@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="theme-color" content="#0a0a0a" />
+  <title>QWERTY Piano</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface2: #1a1a1a;
+      --border: #2a2a2a;
+      --accent: #c8a96e;
+      --accent2: #e8c98e;
+      --white-key: #f0ece4;
+      --white-key-pressed: #c8a96e;
+      --black-key: #1c1c1c;
+      --black-key-pressed: #c8a96e;
+      --text: #e8e4dc;
+      --text-dim: #666;
+      --key-radius: 6px;
+      --glow: rgba(200, 169, 110, 0.35);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    .logo span {
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mode-toggle {
+      display: flex;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      padding: 6px 14px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+
+    .mode-btn.active {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .settings-btn {
+      padding: 6px 12px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      transition: all 0.15s;
+    }
+
+    .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── SETTINGS PANEL ── */
+    #settingsPanel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    #settingsPanel.open { display: flex; }
+
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      width: min(420px, 90vw);
+    }
+
+    .settings-card h2 {
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .setting-label {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .setting-label small {
+      display: block;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+      font-family: 'Syne Mono', monospace;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      transition: 0.2s;
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+
+    input:checked + .slider { background: var(--accent); }
+    input:checked + .slider::before { transform: translateX(20px); background: #000; }
+
+    select.setting-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .close-settings {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    /* ── INFO BAR ── */
+    .info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 20px;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .note-display {
+      font-family: 'Syne Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 80px;
+      letter-spacing: 0.05em;
+      transition: opacity 0.3s;
+    }
+
+    .note-display.dim { opacity: 0.2; }
+
+    .modifier-hint {
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    .octave-display {
+      font-family: 'Syne Mono', monospace;
+      font-size: 12px;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .octave-btn {
+      width: 28px;
+      height: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+    }
+
+    .octave-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── PIANO AREA ── */
+    .piano-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 16px 20px 0;
+    }
+
+    /* ── PIANO KEYS ── */
+    .piano-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      overflow: hidden;
+      padding-bottom: 12px;
+    }
+
+    .piano {
+      position: relative;
+      display: flex;
+      height: 100%;
+      max-height: 240px;
+      gap: 3px;
+    }
+
+    .white-key {
+      position: relative;
+      width: 64px;
+      min-width: 48px;
+      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
+      border-radius: 0 0 var(--key-radius) var(--key-radius);
+      border: 1px solid #c8c4bc;
+      border-top: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 10px;
+      transition: background 0.06s, transform 0.06s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
+    }
+
+    .white-key.pressed {
+      background: linear-gradient(to bottom, var(--accent), var(--accent2));
+      transform: scaleY(0.97);
+      transform-origin: top;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 20px var(--glow);
+    }
+
+    .black-key {
+      position: absolute;
+      width: 40px;
+      height: 60%;
+      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+      border-radius: 0 0 4px 4px;
+      border: 1px solid #111;
+      top: 0;
+      z-index: 10;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 8px;
+      transition: background 0.06s, transform 0.06s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    .black-key.pressed {
+      background: linear-gradient(to bottom, var(--accent), #b8993e);
+      transform: scaleY(0.97);
+      transform-origin: top;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 20px var(--glow);
+    }
+
+    .key-label {
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      pointer-events: none;
+    }
+
+    .white-key .key-label { color: #888; }
+    .white-key.pressed .key-label { color: #000; }
+    .black-key .key-label { color: #555; font-size: 10px; }
+    .black-key.pressed .key-label { color: #000; }
+
+    .key-note {
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #bbb;
+      margin-bottom: 2px;
+      pointer-events: none;
+    }
+
+    .white-key.pressed .key-note { color: #000; }
+
+    /* ── QWERTY TOUCHPAD ── */
+    .qwerty-area {
+      flex-shrink: 0;
+      padding: 12px 0 16px;
+    }
+
+    .qwerty-row {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+
+    .qkey {
+      width: 44px;
+      height: 44px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.08s;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+
+    .qkey:active, .qkey.pressed {
+      background: var(--accent);
+      border-color: var(--accent2);
+      transform: translateY(1px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.6);
+    }
+
+    .qkey .qkey-char {
+      font-family: 'Syne Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .qkey.pressed .qkey-char { color: #000; }
+
+    .qkey .qkey-note {
+      font-family: 'Syne Mono', monospace;
+      font-size: 8px;
+      color: var(--accent);
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .qkey.pressed .qkey-note { color: rgba(0,0,0,0.7); }
+
+    .qkey.no-note .qkey-char { color: var(--text-dim); }
+    .qkey.no-note .qkey-note { display: none; }
+
+    .qkey.modifier-key {
+      background: var(--surface);
+      border-color: #333;
+      width: auto;
+      padding: 0 10px;
+      min-width: 54px;
+    }
+
+    .qkey.modifier-key.active-mod {
+      background: #2a1f0a;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .qkey.modifier-key .qkey-char {
+      font-size: 10px;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── VISUALIZATION ── */
+    .viz-bar {
+      height: 4px;
+      background: var(--border);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .viz-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      background: linear-gradient(to right, var(--accent), var(--accent2));
+      width: 0;
+      transition: width 0.05s, opacity 0.3s;
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .white-key { width: 46px; min-width: 36px; }
+      .black-key { width: 30px; }
+      .qkey { width: 36px; height: 40px; }
+    }
+
+    /* ── TOUCH RIPPLE ── */
+    @keyframes ripple {
+      to { transform: scale(3); opacity: 0; }
+    }
+
+    .ripple {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(200,169,110,0.4);
+      pointer-events: none;
+      animation: ripple 0.4s ease-out forwards;
+      transform-origin: center;
+      margin-left: -10px;
+      margin-top: -10px;
+    }
+
+    /* ── SUSTAIN INDICATOR ── */
+    .sustain-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.1s;
+    }
+
+    .sustain-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--glow); }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">QWERTY <span>Piano</span></div>
+  <div class="controls">
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">⌨ Keyboard</button>
+      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">☞ Touch</button>
+    </div>
+    <button class="settings-btn" onclick="openSettings()">⚙ Settings</button>
+  </div>
+</header>
+
+<!-- VIZ BAR -->
+<div class="viz-bar"><div class="viz-fill" id="vizFill"></div></div>
+
+<!-- INFO BAR -->
+<div class="info-bar">
+  <div class="note-display dim" id="noteDisplay">—</div>
+  <div class="modifier-hint" id="modHint">
+    <div>Hold <strong>SHIFT</strong> → sharp (♯)</div>
+    <div>Hold <strong>ALT</strong> → flat (♭)</div>
+  </div>
+  <div class="octave-display">
+    <button class="octave-btn" onclick="changeOctave(-1)">−</button>
+    <span>OCT <span id="octaveNum">4</span></span>
+    <button class="octave-btn" onclick="changeOctave(1)">+</button>
+    <div class="sustain-dot" id="sustainDot" title="Sustain"></div>
+  </div>
+</div>
+
+<!-- PIANO AREA -->
+<div class="piano-area">
+  <div class="piano-wrapper">
+    <div class="piano" id="piano"></div>
+  </div>
+  <!-- QWERTY TOUCH AREA -->
+  <div class="qwerty-area" id="qwertyArea" style="display:none">
+    <!-- Rows rendered by JS -->
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div id="settingsPanel">
+  <div class="settings-card">
+    <h2>⚙ Settings</h2>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Show Note Labels
+        <small>Display note names on piano keys</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="showNotes" checked onchange="updateLabels()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Show Key Labels
+        <small>Display keyboard letters on piano keys</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="showKeys" checked onchange="updateLabels()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Sustain Mode
+        <small>Notes ring until another key pressed</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="sustainMode" onchange="toggleSustain()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Waveform
+        <small>Tone character</small>
+      </div>
+      <select class="setting-select" id="waveformSelect">
+        <option value="sine">Sine (pure)</option>
+        <option value="triangle">Triangle (soft)</option>
+        <option value="sawtooth">Sawtooth (bright)</option>
+        <option value="square">Square (harsh)</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Sharp key
+        <small>Modifier for sharp (♯)</small>
+      </div>
+      <select class="setting-select" id="sharpKey">
+        <option value="Shift">Shift</option>
+        <option value="Alt">Alt / Option</option>
+      </select>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Volume
+        <small>Master volume</small>
+      </div>
+      <input type="range" min="0" max="100" value="70" id="volumeSlider"
+        style="accent-color: var(--accent); width:100px"
+        oninput="setVolume(this.value)" />
+    </div>
+
+    <button class="close-settings" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────
+//  AUDIO ENGINE
+// ──────────────────────────────────────────
+let audioCtx = null;
+const activeOscillators = {};
+let masterVolume = 0.7;
+let octave = 4;
+let mode = 'keyboard'; // 'keyboard' | 'touch'
+let sustainMode = false;
+let waveform = 'sine';
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function noteToFreq(note, oct) {
+  // A4 = 440 Hz
+  const notes = { 'C':0,'C#':1,'D':2,'D#':3,'E':4,'F':5,'F#':6,'G':7,'G#':8,'A':9,'A#':10,'B':11 };
+  const semitone = notes[note];
+  if (semitone === undefined) return null;
+  const n = (oct - 4) * 12 + semitone - 9; // relative to A4
+  return 440 * Math.pow(2, n / 12);
+}
+
+function playNote(noteId, freq) {
+  if (activeOscillators[noteId]) return;
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gainNode = ctx.createGain();
+
+  osc.type = waveform;
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+
+  // Piano-like envelope
+  gainNode.gain.setValueAtTime(0, ctx.currentTime);
+  gainNode.gain.linearRampToValueAtTime(masterVolume * 0.8, ctx.currentTime + 0.005);
+  gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
+  gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.25, ctx.currentTime + 0.5);
+
+  osc.connect(gainNode);
+  gainNode.connect(ctx.destination);
+  osc.start();
+
+  activeOscillators[noteId] = { osc, gainNode };
+}
+
+function stopNote(noteId) {
+  const entry = activeOscillators[noteId];
+  if (!entry) return;
+  const ctx = getAudioCtx();
+  const { osc, gainNode } = entry;
+  gainNode.gain.cancelScheduledValues(ctx.currentTime);
+  gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+  osc.stop(ctx.currentTime + 0.41);
+  delete activeOscillators[noteId];
+}
+
+function stopAllNotes() {
+  Object.keys(activeOscillators).forEach(stopNote);
+}
+
+// ──────────────────────────────────────────
+//  KEY MAPPING
+// ──────────────────────────────────────────
+// Musical key letter → note name
+const KEY_TO_NOTE = { A:'A', B:'B', C:'C', D:'D', E:'E', F:'F', G:'G' };
+
+// Full chromatic scale for the piano display
+const CHROMATIC = [
+  { note:'C', black:false },
+  { note:'C#', black:true },
+  { note:'D', black:false },
+  { note:'D#', black:true },
+  { note:'E', black:false },
+  { note:'F', black:false },
+  { note:'F#', black:true },
+  { note:'G', black:false },
+  { note:'G#', black:true },
+  { note:'A', black:false },
+  { note:'A#', black:true },
+  { note:'B', black:false },
+];
+
+// Map note letter → white key index in octave
+const NOTE_WHITE_INDEX = { C:0, D:1, E:2, F:3, G:4, A:5, B:6 };
+
+// Black key positions as fraction of white key width+gap
+// Between which white keys: C#→C/D, D#→D/E, F#→F/G, G#→G/A, A#→A/B
+const BLACK_KEY_OFFSETS = {
+  'C#': 0, 'D#': 1, 'F#': 3, 'G#': 4, 'A#': 5
+};
+
+// Enharmonic equivalents
+const FLAT_TO_SHARP = { 'Db':'C#','Eb':'D#','Fb':'E','Gb':'F#','Ab':'G#','Bb':'A#','Cb':'B' };
+const SHARP_TO_NOTE = {'C#':'C#','D#':'D#','E#':'F','F#':'F#','G#':'G#','A#':'A#','B#':'C'};
+
+// QWERTY rows
+const QWERTY_ROWS = [
+  ['`','1','2','3','4','5','6','7','8','9','0','-','='],
+  ['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']'],
+  ['Caps','A','S','D','F','G','H','J','K','L',';',"'"],
+  ['Shift','Z','X','C','V','B','N','M',',','.','/','Shift2'],
+  ['Space']
+];
+
+// Musical notes assigned to letter keys
+const LETTER_KEYS = new Set(['A','B','C','D','E','F','G']);
+
+// State
+let sharpKey = 'Shift'; // or 'Alt'
+let modifiers = { Shift: false, Alt: false, Control: false };
+let pressedKeys = new Set();
+
+function getNoteForKey(letter, isSharp, isFlat) {
+  const baseNote = KEY_TO_NOTE[letter.toUpperCase()];
+  if (!baseNote) return null;
+  if (isSharp) {
+    const sharp = baseNote + '#';
+    // normalize
+    return FLAT_TO_SHARP['#' + baseNote] || (CHROMATIC.find(k=>k.note===sharp) ? sharp : baseNote);
+  }
+  if (isFlat) {
+    // flat: find the note one semitone below
+    const chromIdx = CHROMATIC.findIndex(k => k.note === baseNote);
+    if (chromIdx <= 0) return baseNote; // C flat = B (could go to lower oct)
+    return CHROMATIC[chromIdx - 1].note;
+  }
+  return baseNote;
+}
+
+// ──────────────────────────────────────────
+//  PIANO RENDER
+// ──────────────────────────────────────────
+function buildPiano() {
+  const piano = document.getElementById('piano');
+  piano.innerHTML = '';
+
+  const WKW = 64; // white key width px
+  const GAP = 3;
+  const BKW = 40; // black key width
+
+  const whiteKeys = CHROMATIC.filter(k => !k.black);
+  const totalW = whiteKeys.length * (WKW + GAP) - GAP;
+  piano.style.width = totalW + 'px';
+
+  // Render white keys
+  let wIdx = 0;
+  whiteKeys.forEach((k) => {
+    const el = document.createElement('div');
+    el.className = 'white-key';
+    el.dataset.note = k.note;
+    el.dataset.full = k.note + octave;
+
+    // Find if this note is a letter key
+    const letterKey = Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.note);
+
+    el.innerHTML = `
+      <span class="key-note show-note">${k.note}</span>
+      <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
+    `;
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerNoteByPianoKey(k.note, false, false); });
+    el.addEventListener('pointerup', (e) => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
+    el.addEventListener('pointerleave', (e) => { if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
+    piano.appendChild(el);
+    wIdx++;
+  });
+
+  // Render black keys (positioned absolutely)
+  CHROMATIC.forEach((k, ci) => {
+    if (!k.black) return;
+    // Find white key index to the left
+    const whitesBefore = CHROMATIC.slice(0, ci).filter(x => !x.black).length;
+    const left = whitesBefore * (WKW + GAP) - BKW / 2 + (WKW + GAP) * 0.55;
+
+    const el = document.createElement('div');
+    el.className = 'black-key';
+    el.dataset.note = k.note;
+    el.style.left = left + 'px';
+
+    el.innerHTML = `<span class="key-label show-key" style="color:#555; font-size:9px"></span>`;
+    el.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerNoteByPianoKey(k.note, false, false); });
+    el.addEventListener('pointerup', (e) => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
+    el.addEventListener('pointerleave', (e) => { if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
+    piano.appendChild(el);
+  });
+
+  updateLabels();
+}
+
+function triggerNoteByPianoKey(note, sharp, flat) {
+  const freq = noteToFreq(note, octave);
+  if (!freq) return;
+  const id = note + octave;
+  playNote(id, freq);
+  highlightPianoKey(note, true);
+  showNoteDisplay(note);
+  pulseViz();
+}
+
+function releaseNoteByPianoKey(note, sharp, flat) {
+  const id = note + octave;
+  if (!sustainMode) stopNote(id);
+  highlightPianoKey(note, false);
+  dimNoteDisplay();
+}
+
+function highlightPianoKey(note, on) {
+  const keys = document.querySelectorAll(`[data-note="${note}"]`);
+  keys.forEach(k => on ? k.classList.add('pressed') : k.classList.remove('pressed'));
+}
+
+// ──────────────────────────────────────────
+//  QWERTY TOUCH KEYBOARD RENDER
+// ──────────────────────────────────────────
+function buildQwerty() {
+  const area = document.getElementById('qwertyArea');
+  area.innerHTML = '';
+
+  QWERTY_ROWS.forEach(row => {
+    const rowEl = document.createElement('div');
+    rowEl.className = 'qwerty-row';
+    row.forEach(key => {
+      const el = document.createElement('div');
+      const upper = key.toUpperCase().replace('SHIFT2','SHIFT');
+      const isModifier = ['TAB','CAPS','SHIFT','SHIFT2','SPACE'].includes(upper);
+      const isLetter = LETTER_KEYS.has(upper);
+      const note = isLetter ? KEY_TO_NOTE[upper] : null;
+
+      el.className = 'qkey' + (isModifier ? ' modifier-key' : '') + (!isLetter && !isModifier ? ' no-note' : '');
+      el.dataset.key = key;
+
+      if (key === 'Space') {
+        el.style.width = '120px';
+        el.innerHTML = `<span class="qkey-char" style="font-size:10px; letter-spacing:0.1em">SPACE</span>`;
+      } else {
+        el.innerHTML = `
+          <span class="qkey-char">${key === 'Shift2' ? '⇧' : key}</span>
+          ${note ? `<span class="qkey-note">${note}</span>` : ''}
+        `;
+      }
+
+      // Touch events
+      if (isLetter) {
+        el.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          handleNoteOn(upper, isSharp, isFlat);
+          addRipple(el, e);
+        });
+        el.addEventListener('pointerup', (e) => {
+          e.preventDefault();
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
+        });
+        el.addEventListener('pointerleave', (e) => {
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
+        });
+      } else if (['SHIFT','SHIFT2'].includes(upper)) {
+        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
+      } else if (upper === 'CAPS') {
+        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
+      } else if (upper === 'SPACE') {
+        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(1); addRipple(el, e); });
+      } else if (upper === 'TAB') {
+        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(-1); addRipple(el, e); });
+      }
+
+      rowEl.appendChild(el);
+    });
+    area.appendChild(rowEl);
+  });
+
+  // Hint for touch mode
+  const hint = document.createElement('div');
+  hint.style.cssText = 'text-align:center; font-family: Syne Mono, monospace; font-size:11px; color:var(--text-dim); margin-top:4px';
+  hint.textContent = '⇧ Shift = sharp ♯  |  Caps Lock = flat ♭  |  Tab = Oct−  |  Space = Oct+';
+  area.appendChild(hint);
+}
+
+function addRipple(el, e) {
+  const r = el.getBoundingClientRect();
+  const ripple = document.createElement('div');
+  ripple.className = 'ripple';
+  ripple.style.left = (e.clientX - r.left) + 'px';
+  ripple.style.top = (e.clientY - r.top) + 'px';
+  el.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+}
+
+// ──────────────────────────────────────────
+//  NOTE HANDLING
+// ──────────────────────────────────────────
+function handleNoteOn(letter, isSharp, isFlat) {
+  const note = getNoteForKey(letter, isSharp, isFlat);
+  if (!note) return;
+  const freq = noteToFreq(note, octave);
+  if (!freq) return;
+  const id = note + octave + letter; // unique per letter (sharp A ≠ natural A)
+  if (sustainMode) stopAllNotes();
+  playNote(id, freq);
+  highlightPianoKey(note, true);
+  highlightQKey(letter, true);
+  showNoteDisplay(note + (isSharp ? '♯' : isFlat ? '♭' : ''));
+  pulseViz();
+  pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
+}
+
+function handleNoteOff(letter, isSharp, isFlat) {
+  const note = getNoteForKey(letter, isSharp, isFlat);
+  if (!note) return;
+  const id = note + octave + letter;
+  if (!sustainMode) stopNote(id);
+  highlightPianoKey(note, false);
+  highlightQKey(letter, false);
+  pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
+  if (pressedKeys.size === 0) dimNoteDisplay();
+}
+
+function highlightQKey(letter, on) {
+  const el = document.querySelector(`[data-key="${letter}"], [data-key="${letter.toLowerCase()}"]`);
+  if (el) on ? el.classList.add('pressed') : el.classList.remove('pressed');
+}
+
+// ──────────────────────────────────────────
+//  KEYBOARD INPUT
+// ──────────────────────────────────────────
+const heldKeys = {};
+
+document.addEventListener('keydown', (e) => {
+  if (mode !== 'keyboard') return;
+  const key = e.key;
+
+  // Update modifiers
+  if (key === 'Shift') { modifiers.Shift = true; updateModHint(); return; }
+  if (key === 'Alt') { e.preventDefault(); modifiers.Alt = true; updateModHint(); return; }
+  if (key === 'Control') { modifiers.Control = true; return; }
+  if (key === 'CapsLock') { return; }
+
+  const upper = key.toUpperCase();
+  if (!LETTER_KEYS.has(upper)) {
+    // Octave controls
+    if (key === 'ArrowUp' || key === ']') changeOctave(1);
+    if (key === 'ArrowDown' || key === '[') changeOctave(-1);
+    return;
+  }
+
+  if (heldKeys[upper]) return; // prevent repeat
+  heldKeys[upper] = true;
+
+  const isSharp = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
+  const isFlat = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  handleNoteOn(upper, isSharp, isFlat);
+});
+
+document.addEventListener('keyup', (e) => {
+  if (mode !== 'keyboard') return;
+  const key = e.key;
+
+  if (key === 'Shift') { modifiers.Shift = false; updateModHint(); return; }
+  if (key === 'Alt') { modifiers.Alt = false; updateModHint(); return; }
+  if (key === 'Control') { modifiers.Control = false; return; }
+
+  const upper = key.toUpperCase();
+  delete heldKeys[upper];
+  if (!LETTER_KEYS.has(upper)) return;
+
+  const isSharp = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
+  const isFlat = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  handleNoteOff(upper, isSharp, isFlat);
+});
+
+// ──────────────────────────────────────────
+//  UI UPDATES
+// ──────────────────────────────────────────
+let vizTimeout = null;
+
+function pulseViz() {
+  const fill = document.getElementById('vizFill');
+  fill.style.width = (30 + Math.random() * 70) + '%';
+  fill.style.opacity = '1';
+  clearTimeout(vizTimeout);
+  vizTimeout = setTimeout(() => { fill.style.width = '0'; fill.style.opacity = '0.5'; }, 600);
+}
+
+function showNoteDisplay(note) {
+  const el = document.getElementById('noteDisplay');
+  el.textContent = note;
+  el.classList.remove('dim');
+}
+
+function dimNoteDisplay() {
+  const el = document.getElementById('noteDisplay');
+  el.classList.add('dim');
+}
+
+function updateModHint() {
+  const hint = document.getElementById('modHint');
+  const sharpActive = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
+  const flatActive = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  if (sharpActive) {
+    hint.innerHTML = '<span style="color:var(--accent)">♯ SHARP mode active</span>';
+  } else if (flatActive) {
+    hint.innerHTML = '<span style="color:var(--accent)">♭ FLAT mode active</span>';
+  } else {
+    hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯)</div><div>Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭)</div>`;
+  }
+}
+
+function updateLabels() {
+  const showNote = document.getElementById('showNotes').checked;
+  const showKey = document.getElementById('showKeys').checked;
+  document.querySelectorAll('.show-note').forEach(el => el.style.display = showNote ? '' : 'none');
+  document.querySelectorAll('.show-key').forEach(el => el.style.display = showKey ? '' : 'none');
+}
+
+function changeOctave(delta) {
+  octave = Math.max(1, Math.min(7, octave + delta));
+  document.getElementById('octaveNum').textContent = octave;
+}
+
+function setVolume(v) { masterVolume = v / 100; }
+function toggleSustain() {
+  sustainMode = document.getElementById('sustainMode').checked;
+  document.getElementById('sustainDot').className = 'sustain-dot' + (sustainMode ? ' on' : '');
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('btnKeyboard').classList.toggle('active', m === 'keyboard');
+  document.getElementById('btnTouch').classList.toggle('active', m === 'touch');
+  document.getElementById('qwertyArea').style.display = m === 'touch' ? 'block' : 'none';
+  document.getElementById('modHint').style.display = m === 'keyboard' ? 'block' : 'none';
+
+  if (m === 'touch') {
+    buildQwerty();
+    document.getElementById('modHint').style.display = 'none';
+  }
+  stopAllNotes();
+}
+
+function openSettings() { document.getElementById('settingsPanel').classList.add('open'); }
+function closeSettings() {
+  document.getElementById('settingsPanel').classList.remove('open');
+  waveform = document.getElementById('waveformSelect').value;
+  sharpKey = document.getElementById('sharpKey').value;
+  updateModHint();
+}
+
+// ──────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────
+buildPiano();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// Prevent context menu on long press
+document.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
