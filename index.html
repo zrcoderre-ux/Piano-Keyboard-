@@ -244,12 +244,13 @@
 
     .note-display {
       font-family: 'Syne Mono', monospace;
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 700;
       color: var(--accent);
-      min-width: 80px;
-      letter-spacing: 0.05em;
-      transition: opacity 0.3s;
+      min-width: 140px;
+      letter-spacing: 0.03em;
+      transition: opacity 0.3s, font-size 0.1s;
+      white-space: nowrap;
     }
 
     .note-display.dim { opacity: 0.2; }
@@ -310,27 +311,35 @@
     .piano {
       position: relative;
       display: flex;
+      width: 100%;
       height: 100%;
       max-height: 240px;
-      gap: 3px;
+      gap: 0;
     }
 
     .white-key {
       position: relative;
-      width: 64px;
-      min-width: 48px;
-      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
+      flex: 1;
+      min-width: 0;
+      background: linear-gradient(to bottom, #d8d4cc, #e0dcd4);
       border-radius: 0 0 var(--key-radius) var(--key-radius);
-      border: 1px solid #c8c4bc;
+      border: 1px solid #b8b4ac;
       border-top: none;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 10px;
-      transition: background 0.06s, transform 0.06s;
+      padding-bottom: 8px;
+      transition: background 0.06s, transform 0.06s, opacity 0.2s;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
+      opacity: 0.55;
+    }
+
+    .white-key.active-octave {
+      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
+      border-color: #c8c4bc;
+      opacity: 1;
     }
 
     .white-key.pressed {
@@ -342,9 +351,9 @@
 
     .black-key {
       position: absolute;
-      width: 40px;
+      width: 58%;
       height: 60%;
-      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+      background: linear-gradient(to bottom, #222, #161616);
       border-radius: 0 0 4px 4px;
       border: 1px solid #111;
       top: 0;
@@ -353,9 +362,15 @@
       display: flex;
       align-items: flex-end;
       justify-content: center;
-      padding-bottom: 8px;
-      transition: background 0.06s, transform 0.06s;
+      padding-bottom: 6px;
+      transition: background 0.06s, transform 0.06s, opacity 0.2s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+      opacity: 0.5;
+    }
+
+    .black-key.active-octave {
+      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+      opacity: 1;
     }
 
     .black-key.pressed {
@@ -367,26 +382,27 @@
 
     .key-label {
       font-family: 'Syne Mono', monospace;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.02em;
       pointer-events: none;
     }
 
-    .white-key .key-label { color: #888; }
+    .white-key .key-label { color: #999; }
     .white-key.pressed .key-label { color: #000; }
-    .black-key .key-label { color: #555; font-size: 10px; }
+    .black-key .key-label { color: #555; font-size: 8px; }
     .black-key.pressed .key-label { color: #000; }
 
     .key-note {
       font-family: 'Syne', sans-serif;
-      font-size: 13px;
+      font-size: 10px;
       font-weight: 700;
-      color: #bbb;
-      margin-bottom: 2px;
+      color: #999;
+      margin-bottom: 1px;
       pointer-events: none;
     }
 
+    .white-key.active-octave .key-note { color: #bbb; }
     .white-key.pressed .key-note { color: #000; }
 
     /* ── QWERTY TOUCHPAD ── */
@@ -627,6 +643,38 @@
     }
 
     .reset-colors-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── OCTAVE GROUPS ── */
+    .octave-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      border-left: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .octave-group:first-child { border-left: none; }
+
+    .octave-group.active-octave-group {
+      border-left: 1px solid rgba(200,169,110,0.2);
+      border-right: 1px solid rgba(200,169,110,0.2);
+    }
+
+    .octave-label {
+      text-align: center;
+      font-family: 'Syne Mono', monospace;
+      font-size: 9px;
+      color: var(--text-dim);
+      padding: 2px 0 0;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+
+    .octave-label.active-oct-label {
+      color: var(--accent);
+      font-weight: 700;
+    }
 
     /* ── TOUCH RIPPLE ── */
     @keyframes ripple {
@@ -1009,82 +1057,168 @@ function getNoteForKey(letter, isSharp, isFlat) {
 // ──────────────────────────────────────────
 //  PIANO RENDER
 // ──────────────────────────────────────────
+const MIN_OCTAVE = 1;
+const MAX_OCTAVE = 7;
+
+function calcOctaveRange() {
+  // Figure out how many octaves fit at a minimum key width of 28px
+  const availW = window.innerWidth - 40; // padding
+  const minKeyW = 28;
+  const gap = 2;
+  const keysPerOct = 7; // white keys
+  const octW = keysPerOct * (minKeyW + gap);
+  const maxOcts = Math.floor(availW / octW);
+  // Clamp to valid MIDI range
+  const numOcts = Math.min(maxOcts, MAX_OCTAVE - MIN_OCTAVE + 1);
+  // Center the range around the current octave
+  let startOct = Math.max(MIN_OCTAVE, octave - Math.floor(numOcts / 2));
+  let endOct = startOct + numOcts - 1;
+  if (endOct > MAX_OCTAVE) { endOct = MAX_OCTAVE; startOct = Math.max(MIN_OCTAVE, endOct - numOcts + 1); }
+  return { startOct, endOct, numOcts };
+}
+
 function buildPiano() {
   const piano = document.getElementById('piano');
   piano.innerHTML = '';
 
-  const WKW = 64; // white key width px
-  const GAP = 3;
-  const BKW = 40; // black key width
+  const { startOct, endOct } = calcOctaveRange();
+  const gap = 2;
 
-  const whiteKeys = CHROMATIC.filter(k => !k.black);
-  const totalW = whiteKeys.length * (WKW + GAP) - GAP;
-  piano.style.width = totalW + 'px';
+  // Build one octave group per octave
+  for (let oct = startOct; oct <= endOct; oct++) {
+    const isActive = oct === octave;
+    const group = document.createElement('div');
+    group.className = 'octave-group' + (isActive ? ' active-octave-group' : '');
+    group.dataset.oct = oct;
 
-  // Render white keys
-  let wIdx = 0;
-  whiteKeys.forEach((k) => {
-    const el = document.createElement('div');
-    el.className = 'white-key';
-    el.dataset.note = k.note;
-    el.dataset.full = k.note + octave;
+    // White keys as flex row
+    const whiteRow = document.createElement('div');
+    whiteRow.className = 'octave-white-row';
+    whiteRow.style.cssText = 'display:flex; flex:1; gap:' + gap + 'px; position:relative; height:100%;';
 
-    // Find if this note is a letter key
-    const letterKey = Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.note);
+    CHROMATIC.forEach((k, ci) => {
+      if (k.black) return;
+      const el = document.createElement('div');
+      el.className = 'white-key' + (isActive ? ' active-octave' : '');
+      el.dataset.note = k.note;
+      el.dataset.oct = oct;
 
-    el.innerHTML = `
-      <span class="key-note show-note">${k.note}</span>
-      <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
-    `;
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerNoteByPianoKey(k.note, false, false); });
-    el.addEventListener('pointerup', (e) => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
-    el.addEventListener('pointerleave', (e) => { if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
-    piano.appendChild(el);
-    wIdx++;
-  });
+      const letterKey = isActive ? Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.note) : null;
+      el.innerHTML = `
+        <span class="key-note show-note">${k.note}</span>
+        <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
+      `;
+      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      whiteRow.appendChild(el);
+    });
 
-  // Render black keys (positioned absolutely)
-  CHROMATIC.forEach((k, ci) => {
-    if (!k.black) return;
-    // Find white key index to the left
-    const whitesBefore = CHROMATIC.slice(0, ci).filter(x => !x.black).length;
-    const left = whitesBefore * (WKW + GAP) - BKW / 2 + (WKW + GAP) * 0.55;
+    group.appendChild(whiteRow);
 
-    const el = document.createElement('div');
-    el.className = 'black-key';
-    el.dataset.note = k.note;
-    el.style.left = left + 'px';
+    // Black keys overlay — positioned relative to the white row
+    // We need to position them after layout, so store refs
+    CHROMATIC.forEach((k, ci) => {
+      if (!k.black) return;
+      const whitesBefore = CHROMATIC.slice(0, ci).filter(x => !x.black).length;
+      const el = document.createElement('div');
+      el.className = 'black-key' + (isActive ? ' active-octave' : '');
+      el.dataset.note = k.note;
+      el.dataset.oct = oct;
+      el.dataset.whitesBefore = whitesBefore;
+      el.innerHTML = `<span class="key-label show-key"></span>`;
+      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      whiteRow.appendChild(el);
+    });
 
-    el.innerHTML = `<span class="key-label show-key" style="color:#555; font-size:9px"></span>`;
-    el.addEventListener('pointerdown', (e) => { e.preventDefault(); triggerNoteByPianoKey(k.note, false, false); });
-    el.addEventListener('pointerup', (e) => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
-    el.addEventListener('pointerleave', (e) => { if (!sustainMode) releaseNoteByPianoKey(k.note, false, false); });
-    piano.appendChild(el);
-  });
+    piano.appendChild(group);
+  }
 
+  // Add octave number labels at bottom of each group
+  for (let oct = startOct; oct <= endOct; oct++) {
+    const group = piano.querySelector(`.octave-group[data-oct="${oct}"]`);
+    if (!group) continue;
+    const lbl = document.createElement('div');
+    lbl.className = 'octave-label' + (oct === octave ? ' active-oct-label' : '');
+    lbl.textContent = oct;
+    group.appendChild(lbl);
+  }
+
+  // Position black keys after DOM insert using requestAnimationFrame
+  requestAnimationFrame(() => positionBlackKeys());
   updateLabels();
 }
 
-function triggerNoteByPianoKey(note, sharp, flat) {
-  const freq = noteToFreq(note, octave);
+function positionBlackKeys() {
+  const piano = document.getElementById('piano');
+  if (!piano) return;
+  piano.querySelectorAll('.black-key').forEach(bk => {
+    const whitesBefore = parseInt(bk.dataset.whitesBefore);
+    const whiteRow = bk.parentElement;
+    const whiteKeys = whiteRow.querySelectorAll('.white-key');
+    if (whiteKeys.length < 7) return;
+    const refWhite = whiteKeys[whitesBefore];
+    const nextWhite = whiteKeys[whitesBefore + 1];
+    if (!refWhite || !nextWhite) return;
+    const rowRect = whiteRow.getBoundingClientRect();
+    const leftRect = refWhite.getBoundingClientRect();
+    const rightRect = nextWhite.getBoundingClientRect();
+    const center = (leftRect.right + rightRect.left) / 2;
+    const bkW = (rightRect.left - leftRect.right) + leftRect.width * 0.55;
+    bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
+    bk.style.width = Math.max(bkW * 0.85, 14) + 'px';
+  });
+}
+
+function updateActiveOctave() {
+  const piano = document.getElementById('piano');
+  if (!piano) return;
+  // Check if current octave is in range, if not rebuild
+  const groups = piano.querySelectorAll('.octave-group');
+  const octs = Array.from(groups).map(g => parseInt(g.dataset.oct));
+  if (!octs.includes(octave)) { buildPiano(); return; }
+
+  // Update active styling
+  piano.querySelectorAll('.white-key').forEach(k => {
+    const koct = parseInt(k.dataset.oct);
+    k.classList.toggle('active-octave', koct === octave);
+    // Update letter labels
+    const letterKey = koct === octave ? Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.dataset.note) : null;
+    const lbl = k.querySelector('.key-label');
+    if (lbl) lbl.textContent = letterKey ? letterKey[0] : '';
+  });
+  piano.querySelectorAll('.black-key').forEach(k => {
+    k.classList.toggle('active-octave', parseInt(k.dataset.oct) === octave);
+  });
+  piano.querySelectorAll('.octave-label').forEach(l => {
+    l.classList.toggle('active-oct-label', parseInt(l.textContent) === octave);
+  });
+}
+
+
+
+function triggerNoteByPianoKey(note, oct) {
+  const freq = noteToFreq(note, oct);
   if (!freq) return;
-  const id = note + octave;
+  const id = note + oct + '_piano';
   playNote(id, freq);
-  highlightPianoKey(note, true);
+  highlightPianoKey(note, oct, true);
   const color = noteColors[note] || '#c8a96e';
   showNoteDisplay(note, color);
   pulseViz(color);
 }
 
-function releaseNoteByPianoKey(note, sharp, flat) {
-  const id = note + octave;
+function releaseNoteByPianoKey(note, oct) {
+  const id = note + oct + '_piano';
   if (!sustainMode) stopNote(id);
-  highlightPianoKey(note, false);
+  highlightPianoKey(note, oct, false);
   dimNoteDisplay();
 }
 
-function highlightPianoKey(note, on) {
-  const keys = document.querySelectorAll(`[data-note="${note}"]`);
+function highlightPianoKey(note, oct, on) {
+  const keys = document.querySelectorAll(`[data-note="${note}"][data-oct="${oct}"]`);
   keys.forEach(k => {
     if (on) {
       applyNoteColor(k, note);
@@ -1181,6 +1315,54 @@ function addRipple(el, e) {
   setTimeout(() => ripple.remove(), 500);
 }
 
+// Enharmonic equivalents — what to show alongside the played note
+const ENHARMONICS = {
+  // sharp → flat equivalent
+  'C#': 'D♭', 'D#': 'E♭', 'F#': 'G♭', 'G#': 'A♭', 'A#': 'B♭',
+  // natural notes that ARE enharmonic to a sharp/flat
+  // (these appear when using flat modifier on E or B, or sharp on C/F)
+  'E':  'F♭',  // E natural = Fb (only shown when flat modifier used on F)
+  'B':  'C♭',  // B natural = Cb (only shown when flat modifier used on C)
+  'C':  'B#',  // C natural = B# (only shown when sharp modifier used on B)
+  'F':  'E#',  // F natural = E# (only shown when sharp modifier used on E)
+};
+
+// Build the display label: e.g. "A♯ = B♭" or "B♭ = A♯"
+function buildNoteLabel(baseLetter, note, isSharp, isFlat) {
+  // The "typed" name — what the user pressed
+  const typedName = baseLetter + (isSharp ? '♯' : isFlat ? '♭' : '');
+
+  // Only show enharmonic when a modifier is used
+  if (!isSharp && !isFlat) return typedName;
+
+  // The chromatic note we actually play (e.g. 'A#')
+  // Find its enharmonic
+  let enharmonic = null;
+
+  if (isSharp) {
+    // Sharp pressed: show flat equivalent if it exists
+    const flatEquiv = { 'C#':'D♭','D#':'E♭','F#':'G♭','G#':'A♭','A#':'B♭' };
+    enharmonic = flatEquiv[note] || null;
+    // Edge cases: E# = F, B# = C
+    if (note === 'F') enharmonic = 'F';   // E# lands on F natural
+    if (note === 'C') enharmonic = 'C';   // B# lands on C natural
+  } else if (isFlat) {
+    // Flat pressed: show sharp equivalent if it exists
+    const sharpEquiv = { 'A#':'B♭→A♯','D#':'E♭→D♯','C#':'D♭→C♯','F#':'G♭→F♯','G#':'A♭→G♯' };
+    // Simpler: just show the chromatic note name
+    const sharpNames = { 'A#':'A♯','D#':'D♯','C#':'C♯','F#':'F♯','G#':'G♯' };
+    enharmonic = sharpNames[note] || null;
+    // Edge cases: Fb = E, Cb = B
+    if (note === 'E') enharmonic = 'E';   // Fb lands on E natural
+    if (note === 'B') enharmonic = 'B';   // Cb lands on B natural
+  }
+
+  if (enharmonic && enharmonic !== typedName) {
+    return `${typedName} = ${enharmonic}`;
+  }
+  return typedName;
+}
+
 // ──────────────────────────────────────────
 //  NOTE HANDLING
 // ──────────────────────────────────────────
@@ -1192,10 +1374,10 @@ function handleNoteOn(letter, isSharp, isFlat) {
   const id = note + octave + letter;
   if (sustainMode) stopAllNotes();
   playNote(id, freq);
-  highlightPianoKey(note, true);
+  highlightPianoKey(note, octave, true);
   highlightQKey(letter, true, note);
   const color = noteColors[note] || '#c8a96e';
-  showNoteDisplay(note + (isSharp ? '♯' : isFlat ? '♭' : ''), color);
+  showNoteDisplay(buildNoteLabel(letter, note, isSharp, isFlat), color);
   pulseViz(color);
   pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
 }
@@ -1205,7 +1387,7 @@ function handleNoteOff(letter, isSharp, isFlat) {
   if (!note) return;
   const id = note + octave + letter;
   if (!sustainMode) stopNote(id);
-  highlightPianoKey(note, false);
+  highlightPianoKey(note, octave, false);
   highlightQKey(letter, false, null);
   pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
   if (pressedKeys.size === 0) dimNoteDisplay();
@@ -1291,6 +1473,7 @@ function showNoteDisplay(note, color) {
   const el = document.getElementById('noteDisplay');
   el.textContent = note;
   el.style.color = color || 'var(--accent)';
+  el.style.fontSize = note.includes('=') ? '14px' : '20px';
   el.classList.remove('dim');
 }
 
@@ -1320,8 +1503,9 @@ function updateLabels() {
 }
 
 function changeOctave(delta) {
-  octave = Math.max(1, Math.min(7, octave + delta));
+  octave = Math.max(MIN_OCTAVE, Math.min(MAX_OCTAVE, octave + delta));
   document.getElementById('octaveNum').textContent = octave;
+  updateActiveOctave();
 }
 
 function setVolume(v) { masterVolume = v / 100; }
@@ -1388,6 +1572,9 @@ document.addEventListener('keydown', function dismissSplash(e) {
   setTimeout(() => splash.remove(), 400);
   document.removeEventListener('keydown', dismissSplash);
 }, { once: false });
+
+// Rebuild piano on resize
+window.addEventListener('resize', () => { buildPiano(); });
 
 // Register service worker
 if ('serviceWorker' in navigator) {
