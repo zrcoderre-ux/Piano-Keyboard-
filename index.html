@@ -656,6 +656,7 @@ let waveform = 'sine';
 
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
@@ -1104,6 +1105,16 @@ function closeSettings() {
 //  INIT
 // ──────────────────────────────────────────
 buildPiano();
+
+// Resume AudioContext on first user interaction (browser autoplay policy)
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  document.removeEventListener('pointerdown', unlockAudio);
+  document.removeEventListener('keydown', unlockAudio);
+}
+document.addEventListener('pointerdown', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
 
 // Register service worker
 if ('serviceWorker' in navigator) {
