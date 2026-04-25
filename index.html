@@ -676,6 +676,94 @@
       font-weight: 700;
     }
 
+    /* ── OCTAVE RANGE SLIDER ── */
+    .octave-range-row {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .octave-range-track {
+      position: relative;
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin: 8px 4px;
+    }
+
+    .octave-range-fill {
+      position: absolute;
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+      pointer-events: none;
+    }
+
+    .octave-range-slider {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 18px;
+      height: 18px;
+      background: var(--accent);
+      border-radius: 50%;
+      border: 2px solid #000;
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--glow);
+    }
+
+    .octave-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Syne Mono', monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .octave-range-display {
+      font-family: 'Syne Mono', monospace;
+      font-size: 12px;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .octave-dual-sliders {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .octave-slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .octave-slider-label {
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      color: var(--text-dim);
+      width: 36px;
+      flex-shrink: 0;
+    }
+
+    .octave-slider-val {
+      font-family: 'Syne Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      width: 20px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    input.oct-range[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
     /* ── TOUCH RIPPLE ── */
     @keyframes ripple {
       to { transform: scale(3); opacity: 0; }
@@ -692,6 +780,167 @@
       transform-origin: center;
       margin-left: -10px;
       margin-top: -10px;
+    }
+
+    /* ── SONG SHEET ── */
+    #songSheet {
+      display: none;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+    }
+
+    #songSheet.visible { display: block; }
+
+    .song-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .song-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      flex: 1;
+    }
+
+    .song-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      max-width: 180px;
+    }
+
+    .song-close-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 3px 8px;
+      line-height: 1;
+    }
+
+    .song-close-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Scrolling note strip */
+    .note-strip-wrapper {
+      overflow: hidden;
+      position: relative;
+    }
+
+    .note-strip {
+      display: flex;
+      gap: 6px;
+      transition: transform 0.3s ease;
+      will-change: transform;
+    }
+
+    .strip-note {
+      flex-shrink: 0;
+      width: 52px;
+      height: 64px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      position: relative;
+      opacity: 0.35;
+      cursor: pointer;
+    }
+
+    .strip-note.current {
+      opacity: 1;
+      border-color: var(--accent);
+      box-shadow: 0 0 16px rgba(200,169,110,0.3);
+      transform: scale(1.08);
+    }
+
+    .strip-note.played {
+      opacity: 0.6;
+    }
+
+    .strip-note.rest {
+      background: var(--surface2) !important;
+    }
+
+    .strip-note .sn-note {
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #000;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    .strip-note.rest .sn-note {
+      color: var(--text-dim);
+      font-size: 20px;
+    }
+
+    .strip-note .sn-key {
+      font-family: 'Syne Mono', monospace;
+      font-size: 9px;
+      color: rgba(0,0,0,0.55);
+      margin-top: 3px;
+      font-weight: 700;
+    }
+
+    .strip-note.rest .sn-key { color: var(--text-dim); }
+
+    .strip-note .sn-oct {
+      font-family: 'Syne Mono', monospace;
+      font-size: 8px;
+      color: rgba(0,0,0,0.4);
+    }
+
+    /* Progress bar */
+    .song-progress {
+      margin-top: 8px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .song-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.2s;
+    }
+
+    /* Completion celebration */
+    @keyframes celebrate {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+
+    .song-complete {
+      text-align: center;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      padding: 4px 0;
+      animation: celebrate 0.5s ease 3;
+      display: none;
     }
 
     /* ── SUSTAIN INDICATOR ── */
@@ -754,6 +1003,20 @@
   </div>
 </div>
 
+<!-- SONG SHEET -->
+<div id="songSheet">
+  <div class="song-header">
+    <div class="song-title" id="songTitle">Twinkle Twinkle</div>
+    <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
+    <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
+  </div>
+  <div class="note-strip-wrapper">
+    <div class="note-strip" id="noteStrip"></div>
+  </div>
+  <div class="song-progress"><div class="song-progress-fill" id="songProgressFill"></div></div>
+  <div class="song-complete" id="songComplete">🎉 Well done! Play again?</div>
+</div>
+
 <!-- PIANO AREA -->
 <div class="piano-area">
   <div class="piano-wrapper">
@@ -769,6 +1032,56 @@
 <div id="settingsPanel">
   <div class="settings-card">
     <h2>⚙ Settings</h2>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Expanded Keyboard
+        <small>Show multiple octaves on the piano</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="expandedKeyboard" onchange="toggleExpandedKeyboard()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div id="octaveRangeSection" style="display:none">
+    <div class="setting-row">
+      <div class="setting-label" style="width:100%">
+        Octave Range
+        <small>Limits the piano display and playable range</small>
+      </div>
+    </div>
+    <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:4px; padding-top:0">
+      <div class="octave-dual-sliders">
+        <div class="octave-slider-row">
+          <span class="octave-slider-label">Min</span>
+          <input class="oct-range" type="range" id="minOctSlider"
+            min="1" max="7" value="2"
+            oninput="updateOctaveRange()" />
+          <span class="octave-slider-val" id="minOctVal">2</span>
+        </div>
+        <div class="octave-slider-row">
+          <span class="octave-slider-label">Max</span>
+          <input class="oct-range" type="range" id="maxOctSlider"
+            min="1" max="7" value="6"
+            oninput="updateOctaveRange()" />
+          <span class="octave-slider-val" id="maxOctVal">6</span>
+        </div>
+        <div class="octave-range-display" id="octaveRangeDisplay">Showing octaves 2 – 6</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Song Sheet
+        <small>Show notes to play along with songs</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="songSheetToggle" onchange="toggleSongSheet()" />
+        <span class="slider"></span>
+      </label>
+    </div>
 
     <div class="setting-row">
       <div class="setting-label">
@@ -1057,23 +1370,26 @@ function getNoteForKey(letter, isSharp, isFlat) {
 // ──────────────────────────────────────────
 //  PIANO RENDER
 // ──────────────────────────────────────────
-const MIN_OCTAVE = 1;
-const MAX_OCTAVE = 7;
+const ABSOLUTE_MIN_OCTAVE = 1;
+const ABSOLUTE_MAX_OCTAVE = 7;
+let minOctave = 2;
+let maxOctave = 6;
+let expandedKeyboard = false;
 
 function calcOctaveRange() {
-  // Figure out how many octaves fit at a minimum key width of 28px
-  const availW = window.innerWidth - 40; // padding
+  if (!expandedKeyboard) {
+    return { startOct: octave, endOct: octave, numOcts: 1 };
+  }
+  const availW = window.innerWidth - 40;
   const minKeyW = 28;
   const gap = 2;
-  const keysPerOct = 7; // white keys
+  const keysPerOct = 7;
   const octW = keysPerOct * (minKeyW + gap);
   const maxOcts = Math.floor(availW / octW);
-  // Clamp to valid MIDI range
-  const numOcts = Math.min(maxOcts, MAX_OCTAVE - MIN_OCTAVE + 1);
-  // Center the range around the current octave
-  let startOct = Math.max(MIN_OCTAVE, octave - Math.floor(numOcts / 2));
+  const numOcts = Math.min(maxOcts, maxOctave - minOctave + 1);
+  let startOct = Math.max(minOctave, octave - Math.floor(numOcts / 2));
   let endOct = startOct + numOcts - 1;
-  if (endOct > MAX_OCTAVE) { endOct = MAX_OCTAVE; startOct = Math.max(MIN_OCTAVE, endOct - numOcts + 1); }
+  if (endOct > maxOctave) { endOct = maxOctave; startOct = Math.max(minOctave, endOct - numOcts + 1); }
   return { startOct, endOct, numOcts };
 }
 
@@ -1208,6 +1524,7 @@ function triggerNoteByPianoKey(note, oct) {
   const color = noteColors[note] || '#c8a96e';
   showNoteDisplay(note, color);
   pulseViz(color);
+  advanceSongNote(note);
 }
 
 function releaseNoteByPianoKey(note, oct) {
@@ -1379,6 +1696,7 @@ function handleNoteOn(letter, isSharp, isFlat) {
   const color = noteColors[note] || '#c8a96e';
   showNoteDisplay(buildNoteLabel(letter, note, isSharp, isFlat), color);
   pulseViz(color);
+  advanceSongNote(note);
   pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
 }
 
@@ -1503,9 +1821,37 @@ function updateLabels() {
 }
 
 function changeOctave(delta) {
-  octave = Math.max(MIN_OCTAVE, Math.min(MAX_OCTAVE, octave + delta));
+  octave = Math.max(minOctave, Math.min(maxOctave, octave + delta));
   document.getElementById('octaveNum').textContent = octave;
   updateActiveOctave();
+}
+
+function toggleExpandedKeyboard() {
+  expandedKeyboard = document.getElementById('expandedKeyboard').checked;
+  document.getElementById('octaveRangeSection').style.display = expandedKeyboard ? 'block' : 'none';
+  buildPiano();
+}
+
+function updateOctaveRange() {
+  let newMin = parseInt(document.getElementById('minOctSlider').value);
+  let newMax = parseInt(document.getElementById('maxOctSlider').value);
+  if (newMin >= newMax) {
+    if (document.activeElement === document.getElementById('minOctSlider')) {
+      newMin = newMax - 1;
+      document.getElementById('minOctSlider').value = newMin;
+    } else {
+      newMax = newMin + 1;
+      document.getElementById('maxOctSlider').value = newMax;
+    }
+  }
+  minOctave = newMin;
+  maxOctave = newMax;
+  document.getElementById('minOctVal').textContent = minOctave;
+  document.getElementById('maxOctVal').textContent = maxOctave;
+  document.getElementById('octaveRangeDisplay').textContent = `Showing octaves ${minOctave} – ${maxOctave}`;
+  octave = Math.max(minOctave, Math.min(maxOctave, octave));
+  document.getElementById('octaveNum').textContent = octave;
+  buildPiano();
 }
 
 function setVolume(v) { masterVolume = v / 100; }
@@ -1540,8 +1886,260 @@ function closeSettings() {
 }
 
 // ──────────────────────────────────────────
-//  INIT — iOS-safe audio unlock via splash
+//  SONG SHEET
 // ──────────────────────────────────────────
+
+// Each note: { note, oct, key } where key is the letter to press (null for rests)
+// All songs use only A-G natural notes for simplicity (no sharps/flats needed)
+const SONGS = [
+  {
+    id: 'twinkle',
+    title: '⭐ Twinkle Twinkle Little Star',
+    notes: [
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},
+      {n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'-'},
+      {n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'-'},
+      {n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},
+      {n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'-'},
+      {n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'mary',
+    title: '🐑 Mary Had a Little Lamb',
+    notes: [
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'-'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'E',o:4,k:'E'},{n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'-'},
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},
+      {n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'abc',
+    title: '🔤 ABC Song',
+    notes: [
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},
+      {n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'-'},
+      {n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'-'},
+      {n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},
+      {n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'-'},
+      {n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'bingo',
+    title: '🐶 Bingo',
+    notes: [
+      {n:'G',o:4,k:'G'},{n:'G',o:4,k:'G'},{n:'E',o:4,k:'E'},{n:'G',o:4,k:'G'},
+      {n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'E',o:4,k:'E'},{n:'F',o:4,k:'F'},{n:'-'},
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'-'},
+      {n:'G',o:4,k:'G'},{n:'E',o:4,k:'E'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'happybirthday',
+    title: '🎂 Happy Birthday',
+    notes: [
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+      {n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'-'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+      {n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'-'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'C',o:5,k:'C'},{n:'A',o:4,k:'A'},
+      {n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'B',o:4,k:'B'},{n:'B',o:4,k:'B'},{n:'A',o:4,k:'A'},{n:'F',o:4,k:'F'},
+      {n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},
+    ]
+  },
+  {
+    id: 'hotcrossbuns',
+    title: '🍞 Hot Cross Buns',
+    notes: [
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'-'},
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'-'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},
+      {n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'ode',
+    title: '🎵 Ode to Joy',
+    notes: [
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'},
+      {n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},{n:'E',o:4,k:'E'},
+      {n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},{n:'D',o:4,k:'D'},{n:'-'},
+      {n:'E',o:4,k:'E'},{n:'E',o:4,k:'E'},{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'},
+      {n:'G',o:4,k:'G'},{n:'F',o:4,k:'F'},{n:'E',o:4,k:'E'},{n:'D',o:4,k:'D'},
+      {n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},{n:'D',o:4,k:'D'},{n:'E',o:4,k:'E'},
+      {n:'D',o:4,k:'D'},{n:'C',o:4,k:'C'},{n:'C',o:4,k:'C'},
+    ]
+  },
+  {
+    id: 'itsy',
+    title: '🕷️ Itsy Bitsy Spider',
+    notes: [
+      {n:'C',o:4,k:'C'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},{n:'F',o:4,k:'F'},
+      {n:'G',o:4,k:'G'},{n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'-'},
+      {n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},{n:'A',o:4,k:'A'},{n:'G',o:4,k:'G'},
+      {n:'F',o:4,k:'F'},{n:'-'},
+      {n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'A',o:4,k:'A'},{n:'B',o:4,k:'B'},
+      {n:'C',o:5,k:'C'},{n:'C',o:5,k:'C'},{n:'-'},
+      {n:'C',o:5,k:'C'},{n:'B',o:4,k:'B'},{n:'C',o:5,k:'C'},{n:'B',o:4,k:'B'},
+      {n:'A',o:4,k:'A'},{n:'-'},
+    ]
+  },
+];
+
+let currentSong = null;
+let currentNoteIdx = 0;
+let songSheetVisible = false;
+
+function toggleSongSheet() {
+  songSheetVisible = document.getElementById('songSheetToggle').checked;
+  const sheet = document.getElementById('songSheet');
+  if (songSheetVisible) {
+    sheet.classList.add('visible');
+    if (!currentSong) loadSong(SONGS[0].id);
+  } else {
+    sheet.classList.remove('visible');
+  }
+}
+
+function hideSongSheet() {
+  document.getElementById('songSheetToggle').checked = false;
+  document.getElementById('songSheet').classList.remove('visible');
+  songSheetVisible = false;
+}
+
+function populateSongSelect() {
+  const sel = document.getElementById('songSelect');
+  sel.innerHTML = '';
+  SONGS.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent = s.title;
+    sel.appendChild(opt);
+  });
+}
+
+function loadSong(id) {
+  currentSong = SONGS.find(s => s.id === id) || SONGS[0];
+  currentNoteIdx = 0;
+  document.getElementById('songTitle').textContent = currentSong.title;
+  document.getElementById('songSelect').value = currentSong.id;
+  document.getElementById('songComplete').style.display = 'none';
+  renderNoteStrip();
+}
+
+function renderNoteStrip() {
+  const strip = document.getElementById('noteStrip');
+  strip.innerHTML = '';
+  if (!currentSong) return;
+
+  currentSong.notes.forEach((n, i) => {
+    const el = document.createElement('div');
+    const isRest = n.n === '-';
+    el.className = 'strip-note' + (isRest ? ' rest' : '') +
+                   (i === currentNoteIdx ? ' current' : '') +
+                   (i < currentNoteIdx ? ' played' : '');
+
+    if (!isRest) {
+      const color = noteColors[n.n] || '#c8a96e';
+      el.style.background = color;
+      el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
+    }
+
+    el.innerHTML = isRest
+      ? `<span class="sn-note">—</span>`
+      : `<span class="sn-note">${n.n}</span>
+         <span class="sn-key">key ${n.k}</span>
+         <span class="sn-oct">oct ${n.o}</span>`;
+
+    // Clicking a note in the strip jumps to it
+    el.addEventListener('click', () => {
+      currentNoteIdx = i;
+      renderNoteStrip();
+      scrollStripToCurrentNote();
+    });
+
+    strip.appendChild(el);
+  });
+
+  updateSongProgress();
+  scrollStripToCurrentNote();
+}
+
+function scrollStripToCurrentNote() {
+  const strip = document.getElementById('noteStrip');
+  const wrapper = strip.parentElement;
+  const noteEls = strip.querySelectorAll('.strip-note');
+  if (!noteEls[currentNoteIdx]) return;
+  const noteEl = noteEls[currentNoteIdx];
+  const noteCenter = noteEl.offsetLeft + noteEl.offsetWidth / 2;
+  const wrapperCenter = wrapper.offsetWidth / 2;
+  const offset = Math.max(0, noteCenter - wrapperCenter);
+  strip.style.transform = `translateX(-${offset}px)`;
+}
+
+function updateSongProgress() {
+  if (!currentSong) return;
+  const pct = (currentNoteIdx / (currentSong.notes.length - 1)) * 100;
+  document.getElementById('songProgressFill').style.width = pct + '%';
+}
+
+function advanceSongNote(playedNote) {
+  if (!currentSong || !songSheetVisible) return;
+  const current = currentSong.notes[currentNoteIdx];
+  if (!current) return;
+
+  // Skip rests automatically
+  if (current.n === '-') {
+    currentNoteIdx++;
+    if (currentNoteIdx < currentSong.notes.length) advanceSongNote(playedNote);
+    return;
+  }
+
+  // Check if correct note played
+  if (playedNote === current.n) {
+    currentNoteIdx++;
+    // Skip any following rests
+    while (currentNoteIdx < currentSong.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
+      currentNoteIdx++;
+    }
+    if (currentNoteIdx >= currentSong.notes.length) {
+      // Song complete!
+      renderNoteStrip();
+      const completeEl = document.getElementById('songComplete');
+      completeEl.style.display = 'block';
+      setTimeout(() => { completeEl.style.display = 'none'; currentNoteIdx = 0; renderNoteStrip(); }, 3500);
+    } else {
+      renderNoteStrip();
+    }
+  }
+}
+
+populateSongSelect();
+
+
 buildPiano();
 
 document.getElementById('splashBtn').addEventListener('click', function() {
