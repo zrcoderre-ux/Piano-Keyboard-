@@ -138,7 +138,17 @@
       border-radius: 16px;
       padding: 28px;
       width: min(420px, 90vw);
+      max-height: 80vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
     }
+
+    .settings-card::-webkit-scrollbar { width: 6px; }
+    .settings-card::-webkit-scrollbar-track { background: transparent; }
+    .settings-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .settings-card::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     .settings-card h2 {
       font-size: 16px;
@@ -1483,21 +1493,44 @@ function buildPiano() {
 function positionBlackKeys() {
   const piano = document.getElementById('piano');
   if (!piano) return;
-  piano.querySelectorAll('.black-key').forEach(bk => {
-    const whitesBefore = parseInt(bk.dataset.whitesBefore);
-    const whiteRow = bk.parentElement;
-    const whiteKeys = whiteRow.querySelectorAll('.white-key');
-    if (whiteKeys.length < 7) return;
-    const refWhite = whiteKeys[whitesBefore];
-    const nextWhite = whiteKeys[whitesBefore + 1];
-    if (!refWhite || !nextWhite) return;
-    const rowRect = whiteRow.getBoundingClientRect();
-    const leftRect = refWhite.getBoundingClientRect();
-    const rightRect = nextWhite.getBoundingClientRect();
-    const center = (leftRect.right + rightRect.left) / 2;
-    const bkW = (rightRect.left - leftRect.right) + leftRect.width * 0.55;
-    bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
-    bk.style.width = Math.max(bkW * 0.85, 14) + 'px';
+
+  piano.querySelectorAll('.octave-white-row').forEach(whiteRow => {
+    const whiteKeys = Array.from(whiteRow.querySelectorAll('.white-key'));
+    if (whiteKeys.length === 0) return;
+
+    const blackKeys = whiteRow.querySelectorAll('.black-key');
+    if (blackKeys.length === 0) return;
+
+    if (expandedKeyboard) {
+      // Flex layout: use getBoundingClientRect
+      const rowRect = whiteRow.getBoundingClientRect();
+      blackKeys.forEach(bk => {
+        const whitesBefore = parseInt(bk.dataset.whitesBefore);
+        const refWhite = whiteKeys[whitesBefore];
+        const nextWhite = whiteKeys[whitesBefore + 1];
+        if (!refWhite || !nextWhite) return;
+        const leftRect = refWhite.getBoundingClientRect();
+        const rightRect = nextWhite.getBoundingClientRect();
+        const center = (leftRect.right + rightRect.left) / 2;
+        const bkW = leftRect.width * 0.6;
+        bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
+        bk.style.width = bkW + 'px';
+      });
+    } else {
+      // Fixed layout: calculate from fixed key width + gap
+      const WKW = 64;
+      const GAP = 3;
+      const BKW = 38;
+      blackKeys.forEach(bk => {
+        const whitesBefore = parseInt(bk.dataset.whitesBefore);
+        // Center of gap between whitesBefore and whitesBefore+1
+        const leftEdge = whitesBefore * (WKW + GAP);
+        const rightEdge = leftEdge + WKW + GAP;
+        const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
+        bk.style.left = (center - BKW / 2) + 'px';
+        bk.style.width = BKW + 'px';
+      });
+    }
   });
 }
 
@@ -1742,6 +1775,7 @@ function highlightQKey(letter, on, note) {
 const heldKeys = {};
 
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeSettings(); return; }
   if (mode !== 'keyboard') return;
   const key = e.key;
 
