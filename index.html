@@ -457,10 +457,16 @@
       min-width: 54px;
     }
 
-    .qkey.modifier-key.active-mod {
-      background: #2a1f0a;
-      border-color: var(--accent);
-      color: var(--accent);
+    .qkey.modifier-key.active {
+      background: var(--accent);
+      border-color: var(--accent2);
+      box-shadow: 0 0 12px var(--glow), 0 0 24px var(--glow);
+      transform: none;
+    }
+
+    .qkey.modifier-key.active .qkey-char {
+      color: #000;
+      font-weight: 700;
     }
 
     .qkey.modifier-key .qkey-char {
@@ -491,6 +497,85 @@
       .white-key { width: 46px; min-width: 36px; }
       .black-key { width: 30px; }
       .qkey { width: 36px; height: 40px; }
+    }
+
+    /* ── SPLASH SCREEN ── */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      cursor: pointer;
+    }
+
+    #splash .splash-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+
+    #splash .splash-sub {
+      font-family: 'Syne Mono', monospace;
+      font-size: 13px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    #splash .splash-btn {
+      margin-top: 16px;
+      padding: 16px 48px;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #000;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 32px var(--glow);
+      animation: pulse-btn 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-btn {
+      0%, 100% { box-shadow: 0 0 20px var(--glow); }
+      50% { box-shadow: 0 0 48px rgba(200,169,110,0.6); }
+    }
+
+    #splash .splash-keys {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    #splash .splash-key {
+      width: 36px;
+      height: 48px;
+      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
+      border-radius: 0 0 4px 4px;
+      border: 1px solid #c8c4bc;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 6px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      color: #888;
+      font-weight: 700;
+    }
+
+    #splash.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
     }
 
     /* ── TOUCH RIPPLE ── */
@@ -524,6 +609,22 @@
   </style>
 </head>
 <body>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-keys">
+    <div class="splash-key">A</div>
+    <div class="splash-key">B</div>
+    <div class="splash-key">C</div>
+    <div class="splash-key">D</div>
+    <div class="splash-key">E</div>
+    <div class="splash-key">F</div>
+    <div class="splash-key">G</div>
+  </div>
+  <div class="splash-title">QWERTY Piano</div>
+  <div class="splash-sub">A keyboard instrument for every screen</div>
+  <button class="splash-btn" id="splashBtn">Tap to Play</button>
+</div>
 
 <!-- HEADER -->
 <header>
@@ -762,16 +863,14 @@ let pressedKeys = new Set();
 function getNoteForKey(letter, isSharp, isFlat) {
   const baseNote = KEY_TO_NOTE[letter.toUpperCase()];
   if (!baseNote) return null;
+  const chromIdx = CHROMATIC.findIndex(k => k.note === baseNote);
   if (isSharp) {
-    const sharp = baseNote + '#';
-    // normalize
-    return FLAT_TO_SHARP['#' + baseNote] || (CHROMATIC.find(k=>k.note===sharp) ? sharp : baseNote);
+    const upIdx = (chromIdx + 1) % CHROMATIC.length;
+    return CHROMATIC[upIdx].note;
   }
   if (isFlat) {
-    // flat: find the note one semitone below
-    const chromIdx = CHROMATIC.findIndex(k => k.note === baseNote);
-    if (chromIdx <= 0) return baseNote; // C flat = B (could go to lower oct)
-    return CHROMATIC[chromIdx - 1].note;
+    const downIdx = (chromIdx - 1 + CHROMATIC.length) % CHROMATIC.length;
+    return CHROMATIC[downIdx].note;
   }
   return baseNote;
 }
@@ -1053,9 +1152,9 @@ function updateModHint() {
   const sharpActive = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
   const flatActive = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
   if (sharpActive) {
-    hint.innerHTML = '<span style="color:var(--accent)">♯ SHARP mode active</span>';
+    hint.innerHTML = '<span style="background:var(--accent);color:#000;padding:3px 10px;border-radius:6px;font-weight:700;font-size:13px">♯ SHARP</span>';
   } else if (flatActive) {
-    hint.innerHTML = '<span style="color:var(--accent)">♭ FLAT mode active</span>';
+    hint.innerHTML = '<span style="background:var(--accent);color:#000;padding:3px 10px;border-radius:6px;font-weight:700;font-size:13px">♭ FLAT</span>';
   } else {
     hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯)</div><div>Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭)</div>`;
   }
@@ -1102,19 +1201,38 @@ function closeSettings() {
 }
 
 // ──────────────────────────────────────────
-//  INIT
+//  INIT — iOS-safe audio unlock via splash
 // ──────────────────────────────────────────
 buildPiano();
 
-// Resume AudioContext on first user interaction (browser autoplay policy)
-function unlockAudio() {
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume();
-  document.removeEventListener('pointerdown', unlockAudio);
-  document.removeEventListener('keydown', unlockAudio);
-}
-document.addEventListener('pointerdown', unlockAudio);
-document.addEventListener('keydown', unlockAudio);
+document.getElementById('splashBtn').addEventListener('click', function() {
+  // Create AND resume AudioContext inside direct user gesture — required by iOS
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume().then(() => {
+    // Play a silent buffer to fully unlock iOS audio
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+
+    // Hide splash
+    const splash = document.getElementById('splash');
+    splash.classList.add('hidden');
+    setTimeout(() => splash.remove(), 400);
+  });
+});
+
+// Also allow any keypress to dismiss splash on desktop
+document.addEventListener('keydown', function dismissSplash(e) {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume();
+  splash.classList.add('hidden');
+  setTimeout(() => splash.remove(), 400);
+  document.removeEventListener('keydown', dismissSplash);
+}, { once: false });
 
 // Register service worker
 if ('serviceWorker' in navigator) {

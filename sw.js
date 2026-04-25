@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qwerty-piano-v1';
+const CACHE_NAME = 'qwerty-piano-v3';
 const ASSETS = [
   './',
   './index.html',
