@@ -334,10 +334,10 @@
     }
 
     .white-key.pressed {
-      background: linear-gradient(to bottom, var(--accent), var(--accent2));
+      background: var(--note-color, var(--accent));
       transform: scaleY(0.97);
       transform-origin: top;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 20px var(--glow);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 28px var(--note-color, var(--glow));
     }
 
     .black-key {
@@ -359,10 +359,10 @@
     }
 
     .black-key.pressed {
-      background: linear-gradient(to bottom, var(--accent), #b8993e);
+      background: var(--note-color, var(--accent));
       transform: scaleY(0.97);
       transform-origin: top;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 20px var(--glow);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 28px var(--note-color, var(--glow));
     }
 
     .key-label {
@@ -578,6 +578,56 @@
       transition: opacity 0.4s ease;
     }
 
+    /* ── COLOR SETTINGS ── */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .color-swatch-row {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .color-swatch-row label {
+      font-family: 'Syne Mono', monospace;
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+
+    .color-swatch-row input[type="color"] {
+      width: 36px;
+      height: 36px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: none;
+      cursor: pointer;
+      padding: 2px;
+    }
+
+    .color-swatch-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 6px; }
+    .color-swatch-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 5px; }
+
+    .reset-colors-btn {
+      margin-top: 8px;
+      padding: 6px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-dim);
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+    }
+
+    .reset-colors-btn:hover { border-color: var(--accent); color: var(--accent); }
+
     /* ── TOUCH RIPPLE ── */
     @keyframes ripple {
       to { transform: scale(3); opacity: 0; }
@@ -739,6 +789,15 @@
         oninput="setVolume(this.value)" />
     </div>
 
+    <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:10px">
+      <div class="setting-label">
+        Note Colors
+        <small>Color shown when each note is pressed</small>
+      </div>
+      <div class="color-grid" id="colorGrid"></div>
+      <button class="reset-colors-btn" onclick="resetColors()">↺ Reset to defaults</button>
+    </div>
+
     <button class="close-settings" onclick="closeSettings()">Close</button>
   </div>
 </div>
@@ -809,8 +868,78 @@ function stopAllNotes() {
 }
 
 // ──────────────────────────────────────────
-//  KEY MAPPING
+//  NOTE COLORS
 // ──────────────────────────────────────────
+// Default colors inspired by synesthesia / Newton's color-note mapping
+const DEFAULT_NOTE_COLORS = {
+  'C':  '#e63946', // red
+  'C#': '#f4511e', // red-orange
+  'D':  '#ff9800', // orange
+  'D#': '#ffc107', // amber
+  'E':  '#ffeb3b', // yellow
+  'F':  '#8bc34a', // lime green
+  'F#': '#26a69a', // teal
+  'G':  '#29b6f6', // sky blue
+  'G#': '#3f51b5', // indigo
+  'A':  '#7e57c2', // violet
+  'A#': '#ab47bc', // purple
+  'B':  '#ec407a', // pink
+};
+
+let noteColors = { ...DEFAULT_NOTE_COLORS };
+
+function loadColors() {
+  try {
+    const saved = localStorage.getItem('pianoNoteColors');
+    if (saved) noteColors = { ...DEFAULT_NOTE_COLORS, ...JSON.parse(saved) };
+  } catch(e) {}
+}
+
+function saveColors() {
+  try { localStorage.setItem('pianoNoteColors', JSON.stringify(noteColors)); } catch(e) {}
+}
+
+function resetColors() {
+  noteColors = { ...DEFAULT_NOTE_COLORS };
+  saveColors();
+  buildColorGrid();
+}
+
+function applyNoteColor(el, note) {
+  const color = noteColors[note] || '#c8a96e';
+  el.style.setProperty('--note-color', color);
+}
+
+function clearNoteColor(el) {
+  el.style.removeProperty('--note-color');
+}
+
+function buildColorGrid() {
+  const grid = document.getElementById('colorGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  Object.keys(DEFAULT_NOTE_COLORS).forEach(note => {
+    const row = document.createElement('div');
+    row.className = 'color-swatch-row';
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.value = noteColors[note] || DEFAULT_NOTE_COLORS[note];
+    input.title = note;
+    input.addEventListener('input', (e) => {
+      noteColors[note] = e.target.value;
+      saveColors();
+    });
+    const lbl = document.createElement('label');
+    lbl.textContent = note;
+    row.appendChild(input);
+    row.appendChild(lbl);
+    grid.appendChild(row);
+  });
+}
+
+loadColors();
+
+
 // Musical key letter → note name
 const KEY_TO_NOTE = { A:'A', B:'B', C:'C', D:'D', E:'E', F:'F', G:'G' };
 
@@ -940,8 +1069,9 @@ function triggerNoteByPianoKey(note, sharp, flat) {
   const id = note + octave;
   playNote(id, freq);
   highlightPianoKey(note, true);
-  showNoteDisplay(note);
-  pulseViz();
+  const color = noteColors[note] || '#c8a96e';
+  showNoteDisplay(note, color);
+  pulseViz(color);
 }
 
 function releaseNoteByPianoKey(note, sharp, flat) {
@@ -953,7 +1083,15 @@ function releaseNoteByPianoKey(note, sharp, flat) {
 
 function highlightPianoKey(note, on) {
   const keys = document.querySelectorAll(`[data-note="${note}"]`);
-  keys.forEach(k => on ? k.classList.add('pressed') : k.classList.remove('pressed'));
+  keys.forEach(k => {
+    if (on) {
+      applyNoteColor(k, note);
+      k.classList.add('pressed');
+    } else {
+      clearNoteColor(k);
+      k.classList.remove('pressed');
+    }
+  });
 }
 
 // ──────────────────────────────────────────
@@ -1049,13 +1187,14 @@ function handleNoteOn(letter, isSharp, isFlat) {
   if (!note) return;
   const freq = noteToFreq(note, octave);
   if (!freq) return;
-  const id = note + octave + letter; // unique per letter (sharp A ≠ natural A)
+  const id = note + octave + letter;
   if (sustainMode) stopAllNotes();
   playNote(id, freq);
   highlightPianoKey(note, true);
-  highlightQKey(letter, true);
-  showNoteDisplay(note + (isSharp ? '♯' : isFlat ? '♭' : ''));
-  pulseViz();
+  highlightQKey(letter, true, note);
+  const color = noteColors[note] || '#c8a96e';
+  showNoteDisplay(note + (isSharp ? '♯' : isFlat ? '♭' : ''), color);
+  pulseViz(color);
   pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
 }
 
@@ -1065,14 +1204,21 @@ function handleNoteOff(letter, isSharp, isFlat) {
   const id = note + octave + letter;
   if (!sustainMode) stopNote(id);
   highlightPianoKey(note, false);
-  highlightQKey(letter, false);
+  highlightQKey(letter, false, null);
   pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
   if (pressedKeys.size === 0) dimNoteDisplay();
 }
 
-function highlightQKey(letter, on) {
+function highlightQKey(letter, on, note) {
   const el = document.querySelector(`[data-key="${letter}"], [data-key="${letter.toLowerCase()}"]`);
-  if (el) on ? el.classList.add('pressed') : el.classList.remove('pressed');
+  if (!el) return;
+  if (on && note) {
+    applyNoteColor(el, note);
+    el.classList.add('pressed');
+  } else {
+    clearNoteColor(el);
+    el.classList.remove('pressed');
+  }
 }
 
 // ──────────────────────────────────────────
@@ -1128,17 +1274,21 @@ document.addEventListener('keyup', (e) => {
 // ──────────────────────────────────────────
 let vizTimeout = null;
 
-function pulseViz() {
+function pulseViz(color) {
   const fill = document.getElementById('vizFill');
+  fill.style.background = color
+    ? `linear-gradient(to right, ${color}, ${color}aa)`
+    : 'linear-gradient(to right, var(--accent), var(--accent2))';
   fill.style.width = (30 + Math.random() * 70) + '%';
   fill.style.opacity = '1';
   clearTimeout(vizTimeout);
   vizTimeout = setTimeout(() => { fill.style.width = '0'; fill.style.opacity = '0.5'; }, 600);
 }
 
-function showNoteDisplay(note) {
+function showNoteDisplay(note, color) {
   const el = document.getElementById('noteDisplay');
   el.textContent = note;
+  el.style.color = color || 'var(--accent)';
   el.classList.remove('dim');
 }
 
@@ -1192,7 +1342,10 @@ function setMode(m) {
   stopAllNotes();
 }
 
-function openSettings() { document.getElementById('settingsPanel').classList.add('open'); }
+function openSettings() {
+  buildColorGrid();
+  document.getElementById('settingsPanel').classList.add('open');
+}
 function closeSettings() {
   document.getElementById('settingsPanel').classList.remove('open');
   waveform = document.getElementById('waveformSelect').value;
