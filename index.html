@@ -1055,6 +1055,37 @@
       cursor: pointer;
     }
 
+    /* Above-strip ticker bar */
+    .note-strip-wrapper {
+      position: relative;
+    }
+
+    .ticker-bar-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-bottom: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ticker-bar-fill {
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 0%;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+
+    @keyframes tickerSweep {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+
+    .ticker-bar-fill.sweeping {
+      animation: tickerSweep linear forwards;
+    }
+
     /* Sweeping ticker overlay on current note */
     @keyframes sweep {
       from { width: 0%; }
@@ -1143,6 +1174,7 @@
     <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
   </div>
   <div class="note-strip-wrapper">
+    <div class="ticker-bar-track"><div class="ticker-bar-fill" id="tickerBarFill"></div></div>
     <div class="note-strip" id="noteStrip"></div>
   </div>
   <div class="tempo-bar">
@@ -2290,6 +2322,20 @@ function advanceSongNote(playedNote) {
   const current = currentSong.notes[currentNoteIdx];
   if (!current) return;
 
+  // If tempo is running, keypresses don't advance — timer owns that
+  if (tempoPlaying) return;
+
+  // Playing the first note starts the tempo automatically
+  if (playedNote === current.n && currentNoteIdx === 0) {
+    currentNoteIdx++;
+    renderNoteStrip();
+    startTempo();
+    return;
+  }
+
+  const current = currentSong.notes[currentNoteIdx];
+  if (!current) return;
+
   // Check if correct note played
   if (playedNote === current.n) {
     currentNoteIdx++;
@@ -2348,10 +2394,14 @@ function stopTempo() {
   document.getElementById('tempoPlayBtn').textContent = '▶';
   document.getElementById('tempoPlayBtn').classList.remove('playing');
   clearTempoTimer();
+  // Reset ticker bar
+  const tickerBar = document.getElementById('tickerBarFill');
+  if (tickerBar) { tickerBar.style.animation = 'none'; tickerBar.classList.remove('sweeping'); tickerBar.style.width = '0%'; }
   // Remove ticking class from all notes
   document.querySelectorAll('.strip-note.ticking').forEach(el => {
     el.classList.remove('ticking');
-    el.querySelector('.sn-ticker').style.animation = 'none';
+    const t = el.querySelector('.sn-ticker');
+    if (t) t.style.animation = 'none';
   });
 }
 
@@ -2398,6 +2448,18 @@ function scheduleNextNote(immediate) {
   const noteDurationMs = quarterMs * (note.d || 1);
 
   renderNoteStrip();
+
+  // Animate ticker bar above strip
+  const tickerBar = document.getElementById('tickerBarFill');
+  if (tickerBar) {
+    const noteColor = (note.n !== '-') ? (noteColors[note.n] || 'var(--accent)') : 'var(--text-dim)';
+    tickerBar.style.background = noteColor;
+    tickerBar.classList.remove('sweeping');
+    tickerBar.style.animation = 'none';
+    tickerBar.offsetWidth; // force reflow
+    tickerBar.style.animation = `tickerSweep ${noteDurationMs}ms linear forwards`;
+    tickerBar.classList.add('sweeping');
+  }
 
   // Start sweeping ticker on current note
   const noteEls = document.querySelectorAll('.strip-note');
@@ -2463,6 +2525,12 @@ window.addEventListener('resize', () => { buildPiano(); });
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }
+
+
+// Click outside settings card to close
+document.getElementById('settingsPanel').addEventListener('click', function(e) {
+  if (e.target === this) closeSettings();
+});
 
 // Prevent context menu on long press
 document.addEventListener('contextmenu', e => e.preventDefault());
