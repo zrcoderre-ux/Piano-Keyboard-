@@ -2004,54 +2004,32 @@ function positionBlackKeys(retryCount) {
     const blackKeys = whiteRow.querySelectorAll('.black-key');
     if (blackKeys.length === 0) return;
 
-    if (expandedKeyboard) {
-      // Flex layout: measure actual rendered white key positions.
-      // Use piano.offsetHeight for height — it has an explicit max-height:240px
-      // so it's always resolved, unlike the flex-driven row height.
-      const rowRect = whiteRow.getBoundingClientRect();
-      const rowH = piano.offsetHeight;
-      // If measurements aren't ready, flag for retry. Black keys remain at
-      // their safe CSS default (0×0) until we can size them properly.
-      if (rowRect.width === 0 || rowH === 0) { needsRetry = true; return; }
+    // Both single-octave and expanded modes: measure actual rendered white
+    // key positions. Single-octave used to use hardcoded WKW=64 but iPhone
+    // portrait shrinks white keys to 38px, which made the math walk every
+    // black key further off to the right.
+    const rowRect = whiteRow.getBoundingClientRect();
+    const rowH = piano.offsetHeight;
+    if (rowRect.width === 0 || rowH === 0) { needsRetry = true; return; }
 
-      // Also bail out if individual white keys haven't sized yet
-      const firstWidth = whiteKeys[0].getBoundingClientRect().width;
-      if (firstWidth === 0) { needsRetry = true; return; }
+    const firstWidth = whiteKeys[0].getBoundingClientRect().width;
+    if (firstWidth === 0) { needsRetry = true; return; }
 
-      blackKeys.forEach(bk => {
-        const whitesBefore = parseInt(bk.dataset.whitesBefore);
-        const refWhite = whiteKeys[whitesBefore];
-        const nextWhite = whiteKeys[whitesBefore + 1];
-        if (!refWhite || !nextWhite) return;
-        const leftRect = refWhite.getBoundingClientRect();
-        const rightRect = nextWhite.getBoundingClientRect();
-        const center = (leftRect.right + rightRect.left) / 2;
-        const bkW = Math.max(leftRect.width * 0.6, 10);
-        const bkH = rowH * 0.62;
-        bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
-        bk.style.width = bkW + 'px';
-        bk.style.height = bkH + 'px';
-        bk.style.borderRadius = '0 0 4px 4px';
-      });
-    } else {
-      // Fixed layout: calculate from fixed key width + gap.
-      // CSS defaults are now 0/0 (safe for expanded mode), so we must set
-      // explicit pixel height here too.
-      const WKW = 64;
-      const GAP = 3;
-      const BKW = 38;
-      const rowH = piano.offsetHeight || 220;
-      const bkH = rowH * 0.6;
-      blackKeys.forEach(bk => {
-        const whitesBefore = parseInt(bk.dataset.whitesBefore);
-        const leftEdge = whitesBefore * (WKW + GAP);
-        const rightEdge = leftEdge + WKW + GAP;
-        const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
-        bk.style.left = (center - BKW / 2) + 'px';
-        bk.style.width = BKW + 'px';
-        bk.style.height = bkH + 'px';
-      });
-    }
+    blackKeys.forEach(bk => {
+      const whitesBefore = parseInt(bk.dataset.whitesBefore);
+      const refWhite = whiteKeys[whitesBefore];
+      const nextWhite = whiteKeys[whitesBefore + 1];
+      if (!refWhite || !nextWhite) return;
+      const leftRect = refWhite.getBoundingClientRect();
+      const rightRect = nextWhite.getBoundingClientRect();
+      const center = (leftRect.right + rightRect.left) / 2;
+      const bkW = Math.max(leftRect.width * 0.6, 10);
+      const bkH = rowH * 0.62;
+      bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
+      bk.style.width = bkW + 'px';
+      bk.style.height = bkH + 'px';
+      bk.style.borderRadius = '0 0 4px 4px';
+    });
   });
 
   // If any row couldn't be measured yet, retry up to ~10 frames later.
