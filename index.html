@@ -1988,7 +1988,11 @@ function positionBlackKeys() {
       // Flex layout: measure actual rendered positions
       const rowRect = whiteRow.getBoundingClientRect();
       if (rowRect.width === 0) return; // layout not ready yet
-      const rowH = rowRect.height;
+      // rowRect.height may still be 0 if the flex chain hasn't committed heights yet.
+      // Fall back to the piano element's offsetHeight (capped by CSS max-height: 240px).
+      const pianoEl = document.getElementById('piano');
+      const rowH = rowRect.height > 0 ? rowRect.height : (pianoEl ? pianoEl.offsetHeight : 0);
+      if (rowH === 0) return;
       blackKeys.forEach(bk => {
         const whitesBefore = parseInt(bk.dataset.whitesBefore);
         const refWhite = whiteKeys[whitesBefore];
@@ -2022,9 +2026,34 @@ function positionBlackKeys() {
   });
 }
 
-// Double-rAF ensures layout is fully flushed before we measure
+// ResizeObserver fires once the piano element has a real painted size,
+// which is more reliable than double-rAF when heights are flex-driven.
+// Falls back to double-rAF on browsers without ResizeObserver support.
+let _pianoResizeObserver = null;
+
 function schedulePositionBlackKeys() {
-  requestAnimationFrame(() => requestAnimationFrame(() => positionBlackKeys()));
+  const piano = document.getElementById('piano');
+  if (!piano) {
+    requestAnimationFrame(() => requestAnimationFrame(() => positionBlackKeys()));
+    return;
+  }
+
+  if (typeof ResizeObserver !== 'undefined') {
+    // Disconnect any previous observer (piano is rebuilt on each buildPiano call)
+    if (_pianoResizeObserver) { _pianoResizeObserver.disconnect(); _pianoResizeObserver = null; }
+    _pianoResizeObserver = new ResizeObserver((entries, obs) => {
+      const e = entries[0];
+      if (e && e.contentRect.width > 0 && e.contentRect.height > 0) {
+        obs.disconnect();
+        _pianoResizeObserver = null;
+        positionBlackKeys();
+      }
+    });
+    _pianoResizeObserver.observe(piano);
+  } else {
+    // Fallback for older Safari / WebKit
+    requestAnimationFrame(() => requestAnimationFrame(() => positionBlackKeys()));
+  }
 }
 
 function updateActiveOctave() {
