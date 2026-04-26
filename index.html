@@ -610,28 +610,6 @@
       transition: opacity 0.4s ease;
     }
 
-    /* Floating re-unlock button — shown if audio still silent after splash */
-    #reUnlockBtn {
-      display: none;
-      position: fixed;
-      bottom: 160px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 500;
-      padding: 12px 28px;
-      background: var(--accent);
-      border: none;
-      border-radius: 10px;
-      color: #000;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 0 24px var(--glow);
-      animation: pulse-btn 2s ease-in-out infinite;
-    }
 
     /* ── COLOR SETTINGS ── */
     .color-grid {
@@ -1158,9 +1136,6 @@
   <button class="splash-btn" id="splashBtn">Tap to Play</button>
 </div>
 
-<!-- Re-unlock button: shown if audio was silenced after initial tap -->
-<button id="reUnlockBtn">🔊 Tap to Enable Audio</button>
-
 <!-- HEADER -->
 <header>
   <div class="logo">QWERTY <span>Piano</span></div>
@@ -1364,32 +1339,6 @@
 
 <script>
 // ── iOS AUDIO DEBUG PANEL — defined first so everything can use it ──
-function showDebug(msg) {
-  let panel = document.getElementById('audioDebug');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'audioDebug';
-    // Top of screen, massive z-index, can't be missed
-    panel.style.cssText = [
-      'position:fixed','top:0','left:0','right:0','z-index:2147483647',
-      'background:#000','color:#0f0','font:13px/1.8 monospace',
-      'padding:10px 14px','border-bottom:2px solid #0f0',
-      'pointer-events:none','white-space:pre-wrap',
-      'max-height:50vh','overflow-y:auto'
-    ].join(';');
-    // Append immediately — if body not ready, retry
-    if (document.body) {
-      document.body.appendChild(panel);
-    } else {
-      document.addEventListener('DOMContentLoaded', () => document.body.appendChild(panel));
-    }
-  }
-  const ts = new Date().toISOString().slice(11,23);
-  panel.textContent = panel.textContent + '\n[' + ts + '] ' + msg;
-  if (panel.parentNode) panel.scrollTop = panel.scrollHeight;
-  // Also console.log as backup
-  console.log('[DBG]', msg);
-}
 
 // ──────────────────────────────────────────
 //  AUDIO ENGINE
@@ -1408,7 +1357,7 @@ function getAudioCtx() {
     audioCtx.resume(); // belt-and-braces; real unlock happens in unlockAndStart
   }
   if (audioCtx.state !== 'running') {
-    if (typeof showDebug === 'function') showDebug('getAudioCtx: state=' + audioCtx.state + ' (not running!)');
+    audioCtx.resume();
   }
   return audioCtx;
 }
@@ -1423,41 +1372,35 @@ function noteToFreq(note, oct) {
 }
 
 function playNote(noteId, freq) {
-  showDebug('playNote: ' + noteId + ' freq=' + freq + ' ctxState=' + (audioCtx ? audioCtx.state : 'null'));
-  if (activeOscillators[noteId]) { showDebug('  → blocked: already active'); return; }
+  if (activeOscillators[noteId]) return;
   const ctx = getAudioCtx();
-  if (!ctx) { showDebug('  → blocked: no ctx'); return; }
-  showDebug('  → creating osc, ctx.currentTime=' + ctx.currentTime.toFixed(3));
+  if (!ctx) return;
   const osc = ctx.createOscillator();
   const gainNode = ctx.createGain();
-
   osc.type = waveform;
-  osc.frequency.setValueAtTime(freq, ctx.currentTime);
-
-  // Piano-like envelope — use 0.0001 as near-silence floor since
-  // exponentialRampToValueAtTime cannot ramp TO or FROM exactly 0 (log undefined)
+  osc.frequency.value = freq;
   gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
   gainNode.gain.linearRampToValueAtTime(masterVolume * 0.8, ctx.currentTime + 0.005);
   gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
   gainNode.gain.exponentialRampToValueAtTime(Math.max(masterVolume * 0.25, 0.0001), ctx.currentTime + 0.5);
-
   osc.connect(gainNode);
   gainNode.connect(ctx.destination);
   osc.start();
-
   activeOscillators[noteId] = { osc, gainNode };
 }
 
 function stopNote(noteId) {
-  showDebug('stopNote: ' + noteId);
   const entry = activeOscillators[noteId];
   if (!entry) return;
   const ctx = getAudioCtx();
+  if (!ctx) { try { entry.osc.stop(); } catch(e) {} delete activeOscillators[noteId]; return; }
   const { osc, gainNode } = entry;
-  gainNode.gain.cancelScheduledValues(ctx.currentTime);
-  gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-  osc.stop(ctx.currentTime + 0.41);
+  try {
+    gainNode.gain.cancelScheduledValues(ctx.currentTime);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    osc.stop(ctx.currentTime + 0.41);
+  } catch(e) { try { osc.stop(); } catch(e2) {} }
   delete activeOscillators[noteId];
 }
 
@@ -1832,7 +1775,6 @@ const noteTouchTime = {}; // noteId -> timestamp when note started
 const MIN_NOTE_MS = 300;  // minimum audible duration for touch taps
 
 function triggerNoteByPianoKey(note, oct) {
-  showDebug('triggerNote: ' + note + oct);
   const freq = noteToFreq(note, oct);
   if (!freq) return;
   const id = note + oct + '_piano';
@@ -1846,7 +1788,6 @@ function triggerNoteByPianoKey(note, oct) {
 }
 
 function releaseNoteByPianoKey(note, oct) {
-  showDebug('releaseNote: ' + note + oct + ' sustain=' + sustainMode);
   const id = note + oct + '_piano';
   highlightPianoKey(note, oct, false);
   dimNoteDisplay();
@@ -2633,7 +2574,6 @@ function scheduleNextNote(immediate) {
 populateSongSelect();
 
 buildPiano();
-showDebug('=== APP STARTED — tap a piano key and watch here ===');
 
 // ── SPLASH UNLOCK ──────────────────────────
 let splashDone = false;
@@ -2645,28 +2585,21 @@ function unlockAndStart(e) {
   e.preventDefault();
   e.stopPropagation();
 
-  showDebug('unlockAndStart called, event=' + e.type);
 
   try {
     if (!audioCtx) {
       const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { showDebug('ERROR: No AudioContext available!'); return; }
+      if (!AC) { return; }
       audioCtx = new AC();
-      showDebug('AudioContext created, state=' + audioCtx.state);
-    } else {
-      showDebug('AudioContext already exists, state=' + audioCtx.state);
-    }
+        } else {
+        }
 
     // CRITICAL ORDER FOR iOS:
     // 1. resume() first — get the promise
     // 2. Inside the .then(), play the silent buffer
     // 3. Only after both, hide the splash
     const resumePromise = audioCtx.resume();
-    showDebug('resume() called, now=' + audioCtx.state);
-
     resumePromise.then(() => {
-      showDebug('resume().then() — state=' + audioCtx.state);
-
       // Play a silent buffer INSIDE the resume promise — still within gesture trust window
       try {
         const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
@@ -2674,24 +2607,18 @@ function unlockAndStart(e) {
         src.buffer = buf;
         src.connect(audioCtx.destination);
         src.start(0);
-        showDebug('Silent buffer played OK');
-      } catch(err) {
-        showDebug('Silent buffer ERROR: ' + err.message);
-      }
+            } catch(err) {
+            }
 
       // Hide splash now that audio is unlocked
       hideSplash();
-      showDebug('Splash hidden. AudioContext state=' + audioCtx.state);
-
-    }).catch(err => {
-      showDebug('resume() REJECTED: ' + err.message);
-      // Still try to proceed — show piano even if audio failed
+    
+    }).catch(err => {      // Still try to proceed — show piano even if audio failed
       hideSplash();
     });
 
   } catch(err) {
-    showDebug('EXCEPTION in unlockAndStart: ' + err.message);
-    hideSplash();
+      hideSplash();
   }
 }
 
@@ -2721,35 +2648,6 @@ document.addEventListener('keydown', function dismissSplash(e) {
   hideSplash();
   document.removeEventListener('keydown', dismissSplash);
 }, { once: false });
-
-// Re-unlock button: handle the case where iOS suspends the context
-// after it was unlocked (e.g., the app was backgrounded)
-const reUnlockBtn = document.getElementById('reUnlockBtn');
-reUnlockBtn.addEventListener('touchstart', function(e) {
-  e.preventDefault();
-  if (audioCtx) {
-    audioCtx.resume().then(() => {
-      showDebug('re-unlock: state=' + audioCtx.state);
-      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
-    });
-  }
-}, { passive: false });
-reUnlockBtn.addEventListener('click', function() {
-  if (audioCtx) {
-    audioCtx.resume().then(() => {
-      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
-    });
-  }
-});
-
-// Periodically check if context got suspended and show re-unlock if needed
-setInterval(() => {
-  if (audioCtx && splashDone && audioCtx.state === 'suspended') {
-    reUnlockBtn.style.display = 'block';
-  } else if (reUnlockBtn.style.display === 'block' && audioCtx && audioCtx.state === 'running') {
-    reUnlockBtn.style.display = 'none';
-  }
-}, 2000);
 
 // Rebuild piano on resize
 window.addEventListener('resize', () => { buildPiano(); });
