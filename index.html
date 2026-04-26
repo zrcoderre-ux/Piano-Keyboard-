@@ -2333,13 +2333,9 @@ function advanceSongNote(playedNote) {
     return;
   }
 
-  const current = currentSong.notes[currentNoteIdx];
-  if (!current) return;
-
   // Check if correct note played
   if (playedNote === current.n) {
     currentNoteIdx++;
-    // Skip any following rests
     while (currentNoteIdx < currentSong.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
       currentNoteIdx++;
     }
