@@ -25,7 +25,7 @@
       --black-key: #1c1c1c;
       --black-key-pressed: #e03030;
       --text: #e8e4dc;
-      --text-dim: #666;
+      --text-dim: #999;
       --key-radius: 6px;
       --glow: rgba(224, 48, 48, 0.35);
     }
@@ -325,6 +325,19 @@
       gap: 0;
     }
 
+    /* Piano mode: all keys fully lit, no inactive-octave dimming */
+    .piano.piano-mode .white-key,
+    .piano.piano-mode .black-key {
+      opacity: 1;
+    }
+    .piano.piano-mode .white-key {
+      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
+      border-color: #c8c4bc;
+    }
+    .piano.piano-mode .black-key {
+      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+    }
+
     .piano.single-octave {
       width: auto;
     }
@@ -349,7 +362,7 @@
       padding-bottom: 8px;
       transition: background 0.06s, transform 0.06s, opacity 0.2s;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
-      opacity: 0.55;
+      opacity: 0.75;
     }
 
     .white-key.active-octave {
@@ -381,23 +394,7 @@
       padding-bottom: 6px;
       transition: background 0.06s, transform 0.06s, opacity 0.2s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
-      opacity: 0.5;
-    }
-
-    /* Expanded mode: black key lives inside its left white-key parent.
-       It hangs off the right edge, centered between that white key and the next. */
-    .piano.expanded .white-key > .black-key {
-      position: absolute;
-      top: 0;
-      /* Center it over the gap: sits from 75% of this key to 25% of the next.
-         Left edge = 75% of parent width. Width = 60% of parent width.
-         That places it from 75% to 135%, centering it at 105% ≈ the gap. */
-      left: 75%;
-      width: 60%;
-      height: 62%;
-      transform: none;
-      /* Override any inline styles set by the old JS positioner */
-      margin: 0;
+      opacity: 0.72;
     }
 
     .black-key.active-octave {
@@ -414,27 +411,27 @@
 
     .key-label {
       font-family: 'Syne Mono', monospace;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.02em;
       pointer-events: none;
     }
 
-    .white-key .key-label { color: #999; }
+    .white-key .key-label { color: #888; }
     .white-key.pressed .key-label { color: #000; }
-    .black-key .key-label { color: #555; font-size: 8px; }
+    .black-key .key-label { color: #777; font-size: 9px; }
     .black-key.pressed .key-label { color: #000; }
 
     .key-note {
       font-family: 'Syne', sans-serif;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      color: #999;
+      color: #aaa;
       margin-bottom: 1px;
       pointer-events: none;
     }
 
-    .white-key.active-octave .key-note { color: #bbb; }
+    .white-key.active-octave .key-note { color: #ccc; }
     .white-key.pressed .key-note { color: #000; }
 
     /* ── QWERTY TOUCHPAD ── */
@@ -1876,7 +1873,7 @@ function buildPiano() {
   const gap = 2;
   const isExpanded = expandedKeyboard;
 
-  piano.className = 'piano ' + (isExpanded ? 'expanded' : 'single-octave');
+  piano.className = 'piano ' + (isExpanded ? 'expanded' : 'single-octave') + (mode === 'piano' ? ' piano-mode' : '');
 
   // Build one octave group per octave
   for (let oct = startOct; oct <= endOct; oct++) {
@@ -1934,14 +1931,10 @@ function buildPiano() {
 
     group.appendChild(whiteRow);
 
-    // Black keys: in expanded mode, attach each black key as a child of its
-    // left-side white key so CSS percentage positioning works (no JS measuring).
-    // In single-octave mode, keep them as siblings in the white row and JS-position.
-    const whiteEls = Array.from(whiteRow.querySelectorAll('.white-key'));
-
+    // Black keys overlay — positioned relative to the white row
+    // We need to position them after layout, so store refs
     CHROMATIC.forEach((k, ci) => {
       if (!k.black) return;
-      // whitesBefore = index of the white key to the left of this black key
       const whitesBefore = CHROMATIC.slice(0, ci).filter(x => !x.black).length;
       const el = document.createElement('div');
       el.className = 'black-key' + (isActive ? ' active-octave' : '');
@@ -1972,14 +1965,7 @@ function buildPiano() {
       el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
-
-      if (isExpanded) {
-        // Attach to the left white key — CSS positions it via left:75% on .white-key>.black-key
-        const leftWhite = whiteEls[whitesBefore];
-        if (leftWhite) leftWhite.appendChild(el);
-      } else {
-        whiteRow.appendChild(el);
-      }
+      whiteRow.appendChild(el);
     });
 
     piano.appendChild(group);
@@ -2004,11 +1990,6 @@ function positionBlackKeys() {
   const piano = document.getElementById('piano');
   if (!piano) return;
 
-  // Expanded mode: black keys are children of their left white-key,
-  // positioned purely by CSS (left:75%, width:60%, height:62%). No JS needed.
-  if (expandedKeyboard) return;
-
-  // Single-octave mode: black keys are siblings in the white row, JS-positioned.
   piano.querySelectorAll('.octave-white-row').forEach(whiteRow => {
     const whiteKeys = Array.from(whiteRow.querySelectorAll('.white-key'));
     if (whiteKeys.length === 0) return;
@@ -2016,18 +1997,44 @@ function positionBlackKeys() {
     const blackKeys = whiteRow.querySelectorAll('.black-key');
     if (blackKeys.length === 0) return;
 
-    const WKW = 64;
-    const GAP = 3;
-    const BKW = 38;
-    blackKeys.forEach(bk => {
-      const whitesBefore = parseInt(bk.dataset.whitesBefore);
-      const leftEdge = whitesBefore * (WKW + GAP);
-      const rightEdge = leftEdge + WKW + GAP;
-      const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
-      bk.style.left = (center - BKW / 2) + 'px';
-      bk.style.width = BKW + 'px';
-      bk.style.height = ''; // let CSS rule apply
-    });
+    if (expandedKeyboard) {
+      // Flex layout: measure actual rendered white key positions.
+      // Use piano.offsetHeight for height — it has an explicit max-height:240px
+      // so it's always resolved, unlike the flex-driven row height.
+      const rowRect = whiteRow.getBoundingClientRect();
+      if (rowRect.width === 0) return;
+      const rowH = piano.offsetHeight;
+      if (rowH === 0) return;
+      blackKeys.forEach(bk => {
+        const whitesBefore = parseInt(bk.dataset.whitesBefore);
+        const refWhite = whiteKeys[whitesBefore];
+        const nextWhite = whiteKeys[whitesBefore + 1];
+        if (!refWhite || !nextWhite) return;
+        const leftRect = refWhite.getBoundingClientRect();
+        const rightRect = nextWhite.getBoundingClientRect();
+        const center = (leftRect.right + rightRect.left) / 2;
+        const bkW = Math.max(leftRect.width * 0.6, 10);
+        const bkH = rowH * 0.62;
+        bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
+        bk.style.width = bkW + 'px';
+        bk.style.height = bkH + 'px';
+        bk.style.borderRadius = '0 0 4px 4px';
+      });
+    } else {
+      // Fixed layout: calculate from fixed key width + gap
+      const WKW = 64;
+      const GAP = 3;
+      const BKW = 38;
+      blackKeys.forEach(bk => {
+        const whitesBefore = parseInt(bk.dataset.whitesBefore);
+        const leftEdge = whitesBefore * (WKW + GAP);
+        const rightEdge = leftEdge + WKW + GAP;
+        const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
+        bk.style.left = (center - BKW / 2) + 'px';
+        bk.style.width = BKW + 'px';
+        bk.style.height = ''; // let CSS rule apply
+      });
+    }
   });
 }
 
@@ -2467,6 +2474,20 @@ function setMode(m) {
   document.getElementById('qwertyArea').style.display = m === 'touch' ? 'block' : 'none';
   // Modifier hint: only show in keyboard mode
   document.getElementById('modHint').style.display = m === 'keyboard' ? 'block' : 'none';
+
+  // Piano mode: all keys lit, default to expanded keyboard
+  const pianoEl = document.getElementById('piano');
+  if (m === 'piano') {
+    pianoEl.classList.add('piano-mode');
+    if (!expandedKeyboard) {
+      expandedKeyboard = true;
+      document.getElementById('expandedKeyboard').checked = true;
+      document.getElementById('octaveRangeSection').style.display = 'block';
+      buildPiano();
+    }
+  } else {
+    pianoEl.classList.remove('piano-mode');
+  }
 
   if (m === 'touch') {
     buildQwerty();
