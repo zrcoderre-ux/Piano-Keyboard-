@@ -406,6 +406,44 @@
     .close-settings:hover { background: var(--accent-deep); }
     .close-settings:active { transform: scale(0.98); }
 
+    /* Big played-note display, sits above the piano. The fixed line-height
+       reserves vertical space whether or not a note is showing, so the piano
+       below doesn't jump. */
+    .big-note-display {
+      font-family: 'Inter', sans-serif;
+      font-size: 72px;
+      font-weight: 800;
+      line-height: 1;
+      text-align: center;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      padding: 12px 0 16px;
+      transition: opacity 0.2s, transform 0.1s, color 0.05s;
+      pointer-events: none;
+      flex-shrink: 0;
+      text-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+
+    .big-note-display.dim {
+      opacity: 0.18;
+      transform: scale(0.95);
+    }
+
+    .big-note-display.pulse {
+      animation: bigNotePulse 0.18s ease-out;
+    }
+
+    @keyframes bigNotePulse {
+      0%   { transform: scale(1.0); }
+      50%  { transform: scale(1.12); }
+      100% { transform: scale(1.0); }
+    }
+
+    /* Hide the tiny info-bar note display by default (the big one above the
+       piano takes its place). It reappears in landscape touch mode where
+       there's no vertical room for the big display. */
+    .info-bar .note-display { display: none; }
+
     /* ── INFO BAR ── */
     .info-bar {
       display: flex;
@@ -741,6 +779,9 @@
       .modifier-hint { font-size: 12px; }
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
 
+      /* Big note display — smaller on iPhone but still prominent */
+      .big-note-display { font-size: 48px; padding: 6px 0 8px; }
+
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
       .piano-wrapper { padding-bottom: 6px; }
@@ -788,6 +829,10 @@
 
       /* Info bar: merge octave controls inline, reduce height */
       .info-bar { padding: 3px 10px; }
+      /* In landscape there's no vertical room for the big display above
+         the piano, so we fall back to the compact info-bar version. */
+      .info-bar .note-display { display: block; }
+      .big-note-display { display: none; }
       .note-display { font-size: 14px; min-width: 80px; }
       .modifier-hint { display: none; } /* no room */
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
@@ -1711,6 +1756,7 @@
 
 <!-- PIANO AREA -->
 <div class="piano-area">
+  <div class="big-note-display dim" id="bigNoteDisplay">—</div>
   <div class="piano-wrapper">
     <div class="piano" id="piano"></div>
   </div>
@@ -2674,16 +2720,32 @@ function pulseViz(color) {
 }
 
 function showNoteDisplay(note, color) {
-  const el = document.getElementById('noteDisplay');
-  el.textContent = note;
-  el.style.color = color || 'var(--accent)';
-  el.style.fontSize = note.includes('=') ? '14px' : '20px';
-  el.classList.remove('dim');
+  const small = document.getElementById('noteDisplay');
+  const big = document.getElementById('bigNoteDisplay');
+  // Notes like "G=Ab" (sharp/flat enharmonic display) shrink so they fit.
+  const isCompact = note.includes('=');
+  if (small) {
+    small.textContent = note;
+    small.style.color = color || 'var(--accent)';
+    small.style.fontSize = isCompact ? '14px' : '20px';
+    small.classList.remove('dim');
+  }
+  if (big) {
+    big.textContent = note;
+    big.style.color = color || 'var(--accent)';
+    big.classList.remove('dim');
+    // Re-trigger the pulse animation
+    big.classList.remove('pulse');
+    void big.offsetWidth; // force reflow so animation restarts
+    big.classList.add('pulse');
+  }
 }
 
 function dimNoteDisplay() {
-  const el = document.getElementById('noteDisplay');
-  el.classList.add('dim');
+  const small = document.getElementById('noteDisplay');
+  const big = document.getElementById('bigNoteDisplay');
+  if (small) small.classList.add('dim');
+  if (big) big.classList.add('dim');
 }
 
 function updateModHint() {
