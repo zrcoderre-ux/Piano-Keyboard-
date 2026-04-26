@@ -8,6 +8,20 @@
   <meta name="theme-color" content="#faf6ed" />
   <title>Arthur's Piano</title>
   <link rel="manifest" href="manifest.json" />
+
+  <!-- App icons -->
+  <!-- iOS reads apple-touch-icon directly (it does NOT use manifest icons) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
+  <link rel="apple-touch-icon" sizes="167x167" href="icons/icon-167.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png" />
+  <!-- Default apple-touch-icon (some older iOS versions) -->
+  <link rel="apple-touch-icon" href="icons/icon-180.png" />
+  <!-- Browser tab favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="icons/icon-16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
@@ -1579,23 +1593,25 @@
   <div class="splash-title">
     <svg class="splash-logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
-      <rect x="2.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="6.7" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="10.9" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="15.1" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="19.3" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="23.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="2.5" y="9" width="4" height="3" fill="#e63946"/>
-      <rect x="6.7" y="9" width="4" height="3" fill="#ff9800"/>
-      <rect x="10.9" y="9" width="4" height="3" fill="#ffeb3b"/>
-      <rect x="15.1" y="9" width="4" height="3" fill="#4caf50"/>
-      <rect x="19.3" y="9" width="4" height="3" fill="#2196f3"/>
-      <rect x="23.5" y="9" width="4" height="3" fill="#9c27b0"/>
-      <rect x="5.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="9.4" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="17.8" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="22.0" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="26.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
+      <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
+      <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
+      <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
+      <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
+      <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
+      <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
+      <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
       <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
     </svg>
     <span>Arthur's Piano</span>
@@ -1610,26 +1626,30 @@
     <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <!-- piano body -->
       <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a" stroke="#3a2a2a" stroke-width="0.5"/>
-      <!-- white keys with rainbow tops -->
-      <rect x="2.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="6.7" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="10.9" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="15.1" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="19.3" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <rect x="23.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
-      <!-- rainbow color band on keys -->
-      <rect x="2.5" y="9" width="4" height="3" fill="#e63946"/>
-      <rect x="6.7" y="9" width="4" height="3" fill="#ff9800"/>
-      <rect x="10.9" y="9" width="4" height="3" fill="#ffeb3b"/>
-      <rect x="15.1" y="9" width="4" height="3" fill="#4caf50"/>
-      <rect x="19.3" y="9" width="4" height="3" fill="#2196f3"/>
-      <rect x="23.5" y="9" width="4" height="3" fill="#9c27b0"/>
-      <!-- black keys -->
-      <rect x="5.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="9.4" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="17.8" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="22.0" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="26.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <!-- 7 white keys (C–B), 4 wide each, packed left-to-right inside body -->
+      <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+      <!-- rainbow color band across the white keys (7 colours, same widths) -->
+      <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
+      <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
+      <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
+      <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
+      <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
+      <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
+      <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
+      <!-- 5 black keys: C# D# (group of 2) gap F# G# A# (group of 3) gap.
+           Each black key sits over the gap between two whites. Keys 4 wide
+           with ~0.2 gap = pitch 3.9. Black keys are 2.2 wide, centred on gaps. -->
+      <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
       <!-- top stripe -->
       <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
     </svg>
@@ -2190,30 +2210,9 @@ function buildPiano() {
       el.dataset.oct = oct;
 
       el.innerHTML = `<span class="key-note show-note">${k.note}</span>`;
-      // Touch events — track touch identifier so we only release when THIS finger lifts
-      el.addEventListener('touchstart', e => {
-        e.preventDefault();
-        const t = e.changedTouches[0];
-        el.dataset.touchId = t.identifier;
-        triggerNoteByPianoKey(k.note, oct);
-      }, { passive: false });
-      el.addEventListener('touchend', e => {
-        e.preventDefault();
-        const ids = Array.from(e.touches).map(t => t.identifier);
-        // Only release if the finger that started this note has lifted
-        if (!ids.includes(parseInt(el.dataset.touchId))) {
-          if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
-          el.dataset.touchId = '';
-        }
-      }, { passive: false });
-      el.addEventListener('touchcancel', e => {
-        if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
-        el.dataset.touchId = '';
-      });
-      // Pointer events ONLY for mouse
-      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      // Note: input handling (touch/mouse) is delegated at the piano level
+      // so a single drag can play multiple keys in sequence (glissando).
+      // See setupPianoInput() below.
       whiteRow.appendChild(el);
     });
 
@@ -2231,29 +2230,7 @@ function buildPiano() {
       el.dataset.whitesBefore = whitesBefore;
       // Black keys have no label content — sharps/flats are typed via modifier
       // keys, not single letters. The element is left empty by design.
-      // Touch events — track touch identifier so we only release when THIS finger lifts
-      el.addEventListener('touchstart', e => {
-        e.preventDefault();
-        const t = e.changedTouches[0];
-        el.dataset.touchId = t.identifier;
-        triggerNoteByPianoKey(k.note, oct);
-      }, { passive: false });
-      el.addEventListener('touchend', e => {
-        e.preventDefault();
-        const ids = Array.from(e.touches).map(t => t.identifier);
-        if (!ids.includes(parseInt(el.dataset.touchId))) {
-          if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
-          el.dataset.touchId = '';
-        }
-      }, { passive: false });
-      el.addEventListener('touchcancel', e => {
-        if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
-        el.dataset.touchId = '';
-      });
-      // Pointer events ONLY for mouse
-      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      // Input handling is delegated at the piano level (setupPianoInput).
       whiteRow.appendChild(el);
     });
 
@@ -3457,6 +3434,192 @@ function scheduleNextNote(immediate) {
 populateSongSelect();
 
 buildPiano();
+
+// ──────────────────────────────────────────
+//  AUDIO RECOVERY — surviving backgrounding (iOS / Android)
+// ──────────────────────────────────────────
+// When the OS backgrounds a PWA, the AudioContext gets suspended and
+// sometimes ends up in a state where calling resume() outside a user gesture
+// silently fails. Symptoms: app comes back, no sound until you fully kill
+// and reopen it.
+//
+// Recovery strategy:
+//   1. On visibilitychange/pageshow, kill any zombie notes left ringing and
+//      best-effort resume() the context.
+//   2. On the first user gesture after returning (any pointerdown on a piano
+//      key — see setupPianoInput), call resume() AGAIN inside the gesture
+//      handler. iOS grants resume() permission inside a real gesture, even
+//      when it didn't grant the visibilitychange one.
+//   3. Also play a silent 1-sample buffer inside that same gesture, the same
+//      "warmup" trick the splash-screen unlock uses. This reliably revives
+//      the audio pipeline on iOS 16+.
+
+let audioNeedsWarmup = false;
+
+function tryResumeAudio() {
+  if (!audioCtx) return;
+  if (audioCtx.state === 'running') return;
+  // Best-effort. If iOS rejects this (because we're not in a gesture),
+  // audioNeedsWarmup stays true and the next pointerdown will retry.
+  audioNeedsWarmup = true;
+  audioCtx.resume().then(() => {
+    if (audioCtx.state === 'running') {
+      audioNeedsWarmup = false;
+    }
+  }).catch(() => { /* will retry on next gesture */ });
+}
+
+function warmupAudioInGesture() {
+  // MUST be called from inside a real user-gesture handler (pointerdown,
+  // touchend, click). Plays a silent 1-sample buffer to wake up the audio
+  // pipeline — iOS demands this after suspension, even after resume().
+  if (!audioCtx) return;
+  audioCtx.resume().then(() => {
+    try {
+      const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(audioCtx.destination);
+      src.start(0);
+    } catch(_) {}
+    audioNeedsWarmup = false;
+  }).catch(() => { /* keep flag, try again next gesture */ });
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // Kill any zombie notes that may have been left in a half-state
+    stopAllNotes();
+    tryResumeAudio();
+  }
+});
+
+// Fires when restored from back-forward cache (mobile Safari does this)
+window.addEventListener('pageshow', e => {
+  if (e.persisted) {
+    stopAllNotes();
+    tryResumeAudio();
+  }
+});
+
+// Catch-all: any user gesture anywhere in the document is a chance to revive
+// suspended audio. This covers QWERTY pad taps, keyboard presses, settings
+// interactions etc. — anything that's a real user gesture. The piano-input
+// handler also calls warmupAudioInGesture directly on pointerdown for the
+// fastest possible recovery.
+function maybeWarmupOnGesture() {
+  if (!audioCtx) return;
+  if (audioNeedsWarmup || audioCtx.state !== 'running') {
+    warmupAudioInGesture();
+  }
+}
+document.addEventListener('pointerdown', maybeWarmupOnGesture, true);
+document.addEventListener('keydown', maybeWarmupOnGesture, true);
+document.addEventListener('touchstart', maybeWarmupOnGesture, { capture: true, passive: true });
+
+// ──────────────────────────────────────────
+//  PIANO INPUT — unified pointer handling
+// ──────────────────────────────────────────
+// One set of handlers on the piano container, using Pointer Events to cover
+// mouse + touch + pen uniformly. We track each active pointer in a Map and
+// re-resolve the key under the pointer on every move via elementFromPoint —
+// that's what enables glissando (sliding a finger across keys).
+//
+// Multi-touch chords work because each pointerId tracks its own current key
+// independently.
+function setupPianoInput() {
+  const piano = document.getElementById('piano');
+  if (!piano) return;
+
+  // pointerId -> { note, oct, el } currently held down by that pointer
+  const active = new Map();
+
+  // Find the .white-key or .black-key under the given viewport coords, but
+  // only if it belongs to this piano.
+  function keyAtPoint(x, y) {
+    const els = document.elementsFromPoint(x, y);
+    for (const el of els) {
+      if (!el.classList) continue;
+      if ((el.classList.contains('white-key') || el.classList.contains('black-key'))
+          && piano.contains(el)) {
+        return el;
+      }
+    }
+    return null;
+  }
+
+  function press(pointerId, el) {
+    if (!el) return;
+    const note = el.dataset.note;
+    const oct = parseInt(el.dataset.oct);
+    if (!note || isNaN(oct)) return;
+    triggerNoteByPianoKey(note, oct);
+    active.set(pointerId, { note, oct, el });
+  }
+
+  function release(pointerId) {
+    const cur = active.get(pointerId);
+    if (!cur) return;
+    if (!sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
+    active.delete(pointerId);
+  }
+
+  function moveTo(pointerId, x, y) {
+    const cur = active.get(pointerId);
+    if (!cur) return; // pointer not pressed
+    const el = keyAtPoint(x, y);
+    if (el === cur.el) return; // still on same key, nothing to do
+    // Switched keys (or slid off into empty space)
+    if (!sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
+    active.delete(pointerId);
+    if (el) press(pointerId, el);
+  }
+
+  piano.addEventListener('pointerdown', e => {
+    // Only handle events that originated on a key — ignore taps on the piano
+    // body / frame.
+    const el = keyAtPoint(e.clientX, e.clientY);
+    if (!el) return;
+    e.preventDefault();
+    // If audio was suspended by backgrounding, this gesture is our chance
+    // to re-unlock it (iOS grants resume() permission inside real gestures).
+    if (audioNeedsWarmup || (audioCtx && audioCtx.state !== 'running')) {
+      warmupAudioInGesture();
+    }
+    // Capture so subsequent pointermove/up keep firing on the piano element
+    // even when the finger/cursor leaves the keyboard area.
+    try { piano.setPointerCapture(e.pointerId); } catch(_) {}
+    press(e.pointerId, el);
+  });
+
+  piano.addEventListener('pointermove', e => {
+    if (!active.has(e.pointerId)) return;
+    e.preventDefault();
+    moveTo(e.pointerId, e.clientX, e.clientY);
+  });
+
+  function endPointer(e) {
+    if (!active.has(e.pointerId)) return;
+    e.preventDefault();
+    release(e.pointerId);
+    try { piano.releasePointerCapture(e.pointerId); } catch(_) {}
+  }
+
+  piano.addEventListener('pointerup', endPointer);
+  piano.addEventListener('pointercancel', endPointer);
+
+  // Safety net: if the page loses focus or pointer events somehow get lost
+  // (rare but happens on iOS during interruptions), release everything.
+  window.addEventListener('blur', () => {
+    for (const id of Array.from(active.keys())) {
+      const cur = active.get(id);
+      if (cur && !sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
+      active.delete(id);
+    }
+  });
+}
+
+setupPianoInput();
 
 // ── SPLASH UNLOCK ──────────────────────────
 let splashDone = false;

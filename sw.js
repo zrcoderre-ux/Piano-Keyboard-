@@ -1,5 +1,16 @@
-const CACHE = 'arthur-piano-v13';
-const ASSETS = ['./', './index.html', './manifest.json'];
+const CACHE = 'arthur-piano-v17';
+const ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './icons/icon-180.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-192.png',
+  './icons/icon-maskable-512.png',
+  './icons/icon-32.png',
+  './icons/icon-16.png',
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(
