@@ -384,6 +384,22 @@
       opacity: 0.5;
     }
 
+    /* Expanded mode: black key lives inside its left white-key parent.
+       It hangs off the right edge, centered between that white key and the next. */
+    .piano.expanded .white-key > .black-key {
+      position: absolute;
+      top: 0;
+      /* Center it over the gap: sits from 75% of this key to 25% of the next.
+         Left edge = 75% of parent width. Width = 60% of parent width.
+         That places it from 75% to 135%, centering it at 105% ≈ the gap. */
+      left: 75%;
+      width: 60%;
+      height: 62%;
+      transform: none;
+      /* Override any inline styles set by the old JS positioner */
+      margin: 0;
+    }
+
     .black-key.active-octave {
       background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
       opacity: 1;
@@ -1918,10 +1934,14 @@ function buildPiano() {
 
     group.appendChild(whiteRow);
 
-    // Black keys overlay — positioned relative to the white row
-    // We need to position them after layout, so store refs
+    // Black keys: in expanded mode, attach each black key as a child of its
+    // left-side white key so CSS percentage positioning works (no JS measuring).
+    // In single-octave mode, keep them as siblings in the white row and JS-position.
+    const whiteEls = Array.from(whiteRow.querySelectorAll('.white-key'));
+
     CHROMATIC.forEach((k, ci) => {
       if (!k.black) return;
+      // whitesBefore = index of the white key to the left of this black key
       const whitesBefore = CHROMATIC.slice(0, ci).filter(x => !x.black).length;
       const el = document.createElement('div');
       el.className = 'black-key' + (isActive ? ' active-octave' : '');
@@ -1952,7 +1972,14 @@ function buildPiano() {
       el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
-      whiteRow.appendChild(el);
+
+      if (isExpanded) {
+        // Attach to the left white key — CSS positions it via left:75% on .white-key>.black-key
+        const leftWhite = whiteEls[whitesBefore];
+        if (leftWhite) leftWhite.appendChild(el);
+      } else {
+        whiteRow.appendChild(el);
+      }
     });
 
     piano.appendChild(group);
@@ -1977,6 +2004,11 @@ function positionBlackKeys() {
   const piano = document.getElementById('piano');
   if (!piano) return;
 
+  // Expanded mode: black keys are children of their left white-key,
+  // positioned purely by CSS (left:75%, width:60%, height:62%). No JS needed.
+  if (expandedKeyboard) return;
+
+  // Single-octave mode: black keys are siblings in the white row, JS-positioned.
   piano.querySelectorAll('.octave-white-row').forEach(whiteRow => {
     const whiteKeys = Array.from(whiteRow.querySelectorAll('.white-key'));
     if (whiteKeys.length === 0) return;
@@ -1984,45 +2016,18 @@ function positionBlackKeys() {
     const blackKeys = whiteRow.querySelectorAll('.black-key');
     if (blackKeys.length === 0) return;
 
-    if (expandedKeyboard) {
-      // Flex layout: measure actual rendered positions
-      const rowRect = whiteRow.getBoundingClientRect();
-      if (rowRect.width === 0) return; // layout not ready yet
-      // rowRect.height may still be 0 if the flex chain hasn't committed heights yet.
-      // Fall back to the piano element's offsetHeight (capped by CSS max-height: 240px).
-      const pianoEl = document.getElementById('piano');
-      const rowH = rowRect.height > 0 ? rowRect.height : (pianoEl ? pianoEl.offsetHeight : 0);
-      if (rowH === 0) return;
-      blackKeys.forEach(bk => {
-        const whitesBefore = parseInt(bk.dataset.whitesBefore);
-        const refWhite = whiteKeys[whitesBefore];
-        const nextWhite = whiteKeys[whitesBefore + 1];
-        if (!refWhite || !nextWhite) return;
-        const leftRect = refWhite.getBoundingClientRect();
-        const rightRect = nextWhite.getBoundingClientRect();
-        const center = (leftRect.right + rightRect.left) / 2;
-        const bkW = Math.max(leftRect.width * 0.6, 10);
-        const bkH = rowH * 0.62;
-        bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
-        bk.style.width = bkW + 'px';
-        bk.style.height = bkH + 'px';
-        bk.style.borderRadius = '0 0 4px 4px';
-      });
-    } else {
-      // Fixed layout: calculate from fixed key width + gap
-      const WKW = 64;
-      const GAP = 3;
-      const BKW = 38;
-      blackKeys.forEach(bk => {
-        const whitesBefore = parseInt(bk.dataset.whitesBefore);
-        const leftEdge = whitesBefore * (WKW + GAP);
-        const rightEdge = leftEdge + WKW + GAP;
-        const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
-        bk.style.left = (center - BKW / 2) + 'px';
-        bk.style.width = BKW + 'px';
-        bk.style.height = ''; // let CSS rule apply
-      });
-    }
+    const WKW = 64;
+    const GAP = 3;
+    const BKW = 38;
+    blackKeys.forEach(bk => {
+      const whitesBefore = parseInt(bk.dataset.whitesBefore);
+      const leftEdge = whitesBefore * (WKW + GAP);
+      const rightEdge = leftEdge + WKW + GAP;
+      const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
+      bk.style.left = (center - BKW / 2) + 'px';
+      bk.style.width = BKW + 'px';
+      bk.style.height = ''; // let CSS rule apply
+    });
   });
 }
 
