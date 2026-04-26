@@ -380,8 +380,11 @@
 
     .black-key {
       position: absolute;
-      width: 58%;
-      height: 60%;
+      /* Safe defaults: small fixed size so if JS positioning ever fails or
+         hasn't run yet, we never render giant rectangles spanning multiple
+         white keys. JS sets explicit pixel width/height on every black key. */
+      width: 0;
+      height: 0;
       background: linear-gradient(to bottom, #222, #161616);
       border-radius: 0 0 4px 4px;
       border: 1px solid #111;
@@ -395,6 +398,7 @@
       transition: background 0.06s, transform 0.06s, opacity 0.2s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
       opacity: 0.72;
+      overflow: hidden;
     }
 
     .black-key.active-octave {
@@ -1986,9 +1990,12 @@ function buildPiano() {
   updateLabels();
 }
 
-function positionBlackKeys() {
+function positionBlackKeys(retryCount) {
+  retryCount = retryCount || 0;
   const piano = document.getElementById('piano');
   if (!piano) return;
+
+  let needsRetry = false;
 
   piano.querySelectorAll('.octave-white-row').forEach(whiteRow => {
     const whiteKeys = Array.from(whiteRow.querySelectorAll('.white-key'));
@@ -2002,9 +2009,15 @@ function positionBlackKeys() {
       // Use piano.offsetHeight for height — it has an explicit max-height:240px
       // so it's always resolved, unlike the flex-driven row height.
       const rowRect = whiteRow.getBoundingClientRect();
-      if (rowRect.width === 0) return;
       const rowH = piano.offsetHeight;
-      if (rowH === 0) return;
+      // If measurements aren't ready, flag for retry. Black keys remain at
+      // their safe CSS default (0×0) until we can size them properly.
+      if (rowRect.width === 0 || rowH === 0) { needsRetry = true; return; }
+
+      // Also bail out if individual white keys haven't sized yet
+      const firstWidth = whiteKeys[0].getBoundingClientRect().width;
+      if (firstWidth === 0) { needsRetry = true; return; }
+
       blackKeys.forEach(bk => {
         const whitesBefore = parseInt(bk.dataset.whitesBefore);
         const refWhite = whiteKeys[whitesBefore];
@@ -2021,10 +2034,14 @@ function positionBlackKeys() {
         bk.style.borderRadius = '0 0 4px 4px';
       });
     } else {
-      // Fixed layout: calculate from fixed key width + gap
+      // Fixed layout: calculate from fixed key width + gap.
+      // CSS defaults are now 0/0 (safe for expanded mode), so we must set
+      // explicit pixel height here too.
       const WKW = 64;
       const GAP = 3;
       const BKW = 38;
+      const rowH = piano.offsetHeight || 220;
+      const bkH = rowH * 0.6;
       blackKeys.forEach(bk => {
         const whitesBefore = parseInt(bk.dataset.whitesBefore);
         const leftEdge = whitesBefore * (WKW + GAP);
@@ -2032,15 +2049,25 @@ function positionBlackKeys() {
         const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
         bk.style.left = (center - BKW / 2) + 'px';
         bk.style.width = BKW + 'px';
-        bk.style.height = ''; // let CSS rule apply
+        bk.style.height = bkH + 'px';
       });
     }
   });
+
+  // If any row couldn't be measured yet, retry up to ~10 frames later.
+  // This handles cases where the ResizeObserver fires before nested flex
+  // layout has propagated to the white-row / white-key descendants.
+  if (needsRetry && retryCount < 10) {
+    requestAnimationFrame(() => positionBlackKeys(retryCount + 1));
+  }
 }
 
-// ResizeObserver fires once the piano element has a real painted size,
-// which is more reliable than double-rAF when heights are flex-driven.
-// Falls back to double-rAF on browsers without ResizeObserver support.
+// Position black keys reliably across:
+//   1) the synchronous current frame (if layout already happened),
+//   2) the next two animation frames (after layout commits), and
+//   3) the first ResizeObserver fire on the piano element.
+// positionBlackKeys() is idempotent and self-retrying when measurements fail,
+// so calling it multiple times is safe.
 let _pianoResizeObserver = null;
 
 function schedulePositionBlackKeys() {
@@ -2050,8 +2077,18 @@ function schedulePositionBlackKeys() {
     return;
   }
 
+  // Try immediately (covers the common case where layout is already valid)
+  positionBlackKeys();
+
+  // Try on the next two frames (covers freshly-built piano where flex chain
+  // still needs to resolve)
+  requestAnimationFrame(() => {
+    positionBlackKeys();
+    requestAnimationFrame(() => positionBlackKeys());
+  });
+
+  // ResizeObserver covers font-load / orientation-change / async-resize cases
   if (typeof ResizeObserver !== 'undefined') {
-    // Disconnect any previous observer (piano is rebuilt on each buildPiano call)
     if (_pianoResizeObserver) { _pianoResizeObserver.disconnect(); _pianoResizeObserver = null; }
     _pianoResizeObserver = new ResizeObserver((entries, obs) => {
       const e = entries[0];
@@ -2062,9 +2099,6 @@ function schedulePositionBlackKeys() {
       }
     });
     _pianoResizeObserver.observe(piano);
-  } else {
-    // Fallback for older Safari / WebKit
-    requestAnimationFrame(() => requestAnimationFrame(() => positionBlackKeys()));
   }
 }
 
