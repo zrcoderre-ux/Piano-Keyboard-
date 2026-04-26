@@ -1828,11 +1828,15 @@ function updateActiveOctave() {
 
 
 
+const noteTouchTime = {}; // noteId -> timestamp when note started
+const MIN_NOTE_MS = 300;  // minimum audible duration for touch taps
+
 function triggerNoteByPianoKey(note, oct) {
   showDebug('triggerNote: ' + note + oct);
   const freq = noteToFreq(note, oct);
   if (!freq) return;
   const id = note + oct + '_piano';
+  noteTouchTime[id] = performance.now();
   playNote(id, freq);
   highlightPianoKey(note, oct, true);
   const color = noteColors[note] || '#c8a96e';
@@ -1844,9 +1848,18 @@ function triggerNoteByPianoKey(note, oct) {
 function releaseNoteByPianoKey(note, oct) {
   showDebug('releaseNote: ' + note + oct + ' sustain=' + sustainMode);
   const id = note + oct + '_piano';
-  if (!sustainMode) stopNote(id);
   highlightPianoKey(note, oct, false);
   dimNoteDisplay();
+  if (sustainMode) return;
+  // Enforce minimum audible duration — iOS taps can be <50ms which is inaudible
+  const elapsed = performance.now() - (noteTouchTime[id] || 0);
+  const remaining = MIN_NOTE_MS - elapsed;
+  if (remaining > 0) {
+    setTimeout(() => stopNote(id), remaining);
+  } else {
+    stopNote(id);
+  }
+  delete noteTouchTime[id];
 }
 
 function highlightPianoKey(note, oct, on) {
