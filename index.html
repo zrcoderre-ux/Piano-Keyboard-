@@ -610,29 +610,6 @@
       transition: opacity 0.4s ease;
     }
 
-    /* Floating re-unlock button — shown if audio still silent after splash */
-    #reUnlockBtn {
-      display: none;
-      position: fixed;
-      bottom: 160px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 500;
-      padding: 12px 28px;
-      background: var(--accent);
-      border: none;
-      border-radius: 10px;
-      color: #000;
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 13px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 0 24px var(--glow);
-      animation: pulse-btn 2s ease-in-out infinite;
-    }
-
     /* ── COLOR SETTINGS ── */
     .color-grid {
       display: grid;
@@ -1158,9 +1135,6 @@
   <button class="splash-btn" id="splashBtn">Tap to Play</button>
 </div>
 
-<!-- Re-unlock button: shown if audio was silenced after initial tap -->
-<button id="reUnlockBtn">🔊 Tap to Enable Audio</button>
-
 <!-- HEADER -->
 <header>
   <div class="logo">QWERTY <span>Piano</span></div>
@@ -1376,12 +1350,7 @@ let waveform = 'sine';
 
 function getAudioCtx() {
   if (!audioCtx) return null; // never create outside a gesture on iOS
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume(); // belt-and-braces; real unlock happens in unlockAndStart
-  }
-  if (audioCtx.state !== 'running') {
-    if (typeof showDebug === 'function') showDebug('getAudioCtx: state=' + audioCtx.state + ' (not running!)');
-  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
 
@@ -1404,12 +1373,11 @@ function playNote(noteId, freq) {
   osc.type = waveform;
   osc.frequency.setValueAtTime(freq, ctx.currentTime);
 
-  // Piano-like envelope — use 0.0001 as near-silence floor since
-  // exponentialRampToValueAtTime cannot ramp TO or FROM exactly 0 (log undefined)
-  gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+  // Piano-like envelope
+  gainNode.gain.setValueAtTime(0, ctx.currentTime);
   gainNode.gain.linearRampToValueAtTime(masterVolume * 0.8, ctx.currentTime + 0.005);
   gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
-  gainNode.gain.exponentialRampToValueAtTime(Math.max(masterVolume * 0.25, 0.0001), ctx.currentTime + 0.5);
+  gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.25, ctx.currentTime + 0.5);
 
   osc.connect(gainNode);
   gainNode.connect(ctx.destination);
@@ -1636,14 +1604,11 @@ function buildPiano() {
         <span class="key-note show-note">${k.note}</span>
         <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
       `;
-      // Touch events for mobile (iOS/Android)
+      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
+      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
-      // Pointer events ONLY for mouse — touch devices fire pointer AND touch, causing instant note-start + note-stop
-      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
 
@@ -1660,14 +1625,11 @@ function buildPiano() {
       el.dataset.oct = oct;
       el.dataset.whitesBefore = whitesBefore;
       el.innerHTML = `<span class="key-label show-key"></span>`;
-      // Touch events for mobile
+      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
+      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
-      // Pointer events ONLY for mouse
-      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
-      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
 
@@ -1824,60 +1786,35 @@ function buildQwerty() {
 
       // Touch events
       if (isLetter) {
-        const getModifiers = () => ({
-          isSharp: document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
-                   document.querySelector('[data-key="Shift2"]')?.classList.contains('active'),
-          isFlat:  document.querySelector('[data-key="Caps"]')?.classList.contains('active')
-        });
-
-        // Touch (mobile) — use touchstart/touchend to avoid double-fire with pointer events
-        el.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          const { isSharp, isFlat } = getModifiers();
-          handleNoteOn(upper, isSharp, isFlat);
-          addRipple(el, e.touches[0] || e);
-        }, { passive: false });
-        el.addEventListener('touchend', (e) => {
-          e.preventDefault();
-          const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-        }, { passive: false });
-        el.addEventListener('touchcancel', (e) => {
-          const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-        });
-
-        // Mouse only — pointer events fire on iOS touch too, so guard by pointerType
         el.addEventListener('pointerdown', (e) => {
-          if (e.pointerType !== 'mouse') return;
           e.preventDefault();
-          const { isSharp, isFlat } = getModifiers();
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
           handleNoteOn(upper, isSharp, isFlat);
           addRipple(el, e);
         });
         el.addEventListener('pointerup', (e) => {
-          if (e.pointerType !== 'mouse') return;
           e.preventDefault();
-          const { isSharp, isFlat } = getModifiers();
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
           if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
         });
         el.addEventListener('pointerleave', (e) => {
-          if (e.pointerType !== 'mouse') return;
-          const { isSharp, isFlat } = getModifiers();
+          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
+          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
           if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
         });
       } else if (['SHIFT','SHIFT2'].includes(upper)) {
-        el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
-        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
+        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
       } else if (upper === 'CAPS') {
-        el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
-        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
+        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
       } else if (upper === 'SPACE') {
-        el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(1); addRipple(el, e.touches[0] || e); }, { passive: false });
-        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(1); addRipple(el, e); } });
+        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(1); addRipple(el, e); });
       } else if (upper === 'TAB') {
-        el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(-1); addRipple(el, e.touches[0] || e); }, { passive: false });
-        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(-1); addRipple(el, e); } });
+        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(-1); addRipple(el, e); });
       }
 
       rowEl.appendChild(el);
@@ -2552,89 +2489,31 @@ populateSongSelect();
 
 buildPiano();
 
-// ── iOS AUDIO DEBUG PANEL ──────────────────
-// Shows AudioContext state on-screen — remove once audio is confirmed working
-function showDebug(msg) {
-  let panel = document.getElementById('audioDebug');
-  if (!panel) {
-    panel = document.createElement('div');
-    panel.id = 'audioDebug';
-    panel.style.cssText = [
-      'position:fixed','bottom:8px','left:8px','right:8px','z-index:9999',
-      'background:rgba(0,0,0,0.85)','color:#0f0','font:12px/1.6 monospace',
-      'padding:8px 12px','border-radius:8px','border:1px solid #0f0',
-      'pointer-events:none','white-space:pre-wrap','max-height:140px','overflow-y:auto'
-    ].join(';');
-    document.body.appendChild(panel);
-  }
-  const ts = new Date().toISOString().slice(11,23);
-  panel.textContent = panel.textContent + '\n[' + ts + '] ' + msg;
-  panel.scrollTop = panel.scrollHeight;
-}
-
-// ── SPLASH UNLOCK ──────────────────────────
-let splashDone = false;
+document.getElementById('splashBtn').addEventListener('touchend', unlockAndStart, { passive: false });
+document.getElementById('splashBtn').addEventListener('click', unlockAndStart);
 
 function unlockAndStart(e) {
-  // Guard against double-fire (touchend + click both fire on iOS)
-  if (splashDone) return;
-
   e.preventDefault();
   e.stopPropagation();
 
-  showDebug('unlockAndStart called, event=' + e.type);
-
-  try {
-    if (!audioCtx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) { showDebug('ERROR: No AudioContext available!'); return; }
-      audioCtx = new AC();
-      showDebug('AudioContext created, state=' + audioCtx.state);
-    } else {
-      showDebug('AudioContext already exists, state=' + audioCtx.state);
-    }
-
-    // CRITICAL ORDER FOR iOS:
-    // 1. resume() first — get the promise
-    // 2. Inside the .then(), play the silent buffer
-    // 3. Only after both, hide the splash
-    const resumePromise = audioCtx.resume();
-    showDebug('resume() called, now=' + audioCtx.state);
-
-    resumePromise.then(() => {
-      showDebug('resume().then() — state=' + audioCtx.state);
-
-      // Play a silent buffer INSIDE the resume promise — still within gesture trust window
-      try {
-        const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-        const src = audioCtx.createBufferSource();
-        src.buffer = buf;
-        src.connect(audioCtx.destination);
-        src.start(0);
-        showDebug('Silent buffer played OK');
-      } catch(err) {
-        showDebug('Silent buffer ERROR: ' + err.message);
-      }
-
-      // Hide splash now that audio is unlocked
-      hideSplash();
-      showDebug('Splash hidden. AudioContext state=' + audioCtx.state);
-
-    }).catch(err => {
-      showDebug('resume() REJECTED: ' + err.message);
-      // Still try to proceed — show piano even if audio failed
-      hideSplash();
-    });
-
-  } catch(err) {
-    showDebug('EXCEPTION in unlockAndStart: ' + err.message);
-    hideSplash();
+  // Must create AND use AudioContext synchronously inside the gesture
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
-}
 
-function hideSplash() {
-  if (splashDone) return;
-  splashDone = true;
+  // Play silent buffer synchronously — this is the iOS unlock gesture
+  const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+
+  // Resume if suspended (Android/desktop may need this)
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  // Hide splash
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('hidden');
@@ -2642,51 +2521,16 @@ function hideSplash() {
   }
 }
 
-// iOS grants AudioContext gesture trust on touchend and click, NOT touchstart.
-// resume() called from touchstart returns a promise that never resolves on iOS.
-const splashBtn = document.getElementById('splashBtn');
-splashBtn.addEventListener('touchend', unlockAndStart, { passive: false });
-splashBtn.addEventListener('click', unlockAndStart);
-
 // Also allow any keypress to dismiss splash on desktop
 document.addEventListener('keydown', function dismissSplash(e) {
-  if (splashDone) { document.removeEventListener('keydown', dismissSplash); return; }
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   audioCtx.resume();
-  hideSplash();
+  splash.classList.add('hidden');
+  setTimeout(() => splash.remove(), 400);
   document.removeEventListener('keydown', dismissSplash);
 }, { once: false });
-
-// Re-unlock button: handle the case where iOS suspends the context
-// after it was unlocked (e.g., the app was backgrounded)
-const reUnlockBtn = document.getElementById('reUnlockBtn');
-reUnlockBtn.addEventListener('touchstart', function(e) {
-  e.preventDefault();
-  if (audioCtx) {
-    audioCtx.resume().then(() => {
-      showDebug('re-unlock: state=' + audioCtx.state);
-      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
-    });
-  }
-}, { passive: false });
-reUnlockBtn.addEventListener('click', function() {
-  if (audioCtx) {
-    audioCtx.resume().then(() => {
-      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
-    });
-  }
-});
-
-// Periodically check if context got suspended and show re-unlock if needed
-setInterval(() => {
-  if (audioCtx && splashDone && audioCtx.state === 'suspended') {
-    reUnlockBtn.style.display = 'block';
-  } else if (reUnlockBtn.style.display === 'block' && audioCtx && audioCtx.state === 'running') {
-    reUnlockBtn.style.display = 'none';
-  }
-}, 2000);
 
 // Rebuild piano on resize
 window.addEventListener('resize', () => { buildPiano(); });
