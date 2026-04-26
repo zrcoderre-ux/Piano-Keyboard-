@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="theme-color" content="#0a0a0a" />
@@ -571,6 +571,58 @@
 
       /* Settings card full-width on small screens */
       .settings-card { width: 95vw; padding: 20px 16px; max-height: 85vh; }
+    }
+
+    /* ── LANDSCAPE iPhone ── */
+    /* Triggered on short screens in landscape — iPhone SE/13/14/15 landscape is ~390px tall */
+    @media (max-height: 500px) and (orientation: landscape) {
+
+      /* Header: single compact strip */
+      header {
+        padding: 4px 12px;
+        flex-shrink: 0;
+      }
+      .logo { font-size: 13px; }
+      .mode-btn { padding: 4px 8px; font-size: 10px; }
+      .settings-btn { padding: 4px 8px; font-size: 10px; }
+
+      /* Info bar: merge octave controls inline, reduce height */
+      .info-bar { padding: 3px 10px; }
+      .note-display { font-size: 14px; min-width: 80px; }
+      .modifier-hint { display: none; } /* no room */
+      .octave-btn { width: 22px; height: 22px; font-size: 13px; }
+      .octave-display { font-size: 11px; gap: 6px; }
+
+      /* Piano: take up most of the vertical space */
+      .piano-area { padding: 4px 8px 0; flex: 1; min-height: 0; }
+      .piano-wrapper { padding-bottom: 4px; }
+      .piano { max-height: 130px; }
+      .white-key { width: 36px; min-width: 26px; padding-bottom: 4px; }
+      .key-note { font-size: 7px; }
+      .key-label { font-size: 6px; }
+
+      /* QWERTY: very tight, 3 rows must fit below piano */
+      .qwerty-area { padding: 2px 0 4px; flex-shrink: 0; }
+      .qwerty-row { gap: 2px; margin-bottom: 2px; }
+      .qkey { width: 28px; height: 32px; border-radius: 5px; }
+      .qkey .qkey-char { font-size: 10px; }
+      .qkey .qkey-note { font-size: 6px; margin-top: 1px; }
+      .qkey.modifier-key { min-width: 32px; padding: 0 4px; }
+      .qkey.modifier-key .qkey-char { font-size: 8px; }
+
+      /* Song sheet: single-line strip, hide title */
+      #songSheet { padding: 3px 8px; }
+      .song-header { margin-bottom: 3px; }
+      .song-title { display: none; }
+      .strip-note { width: 36px; height: 44px; border-radius: 6px; }
+      .strip-note .sn-note { font-size: 12px; }
+      .strip-note .sn-oct { font-size: 8px; }
+
+      /* Viz bar: thinner */
+      .viz-bar { height: 2px; }
+
+      /* Settings: full screen in landscape */
+      .settings-card { width: 90vw; max-height: 90vh; padding: 16px 14px; }
     }
 
     /* ── SPLASH SCREEN ── */
@@ -2330,6 +2382,225 @@ const SONGS = [
       {n:'A',o:4,k:'A',d:2},
     ]
   },
+  {
+    id: 'jinglebells',
+    title: '🔔 Jingle Bells',
+    notes: [
+      // "Dashing through the snow..."
+      {n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'E',o:4,k:'E',d:4},
+      {n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'D',o:4,k:'D',d:2},{n:'G',o:4,k:'G',d:2},
+      // chorus repeat
+      {n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'E',o:4,k:'E',d:4},
+      {n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'C',o:4,k:'C',d:4},
+    ]
+  },
+  {
+    id: 'silent_night',
+    title: '🌟 Silent Night',
+    notes: [
+      {n:'G',o:4,k:'G',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'G',o:4,k:'G',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'D',o:5,k:'D',d:1.5},{n:'D',o:5,k:'D',d:0.5},{n:'B',o:4,k:'B',d:2},
+      {n:'C',o:5,k:'C',d:1.5},{n:'C',o:5,k:'C',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'A',o:4,k:'A',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'C',o:5,k:'C',d:1},{n:'B',o:4,k:'B',d:1},{n:'A',o:4,k:'A',d:1},
+      {n:'G',o:4,k:'G',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'A',o:4,k:'A',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'C',o:5,k:'C',d:1},{n:'B',o:4,k:'B',d:1},{n:'A',o:4,k:'A',d:1},
+      {n:'G',o:4,k:'G',d:1.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:2},
+      {n:'D',o:5,k:'D',d:1.5},{n:'D',o:5,k:'D',d:0.5},{n:'F',o:5,k:'F',d:1},{n:'D',o:5,k:'D',d:1},{n:'B',o:4,k:'B',d:1},
+      {n:'C',o:5,k:'C',d:3},
+      {n:'E',o:5,k:'E',d:1.5},{n:'E',o:5,k:'E',d:0.5},{n:'C',o:5,k:'C',d:1},{n:'A',o:4,k:'A',d:1},{n:'F',o:4,k:'F',d:1},
+      {n:'G',o:4,k:'G',d:3},
+      {n:'D',o:5,k:'D',d:1.5},{n:'D',o:5,k:'D',d:0.5},{n:'B',o:4,k:'B',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'C',o:5,k:'C',d:3},
+    ]
+  },
+  {
+    id: 'we_wish',
+    title: '🎁 We Wish You a Merry Christmas',
+    notes: [
+      {n:'C',o:4,k:'C',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'E',o:4,k:'E',d:0.5},
+      {n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'F',o:4,k:'F',d:0.5},
+      {n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'A',o:4,k:'A',d:1},{n:'A',o:4,k:'A',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},
+      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},
+      {n:'D',o:4,k:'D',d:1},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'F',o:4,k:'F',d:2},{n:'C',o:4,k:'C',d:1},
+    ]
+  },
+  {
+    id: 'ode_ode',
+    title: '🎄 Deck the Halls',
+    notes: [
+      {n:'C',o:5,k:'C',d:1},{n:'B',o:4,k:'B',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},
+      {n:'A',o:4,k:'A',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'B',o:4,k:'B',d:1},{n:'C',o:5,k:'C',d:1},
+      {n:'D',o:5,k:'D',d:1},{n:'C',o:5,k:'C',d:1},{n:'B',o:4,k:'B',d:1},{n:'A',o:4,k:'A',d:1},
+      {n:'G',o:4,k:'G',d:2},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'C',o:4,k:'C',d:4},
+    ]
+  },
+  {
+    id: 'london_bridge',
+    title: '🌉 London Bridge',
+    notes: [
+      {n:'G',o:4,k:'G',d:1},{n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:1},{n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'D',o:4,k:'D',d:1},{n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'C',o:4,k:'C',d:4},
+    ]
+  },
+  {
+    id: 'scarborough',
+    title: '🌹 Scarborough Fair',
+    notes: [
+      {n:'A',o:3,k:'A',d:2},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:2},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:2},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:3},
+      {n:'C',o:4,k:'C',d:2},{n:'A',o:3,k:'A',d:1},{n:'B',o:3,k:'B',d:2},{n:'B',o:3,k:'B',d:1},
+      {n:'A',o:3,k:'A',d:3},
+      {n:'A',o:3,k:'A',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:2},
+      {n:'C',o:4,k:'C',d:1},{n:'E',o:4,k:'E',d:2},{n:'A',o:4,k:'A',d:1},
+      {n:'A',o:4,k:'A',d:3},
+    ]
+  },
+  {
+    id: 'greensleeves',
+    title: '💚 Greensleeves',
+    notes: [
+      {n:'A',o:3,k:'A',d:1},
+      {n:'C',o:4,k:'C',d:2},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'C',o:4,k:'C',d:2},{n:'A',o:3,k:'A',d:1},{n:'A',o:3,k:'A',d:2},{n:'A',o:3,k:'A',d:1},
+      {n:'B',o:3,k:'B',d:2},{n:'G',o:3,k:'G',d:1},{n:'G',o:3,k:'G',d:1.5},{n:'F',o:3,k:'F',d:0.5},
+      // Note: F# used here — map to F# key
+      {n:'E',o:3,k:'E',d:2},{n:'A',o:3,k:'A',d:1},{n:'A',o:3,k:'A',d:1},
+      {n:'C',o:4,k:'C',d:2},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'C',o:4,k:'C',d:2},{n:'A',o:3,k:'A',d:1},{n:'A',o:3,k:'A',d:2},{n:'B',o:3,k:'B',d:1},
+      {n:'G',o:3,k:'G',d:2},{n:'G',o:3,k:'G',d:1},{n:'E',o:3,k:'E',d:1.5},{n:'E',o:3,k:'E',d:0.5},
+      {n:'A',o:3,k:'A',d:3},
+    ]
+  },
+  {
+    id: 'minuet_g',
+    title: '🎻 Minuet in G (Bach)',
+    notes: [
+      {n:'G',o:4,k:'G',d:1},{n:'C',o:5,k:'C',d:0.5},{n:'D',o:5,k:'D',d:0.5},{n:'E',o:5,k:'E',d:0.5},{n:'F',o:5,k:'F',d:0.5},
+      {n:'G',o:5,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'A',o:4,k:'A',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'D',o:5,k:'D',d:0.5},{n:'E',o:5,k:'E',d:0.5},{n:'F',o:5,k:'F',d:0.5},
+      {n:'G',o:5,k:'G',d:1},{n:'G',o:5,k:'G',d:1},{n:'G',o:5,k:'G',d:1},
+      {n:'C',o:5,k:'C',d:1},{n:'D',o:5,k:'D',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'A',o:4,k:'A',d:0.5},
+      {n:'B',o:4,k:'B',d:1},{n:'C',o:5,k:'C',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},
+      {n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'G',o:4,k:'G',d:0.5},
+      {n:'G',o:4,k:'G',d:3},
+    ]
+  },
+  {
+    id: 'fur_elise',
+    title: '🎹 Für Elise (Beethoven)',
+    notes: [
+      {n:'E',o:5,k:'E',d:0.5},{n:'D#',o:5,k:'D',d:0.5},
+      {n:'E',o:5,k:'E',d:0.5},{n:'D#',o:5,k:'D',d:0.5},{n:'E',o:5,k:'E',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'D',o:5,k:'D',d:0.5},{n:'C',o:5,k:'C',d:0.5},
+      {n:'A',o:4,k:'A',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'A',o:4,k:'A',d:0.5},
+      {n:'B',o:4,k:'B',d:1},{n:'E',o:4,k:'E',d:0.5},{n:'G#',o:4,k:'G',d:0.5},{n:'B',o:4,k:'B',d:0.5},
+      {n:'C',o:5,k:'C',d:1},{n:'E',o:4,k:'E',d:0.5},{n:'E',o:5,k:'E',d:0.5},{n:'D#',o:5,k:'D',d:0.5},
+      {n:'E',o:5,k:'E',d:0.5},{n:'D#',o:5,k:'D',d:0.5},{n:'E',o:5,k:'E',d:0.5},{n:'B',o:4,k:'B',d:0.5},{n:'D',o:5,k:'D',d:0.5},{n:'C',o:5,k:'C',d:0.5},
+      {n:'A',o:4,k:'A',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'A',o:4,k:'A',d:0.5},
+      {n:'B',o:4,k:'B',d:1},{n:'E',o:4,k:'E',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'B',o:4,k:'B',d:0.5},
+      {n:'A',o:4,k:'A',d:2},
+    ]
+  },
+  {
+    id: 'canon',
+    title: '🎼 Canon in D (Pachelbel)',
+    notes: [
+      {n:'F#',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C#',o:4,k:'C',d:1},
+      {n:'B',o:3,k:'B',d:1},{n:'A',o:3,k:'A',d:1},{n:'B',o:3,k:'B',d:1},{n:'C#',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'C#',o:4,k:'C',d:1},{n:'B',o:3,k:'B',d:1},{n:'A',o:3,k:'A',d:1},
+      {n:'G',o:3,k:'G',d:1},{n:'F#',o:3,k:'F',d:1},{n:'G',o:3,k:'G',d:1},{n:'A',o:3,k:'A',d:1},
+      {n:'D',o:4,k:'D',d:2},{n:'A',o:4,k:'A',d:2},
+      {n:'B',o:3,k:'B',d:2},{n:'F#',o:4,k:'F',d:2},
+      {n:'G',o:3,k:'G',d:2},{n:'D',o:4,k:'D',d:2},
+      {n:'G',o:3,k:'G',d:2},{n:'A',o:3,k:'A',d:2},
+    ]
+  },
+  {
+    id: 'row_boat',
+    title: '🚣 Row Your Boat',
+    notes: [
+      {n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:1.5},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:0.5},
+      {n:'G',o:4,k:'G',d:3},
+      {n:'C',o:5,k:'C',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},
+      {n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:0.5},
+      {n:'C',o:4,k:'C',d:3},
+    ]
+  },
+  {
+    id: 'yankee_doodle',
+    title: '🎺 Yankee Doodle',
+    notes: [
+      {n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'C',o:4,k:'C',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:2},
+      {n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'C',o:4,k:'C',d:2},{n:'B',o:3,k:'B',d:2},
+      {n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:2},{n:'G',o:3,k:'G',d:2},
+      // chorus
+      {n:'G',o:4,k:'G',d:1.5},{n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'A',o:4,k:'A',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'D',o:4,k:'D',d:1.5},{n:'D',o:4,k:'D',d:0.5},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},
+      {n:'D',o:4,k:'D',d:2},{n:'C',o:4,k:'C',d:2},
+    ]
+  },
+  {
+    id: 'joy_world',
+    title: '🎉 Joy to the World',
+    notes: [
+      {n:'C',o:5,k:'C',d:1},{n:'B',o:4,k:'B',d:0.5},{n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'E',o:4,k:'E',d:2},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},{n:'E',o:4,k:'E',d:1},
+      {n:'D',o:4,k:'D',d:2},{n:'C',o:4,k:'C',d:2},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'C',o:4,k:'C',d:1},{n:'G',o:4,k:'G',d:1},{n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'F',o:4,k:'F',d:2},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
+    ]
+  },
+  {
+    id: 'frere_jacques',
+    title: '🔔 Frère Jacques',
+    notes: [
+      {n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'C',o:4,k:'C',d:1},{n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'C',o:4,k:'C',d:1},{n:'G',o:3,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:1},{n:'G',o:3,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+    ]
+  },
 ];
 
 let currentSong = null;
@@ -2690,6 +2961,19 @@ document.addEventListener('keydown', function dismissSplash(e) {
   hideSplash();
   document.removeEventListener('keydown', dismissSplash);
 }, { once: false });
+
+// Prevent pinch-zoom on iOS — user-scalable=no is ignored by iOS Safari 10+
+document.addEventListener('touchstart', e => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+// Prevent double-tap zoom
+let lastTap = 0;
+document.addEventListener('touchend', e => {
+  const now = Date.now();
+  if (now - lastTap < 300) e.preventDefault();
+  lastTap = now;
+}, { passive: false });
 
 // Rebuild piano on resize
 window.addEventListener('resize', () => { buildPiano(); });
