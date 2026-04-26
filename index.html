@@ -2362,18 +2362,21 @@ function positionBlackKeys(retryCount) {
     });
   });
 
-  // If any row couldn't be measured yet, retry up to ~10 frames later.
+  // If any row couldn't be measured yet, retry up to ~30 frames later.
   // This handles cases where the ResizeObserver fires before nested flex
-  // layout has propagated to the white-row / white-key descendants.
-  if (needsRetry && retryCount < 10) {
+  // layout has propagated to the white-row / white-key descendants, and
+  // slow iOS viewport settles after orientation change.
+  if (needsRetry && retryCount < 30) {
     requestAnimationFrame(() => positionBlackKeys(retryCount + 1));
   }
 }
 
 // Position black keys reliably across:
 //   1) the synchronous current frame (if layout already happened),
-//   2) the next two animation frames (after layout commits), and
-//   3) the first ResizeObserver fire on the piano element.
+//   2) the next animation frames (after layout commits), and
+//   3) a few timeouts (catches slow iOS viewport settles after rotation /
+//      mode switches that change piano height).
+//   4) the first ResizeObserver fire on the piano element.
 // positionBlackKeys() is idempotent and self-retrying when measurements fail,
 // so calling it multiple times is safe.
 let _pianoResizeObserver = null;
@@ -2395,17 +2398,26 @@ function schedulePositionBlackKeys() {
     requestAnimationFrame(() => positionBlackKeys());
   });
 
-  // ResizeObserver covers font-load / orientation-change / async-resize cases
+  // Then a couple of delayed fires — catches scenarios where layout settles
+  // in stages (mode switch + qwerty pad render, orientation change on iOS,
+  // soft keyboard appearing/dismissing, etc.). Cheap belt-and-braces.
+  setTimeout(positionBlackKeys, 60);
+  setTimeout(positionBlackKeys, 200);
+
+  // ResizeObserver: stay connected indefinitely so future piano size changes
+  // (mode switch, song-sheet toggle, soft-keyboard, font load, etc.) all
+  // trigger a re-position. Previously this disconnected after the first fire
+  // which meant later layout shifts produced wrong-sized black keys.
   if (typeof ResizeObserver !== 'undefined') {
-    if (_pianoResizeObserver) { _pianoResizeObserver.disconnect(); _pianoResizeObserver = null; }
-    _pianoResizeObserver = new ResizeObserver((entries, obs) => {
-      const e = entries[0];
-      if (e && e.contentRect.width > 0 && e.contentRect.height > 0) {
-        obs.disconnect();
-        _pianoResizeObserver = null;
-        positionBlackKeys();
-      }
-    });
+    if (!_pianoResizeObserver) {
+      _pianoResizeObserver = new ResizeObserver(entries => {
+        const e = entries[0];
+        if (e && e.contentRect.width > 0 && e.contentRect.height > 0) {
+          positionBlackKeys();
+        }
+      });
+    }
+    // Re-observe (no-op if already observing this element)
     _pianoResizeObserver.observe(piano);
   }
 }
@@ -2861,6 +2873,10 @@ function setMode(m) {
     buildQwerty();
   }
   stopAllNotes();
+  // Mode switching shows/hides the QWERTY pad and the modifier hint, both of
+  // which change the piano's available height. Re-measure so black keys
+  // scale to the new row height.
+  schedulePositionBlackKeys();
 }
 
 function openSettings() {
@@ -3239,6 +3255,8 @@ function toggleSongSheet() {
     sheet.classList.remove('visible');
     document.body.classList.remove('song-sheet-open');
   }
+  // Song sheet shows/hides above the piano, changing its available height.
+  schedulePositionBlackKeys();
 }
 
 function hideSongSheet() {
@@ -3247,6 +3265,7 @@ function hideSongSheet() {
   document.getElementById('songSheet').classList.remove('visible');
   document.body.classList.remove('song-sheet-open');
   songSheetVisible = false;
+  schedulePositionBlackKeys();
 }
 
 function populateSongSelect() {
@@ -3785,8 +3804,17 @@ document.addEventListener('touchend', e => {
   lastTap = now;
 }, { passive: false });
 
-// Rebuild piano on resize
+// Rebuild piano on resize / rotation. iOS sometimes fires resize before the
+// viewport has finished settling, so we also listen for orientationchange and
+// re-position once more after a beat.
 window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); });
+window.addEventListener('orientationchange', () => {
+  buildPiano();
+  schedulePositionBlackKeys();
+  // Belt-and-braces: re-fire after iOS has had time to settle the new viewport
+  setTimeout(schedulePositionBlackKeys, 200);
+  setTimeout(schedulePositionBlackKeys, 500);
+});
 
 // Register service worker
 if ('serviceWorker' in navigator) {
