@@ -540,7 +540,10 @@
       position: relative;
       display: flex;
       height: 100%;
-      max-height: 240px;
+      /* Cap grows on bigger screens. iPhone overrides this in its media
+         query, and viewport-height-driven clamp prevents overflow when the
+         viewport is short. */
+      max-height: clamp(220px, 38vh, 320px);
       gap: 0;
       padding: 10px 10px 0;
       background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
@@ -578,6 +581,19 @@
     }
 
     .piano.single-octave {
+      /* Scale with viewport on larger screens — looked dwarfed on tablets
+         and desktops at the old fixed 7×64=448px width. Cap at 720px so it
+         doesn't get cartoonishly huge on big monitors. The iPhone-portrait
+         media query overrides this back to a tighter size below. */
+      width: min(85%, 720px);
+    }
+
+    /* In single-octave mode, white keys flex to fill the piano width
+       (like expanded mode does), so resizing the piano automatically resizes
+       all keys equally and black-key positioning re-measures cleanly. */
+    .piano.single-octave .white-key {
+      flex: 1;
+      min-width: 0;
       width: auto;
     }
 
@@ -587,7 +603,12 @@
 
     .white-key {
       position: relative;
-      width: 64px;
+      /* Wider on big screens, capped sensibly. iPhone portrait & landscape
+         media queries override these to fit the small viewport. The 7vw
+         middle term means 7% of the viewport width per white key — eight of
+         them = ~56% of screen width, leaving comfortable margins on either
+         side. */
+      width: clamp(48px, 7vw, 96px);
       min-width: 48px;
       background: linear-gradient(to bottom, #f8f8f8, #ececec);
       border-radius: 0 0 var(--key-radius) var(--key-radius);
@@ -809,6 +830,15 @@
       .white-key { width: 38px; min-width: 28px; padding-bottom: 5px; }
       .key-note { font-size: 10px; }
 
+      /* iPhone portrait: revert single-octave to fixed-width keys (the
+         desktop fluid sizing would push the keys too wide here). */
+      .piano.single-octave { width: auto; }
+      .piano.single-octave .white-key {
+        flex: 0 0 auto;
+        width: 38px;
+        min-width: 28px;
+      }
+
       /* QWERTY keys — compact but still tappable */
       .qwerty-area { padding: 6px 0 10px; }
       .qwerty-row { gap: 3px; margin-bottom: 3px; }
@@ -862,6 +892,14 @@
       .piano { max-height: 130px; }
       .white-key { width: 36px; min-width: 26px; padding-bottom: 4px; }
       .key-note { font-size: 9px; }
+
+      /* iPhone landscape: revert single-octave to fixed-width keys */
+      .piano.single-octave { width: auto; }
+      .piano.single-octave .white-key {
+        flex: 0 0 auto;
+        width: 36px;
+        min-width: 26px;
+      }
 
       /* QWERTY: very tight, 3 rows must fit below piano */
       .qwerty-area { padding: 2px 0 4px; flex-shrink: 0; }
