@@ -2217,40 +2217,7 @@ function buildPiano() {
       whiteRow.appendChild(el);
     });
 
-    // Add an unmapped boundary C (next octave) as the 8th white key.
-    // This gives A# a proper right neighbour for positioning and mirrors
-    // how a real piano keyboard always ends each octave group with the
-    // start of the next. It has no keyboard mapping but is fully playable.
-    if (!isExpanded) {
-      const boundaryC = document.createElement('div');
-      boundaryC.className = 'white-key' + (isActive ? ' active-octave' : '');
-      boundaryC.dataset.note = 'C';
-      boundaryC.dataset.oct = oct + 1;
-      boundaryC.dataset.boundary = 'true';
-      boundaryC.innerHTML = `<span class="key-note show-note">C</span>`;
-      boundaryC.addEventListener('touchstart', e => {
-        e.preventDefault();
-        const t = e.changedTouches[0];
-        boundaryC.dataset.touchId = t.identifier;
-        triggerNoteByPianoKey('C', oct + 1);
-      }, { passive: false });
-      boundaryC.addEventListener('touchend', e => {
-        e.preventDefault();
-        const ids = Array.from(e.touches).map(t => t.identifier);
-        if (!ids.includes(parseInt(boundaryC.dataset.touchId))) {
-          if (!sustainMode) releaseNoteByPianoKey('C', oct + 1);
-          boundaryC.dataset.touchId = '';
-        }
-      }, { passive: false });
-      boundaryC.addEventListener('touchcancel', () => {
-        if (!sustainMode) releaseNoteByPianoKey('C', oct + 1);
-        boundaryC.dataset.touchId = '';
-      });
-      boundaryC.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey('C', oct + 1); } });
-      boundaryC.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey('C', oct + 1); } });
-      boundaryC.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey('C', oct + 1); });
-      whiteRow.appendChild(boundaryC);
-    }
+    group.appendChild(whiteRow);
 
     // Black keys overlay — positioned relative to the white row
     // We need to position them after layout, so store refs
@@ -2341,8 +2308,14 @@ function positionBlackKeys(retryCount) {
 
     blackKeys.forEach(bk => {
       const whitesBefore = parseInt(bk.dataset.whitesBefore);
-      const refWhite = whiteKeys[whitesBefore];
-      const nextWhite = whiteKeys[whitesBefore + 1];
+      // whitesBefore = count of white keys before this black key in
+      // chromatic order. The black key sits between the LAST white before
+      // it (index whitesBefore - 1) and the next white (index whitesBefore).
+      // Previously this used [whitesBefore] and [whitesBefore + 1], which
+      // shifted every black one slot right and made A# (whitesBefore = 6)
+      // look up whiteKeys[7] — undefined — so A# silently disappeared.
+      const refWhite = whiteKeys[whitesBefore - 1];
+      const nextWhite = whiteKeys[whitesBefore];
       if (!refWhite || !nextWhite) return;
       const leftRect = refWhite.getBoundingClientRect();
       const rightRect = nextWhite.getBoundingClientRect();
