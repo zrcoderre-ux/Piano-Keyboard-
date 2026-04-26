@@ -610,6 +610,29 @@
       transition: opacity 0.4s ease;
     }
 
+    /* Floating re-unlock button — shown if audio still silent after splash */
+    #reUnlockBtn {
+      display: none;
+      position: fixed;
+      bottom: 160px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 500;
+      padding: 12px 28px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 0 24px var(--glow);
+      animation: pulse-btn 2s ease-in-out infinite;
+    }
+
     /* ── COLOR SETTINGS ── */
     .color-grid {
       display: grid;
@@ -1135,6 +1158,9 @@
   <button class="splash-btn" id="splashBtn">Tap to Play</button>
 </div>
 
+<!-- Re-unlock button: shown if audio was silenced after initial tap -->
+<button id="reUnlockBtn">🔊 Tap to Enable Audio</button>
+
 <!-- HEADER -->
 <header>
   <div class="logo">QWERTY <span>Piano</span></div>
@@ -1337,6 +1363,34 @@
 </div>
 
 <script>
+// ── iOS AUDIO DEBUG PANEL — defined first so everything can use it ──
+function showDebug(msg) {
+  let panel = document.getElementById('audioDebug');
+  if (!panel) {
+    panel = document.createElement('div');
+    panel.id = 'audioDebug';
+    // Top of screen, massive z-index, can't be missed
+    panel.style.cssText = [
+      'position:fixed','top:0','left:0','right:0','z-index:2147483647',
+      'background:#000','color:#0f0','font:13px/1.8 monospace',
+      'padding:10px 14px','border-bottom:2px solid #0f0',
+      'pointer-events:none','white-space:pre-wrap',
+      'max-height:50vh','overflow-y:auto'
+    ].join(';');
+    // Append immediately — if body not ready, retry
+    if (document.body) {
+      document.body.appendChild(panel);
+    } else {
+      document.addEventListener('DOMContentLoaded', () => document.body.appendChild(panel));
+    }
+  }
+  const ts = new Date().toISOString().slice(11,23);
+  panel.textContent = panel.textContent + '\n[' + ts + '] ' + msg;
+  if (panel.parentNode) panel.scrollTop = panel.scrollHeight;
+  // Also console.log as backup
+  console.log('[DBG]', msg);
+}
+
 // ──────────────────────────────────────────
 //  AUDIO ENGINE
 // ──────────────────────────────────────────
@@ -1350,7 +1404,12 @@ let waveform = 'sine';
 
 function getAudioCtx() {
   if (!audioCtx) return null; // never create outside a gesture on iOS
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume(); // belt-and-braces; real unlock happens in unlockAndStart
+  }
+  if (audioCtx.state !== 'running') {
+    if (typeof showDebug === 'function') showDebug('getAudioCtx: state=' + audioCtx.state + ' (not running!)');
+  }
   return audioCtx;
 }
 
@@ -1364,20 +1423,23 @@ function noteToFreq(note, oct) {
 }
 
 function playNote(noteId, freq) {
-  if (activeOscillators[noteId]) return;
+  showDebug('playNote: ' + noteId + ' freq=' + freq + ' ctxState=' + (audioCtx ? audioCtx.state : 'null'));
+  if (activeOscillators[noteId]) { showDebug('  → blocked: already active'); return; }
   const ctx = getAudioCtx();
-  if (!ctx) return;
+  if (!ctx) { showDebug('  → blocked: no ctx'); return; }
+  showDebug('  → creating osc, ctx.currentTime=' + ctx.currentTime.toFixed(3));
   const osc = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
   osc.type = waveform;
   osc.frequency.setValueAtTime(freq, ctx.currentTime);
 
-  // Piano-like envelope
-  gainNode.gain.setValueAtTime(0, ctx.currentTime);
+  // Piano-like envelope — use 0.0001 as near-silence floor since
+  // exponentialRampToValueAtTime cannot ramp TO or FROM exactly 0 (log undefined)
+  gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
   gainNode.gain.linearRampToValueAtTime(masterVolume * 0.8, ctx.currentTime + 0.005);
   gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
-  gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.25, ctx.currentTime + 0.5);
+  gainNode.gain.exponentialRampToValueAtTime(Math.max(masterVolume * 0.25, 0.0001), ctx.currentTime + 0.5);
 
   osc.connect(gainNode);
   gainNode.connect(ctx.destination);
@@ -1387,6 +1449,7 @@ function playNote(noteId, freq) {
 }
 
 function stopNote(noteId) {
+  showDebug('stopNote: ' + noteId);
   const entry = activeOscillators[noteId];
   if (!entry) return;
   const ctx = getAudioCtx();
@@ -1408,23 +1471,29 @@ function stopAllNotes() {
 // Default colors inspired by synesthesia / Newton's color-note mapping
 const DEFAULT_NOTE_COLORS = {
   'C':  '#e63946', // red
-  'C#': '#f4511e', // red-orange
+  'C#': '#f4511e', // red-orange (between C red and D orange)
   'D':  '#ff9800', // orange
-  'D#': '#ffc107', // amber
+  'D#': '#ffc107', // amber (between D orange and E yellow)
   'E':  '#ffeb3b', // yellow
-  'F':  '#8bc34a', // lime green
-  'F#': '#26a69a', // teal
-  'G':  '#29b6f6', // sky blue
-  'G#': '#3f51b5', // indigo
-  'A':  '#7e57c2', // violet
-  'A#': '#ab47bc', // purple
-  'B':  '#ec407a', // pink
+  'F':  '#4caf50', // green
+  'F#': '#009688', // teal (between F green and G teal)
+  'G':  '#00897b', // teal
+  'G#': '#2196f3', // blue (A flat = blue)
+  'A':  '#9c27b0', // purple
+  'A#': '#e91e63', // pink (between A purple and B pink)
+  'B':  '#f06292', // pink
 };
 
 let noteColors = { ...DEFAULT_NOTE_COLORS };
 
 function loadColors() {
   try {
+    const version = localStorage.getItem('pianoColorVersion');
+    if (version !== '2') {
+      // New color scheme — clear old saved colors and adopt new defaults
+      localStorage.removeItem('pianoNoteColors');
+      localStorage.setItem('pianoColorVersion', '2');
+    }
     const saved = localStorage.getItem('pianoNoteColors');
     if (saved) noteColors = { ...DEFAULT_NOTE_COLORS, ...JSON.parse(saved) };
   } catch(e) {}
@@ -1604,11 +1673,14 @@ function buildPiano() {
         <span class="key-note show-note">${k.note}</span>
         <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
       `;
-      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      // Touch events for mobile (iOS/Android)
       el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      // Pointer events ONLY for mouse — touch devices fire pointer AND touch, causing instant note-start + note-stop
+      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
+      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
+      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
 
@@ -1625,11 +1697,14 @@ function buildPiano() {
       el.dataset.oct = oct;
       el.dataset.whitesBefore = whitesBefore;
       el.innerHTML = `<span class="key-label show-key"></span>`;
-      el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      // Touch events for mobile
       el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      // Pointer events ONLY for mouse
+      el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
+      el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
+      el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
 
@@ -1723,6 +1798,7 @@ function updateActiveOctave() {
 
 
 function triggerNoteByPianoKey(note, oct) {
+  showDebug('triggerNote: ' + note + oct);
   const freq = noteToFreq(note, oct);
   if (!freq) return;
   const id = note + oct + '_piano';
@@ -1735,6 +1811,7 @@ function triggerNoteByPianoKey(note, oct) {
 }
 
 function releaseNoteByPianoKey(note, oct) {
+  showDebug('releaseNote: ' + note + oct + ' sustain=' + sustainMode);
   const id = note + oct + '_piano';
   if (!sustainMode) stopNote(id);
   highlightPianoKey(note, oct, false);
@@ -1786,35 +1863,60 @@ function buildQwerty() {
 
       // Touch events
       if (isLetter) {
-        el.addEventListener('pointerdown', (e) => {
+        const getModifiers = () => ({
+          isSharp: document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
+                   document.querySelector('[data-key="Shift2"]')?.classList.contains('active'),
+          isFlat:  document.querySelector('[data-key="Caps"]')?.classList.contains('active')
+        });
+
+        // Touch (mobile) — use touchstart/touchend to avoid double-fire with pointer events
+        el.addEventListener('touchstart', (e) => {
           e.preventDefault();
-          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
-                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
-          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          const { isSharp, isFlat } = getModifiers();
+          handleNoteOn(upper, isSharp, isFlat);
+          addRipple(el, e.touches[0] || e);
+        }, { passive: false });
+        el.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          const { isSharp, isFlat } = getModifiers();
+          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
+        }, { passive: false });
+        el.addEventListener('touchcancel', (e) => {
+          const { isSharp, isFlat } = getModifiers();
+          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
+        });
+
+        // Mouse only — pointer events fire on iOS touch too, so guard by pointerType
+        el.addEventListener('pointerdown', (e) => {
+          if (e.pointerType !== 'mouse') return;
+          e.preventDefault();
+          const { isSharp, isFlat } = getModifiers();
           handleNoteOn(upper, isSharp, isFlat);
           addRipple(el, e);
         });
         el.addEventListener('pointerup', (e) => {
+          if (e.pointerType !== 'mouse') return;
           e.preventDefault();
-          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
-                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
-          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          const { isSharp, isFlat } = getModifiers();
           if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
         });
         el.addEventListener('pointerleave', (e) => {
-          const isSharp = document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
-                          document.querySelector('[data-key="Shift2"]')?.classList.contains('active');
-          const isFlat = document.querySelector('[data-key="Caps"]')?.classList.contains('active');
+          if (e.pointerType !== 'mouse') return;
+          const { isSharp, isFlat } = getModifiers();
           if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
         });
       } else if (['SHIFT','SHIFT2'].includes(upper)) {
-        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
+        el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
+        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
       } else if (upper === 'CAPS') {
-        el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.toggle('active'); });
+        el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
+        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
       } else if (upper === 'SPACE') {
-        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(1); addRipple(el, e); });
+        el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(1); addRipple(el, e.touches[0] || e); }, { passive: false });
+        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(1); addRipple(el, e); } });
       } else if (upper === 'TAB') {
-        el.addEventListener('pointerdown', e => { e.preventDefault(); changeOctave(-1); addRipple(el, e); });
+        el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(-1); addRipple(el, e.touches[0] || e); }, { passive: false });
+        el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(-1); addRipple(el, e); } });
       }
 
       rowEl.appendChild(el);
@@ -2486,34 +2588,72 @@ function scheduleNextNote(immediate) {
 
 populateSongSelect();
 
-
 buildPiano();
+showDebug('=== APP STARTED — tap a piano key and watch here ===');
 
-document.getElementById('splashBtn').addEventListener('touchend', unlockAndStart, { passive: false });
-document.getElementById('splashBtn').addEventListener('click', unlockAndStart);
+// ── SPLASH UNLOCK ──────────────────────────
+let splashDone = false;
 
 function unlockAndStart(e) {
+  // Guard against double-fire (touchend + click both fire on iOS)
+  if (splashDone) return;
+
   e.preventDefault();
   e.stopPropagation();
 
-  // Must create AND use AudioContext synchronously inside the gesture
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  showDebug('unlockAndStart called, event=' + e.type);
+
+  try {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { showDebug('ERROR: No AudioContext available!'); return; }
+      audioCtx = new AC();
+      showDebug('AudioContext created, state=' + audioCtx.state);
+    } else {
+      showDebug('AudioContext already exists, state=' + audioCtx.state);
+    }
+
+    // CRITICAL ORDER FOR iOS:
+    // 1. resume() first — get the promise
+    // 2. Inside the .then(), play the silent buffer
+    // 3. Only after both, hide the splash
+    const resumePromise = audioCtx.resume();
+    showDebug('resume() called, now=' + audioCtx.state);
+
+    resumePromise.then(() => {
+      showDebug('resume().then() — state=' + audioCtx.state);
+
+      // Play a silent buffer INSIDE the resume promise — still within gesture trust window
+      try {
+        const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start(0);
+        showDebug('Silent buffer played OK');
+      } catch(err) {
+        showDebug('Silent buffer ERROR: ' + err.message);
+      }
+
+      // Hide splash now that audio is unlocked
+      hideSplash();
+      showDebug('Splash hidden. AudioContext state=' + audioCtx.state);
+
+    }).catch(err => {
+      showDebug('resume() REJECTED: ' + err.message);
+      // Still try to proceed — show piano even if audio failed
+      hideSplash();
+    });
+
+  } catch(err) {
+    showDebug('EXCEPTION in unlockAndStart: ' + err.message);
+    hideSplash();
   }
+}
 
-  // Play silent buffer synchronously — this is the iOS unlock gesture
-  const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-  const src = audioCtx.createBufferSource();
-  src.buffer = buf;
-  src.connect(audioCtx.destination);
-  src.start(0);
-
-  // Resume if suspended (Android/desktop may need this)
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-
-  // Hide splash
+function hideSplash() {
+  if (splashDone) return;
+  splashDone = true;
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('hidden');
@@ -2521,16 +2661,51 @@ function unlockAndStart(e) {
   }
 }
 
+// iOS grants AudioContext gesture trust on touchend and click, NOT touchstart.
+// resume() called from touchstart returns a promise that never resolves on iOS.
+const splashBtn = document.getElementById('splashBtn');
+splashBtn.addEventListener('touchend', unlockAndStart, { passive: false });
+splashBtn.addEventListener('click', unlockAndStart);
+
 // Also allow any keypress to dismiss splash on desktop
 document.addEventListener('keydown', function dismissSplash(e) {
-  const splash = document.getElementById('splash');
-  if (!splash) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (splashDone) { document.removeEventListener('keydown', dismissSplash); return; }
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
   audioCtx.resume();
-  splash.classList.add('hidden');
-  setTimeout(() => splash.remove(), 400);
+  hideSplash();
   document.removeEventListener('keydown', dismissSplash);
 }, { once: false });
+
+// Re-unlock button: handle the case where iOS suspends the context
+// after it was unlocked (e.g., the app was backgrounded)
+const reUnlockBtn = document.getElementById('reUnlockBtn');
+reUnlockBtn.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  if (audioCtx) {
+    audioCtx.resume().then(() => {
+      showDebug('re-unlock: state=' + audioCtx.state);
+      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
+    });
+  }
+}, { passive: false });
+reUnlockBtn.addEventListener('click', function() {
+  if (audioCtx) {
+    audioCtx.resume().then(() => {
+      if (audioCtx.state === 'running') reUnlockBtn.style.display = 'none';
+    });
+  }
+});
+
+// Periodically check if context got suspended and show re-unlock if needed
+setInterval(() => {
+  if (audioCtx && splashDone && audioCtx.state === 'suspended') {
+    reUnlockBtn.style.display = 'block';
+  } else if (reUnlockBtn.style.display === 'block' && audioCtx && audioCtx.state === 'running') {
+    reUnlockBtn.style.display = 'none';
+  }
+}, 2000);
 
 // Rebuild piano on resize
 window.addEventListener('resize', () => { buildPiano(); });
