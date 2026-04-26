@@ -783,6 +783,15 @@
       /* Big note display — smaller on iPhone but still prominent */
       .big-note-display { font-size: 48px; padding: 6px 0 8px; }
 
+      /* On iPhone portrait, the screen is short — the big note display only
+         fits in keyboard and piano modes. In touch mode (QWERTY pad takes up
+         the bottom) and when the song sheet is open (note strip eats vertical
+         room), fall back to the compact info-bar version. */
+      body.mode-touch .big-note-display,
+      body.song-sheet-open .big-note-display { display: none; }
+      body.mode-touch .info-bar .note-display,
+      body.song-sheet-open .info-bar .note-display { display: block; }
+
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
       .piano-wrapper { padding-bottom: 6px; }
@@ -1597,7 +1606,7 @@
     .sustain-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--glow); }
   </style>
 </head>
-<body>
+<body class="mode-keyboard">
 
 <!-- Decorative floating musical notes — purely visual, behind all content -->
 <div class="bg-decorations" aria-hidden="true">
@@ -2812,6 +2821,8 @@ function toggleSustain() {
 function setMode(m) {
   const prevMode = mode;
   mode = m;
+  document.body.classList.remove('mode-keyboard', 'mode-touch', 'mode-piano');
+  document.body.classList.add('mode-' + m);
   document.getElementById('btnKeyboard').classList.toggle('active', m === 'keyboard');
   document.getElementById('btnTouch').classList.toggle('active', m === 'touch');
   document.getElementById('btnPiano').classList.toggle('active', m === 'piano');
@@ -3222,9 +3233,11 @@ function toggleSongSheet() {
   const sheet = document.getElementById('songSheet');
   if (songSheetVisible) {
     sheet.classList.add('visible');
+    document.body.classList.add('song-sheet-open');
     if (!currentSong) loadSong(SONGS[0].id);
   } else {
     sheet.classList.remove('visible');
+    document.body.classList.remove('song-sheet-open');
   }
 }
 
@@ -3232,6 +3245,7 @@ function hideSongSheet() {
   stopTempo();
   document.getElementById('songSheetToggle').checked = false;
   document.getElementById('songSheet').classList.remove('visible');
+  document.body.classList.remove('song-sheet-open');
   songSheetVisible = false;
 }
 
