@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="theme-color" content="#0a0a0a" />
-  <title>QWERTY Piano</title>
+  <title>Arthur's Piano</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap" rel="stylesheet" />
@@ -18,16 +18,16 @@
       --surface: #111111;
       --surface2: #1a1a1a;
       --border: #2a2a2a;
-      --accent: #c8a96e;
-      --accent2: #e8c98e;
+      --accent: #e03030;
+      --accent2: #ff5555;
       --white-key: #f0ece4;
-      --white-key-pressed: #c8a96e;
+      --white-key-pressed: #e03030;
       --black-key: #1c1c1c;
-      --black-key-pressed: #c8a96e;
+      --black-key-pressed: #e03030;
       --text: #e8e4dc;
       --text-dim: #666;
       --key-radius: 6px;
-      --glow: rgba(200, 169, 110, 0.35);
+      --glow: rgba(224, 48, 48, 0.35);
     }
 
     html, body {
@@ -623,6 +623,97 @@
 
       /* Settings: full screen in landscape */
       .settings-card { width: 90vw; max-height: 90vh; padding: 16px 14px; }
+    }
+
+    /* ── HELP MODAL ── */
+    #helpPanel {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #helpPanel.open { display: flex; }
+
+    .help-card {
+      max-width: 480px;
+    }
+
+    .help-section {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .help-section:last-of-type { border-bottom: none; }
+
+    .help-section p {
+      font-size: 12px;
+      color: var(--text-dim);
+      line-height: 1.6;
+      margin-top: 6px;
+    }
+
+    .help-section-title {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .help-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 5px;
+      font-size: 12px;
+      color: var(--text-dim);
+    }
+
+    .help-chip {
+      flex-shrink: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 10px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .help-table {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .help-table-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .hk {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: 'Syne Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
     }
 
     /* ── SPLASH SCREEN ── */
@@ -1225,20 +1316,22 @@
     <div class="splash-key">F</div>
     <div class="splash-key">G</div>
   </div>
-  <div class="splash-title">QWERTY Piano</div>
-  <div class="splash-sub">A keyboard instrument for every screen</div>
+  <div class="splash-title">Arthur's Piano</div>
+  <div class="splash-sub">Arthur's personal piano — any screen, any device</div>
   <button class="splash-btn" id="splashBtn">Tap to Play</button>
 </div>
 
 <!-- HEADER -->
 <header>
-  <div class="logo">QWERTY <span>Piano</span></div>
+  <div class="logo">Arthur's <span>Piano</span></div>
   <div class="controls">
     <div class="mode-toggle">
       <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">⌨ Keyboard</button>
       <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">☞ Touch</button>
+      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')">🎹 Piano</button>
     </div>
     <button class="settings-btn" onclick="openSettings()">⚙ Settings</button>
+    <button class="settings-btn" onclick="openHelp()">? Help</button>
   </div>
 </header>
 
@@ -1428,6 +1521,92 @@
     </div>
 
     <button class="close-settings" onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<!-- HELP MODAL -->
+<div id="helpPanel">
+  <div class="settings-card help-card">
+    <h2>? How to Play</h2>
+
+    <div class="help-section">
+      <div class="help-section-title">🎹 Three Play Modes</div>
+      <p>Switch between modes using the buttons in the top bar.</p>
+      <div class="help-row">
+        <div class="help-chip">⌨ Keyboard</div>
+        <span>Use your computer keyboard — A B C D E F G play notes. Best for laptops &amp; desktops</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">☞ Touch</div>
+        <span>On-screen QWERTY pad for touchscreens — best for phones &amp; tablets</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">🎹 Piano</div>
+        <span>Tap or click the piano keys directly — no keyboard needed. Best for tablets used as a piano</span>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">⌨️ Keyboard Mode</div>
+      <p>The keys <strong>A B C D E F G</strong> play the notes of the same name in the current octave.</p>
+      <div class="help-table">
+        <div class="help-table-row"><span class="hk">A</span><span>→ A</span></div>
+        <div class="help-table-row"><span class="hk">B</span><span>→ B</span></div>
+        <div class="help-table-row"><span class="hk">C</span><span>→ C</span></div>
+        <div class="help-table-row"><span class="hk">D</span><span>→ D</span></div>
+        <div class="help-table-row"><span class="hk">E</span><span>→ E</span></div>
+        <div class="help-table-row"><span class="hk">F</span><span>→ F</span></div>
+        <div class="help-table-row"><span class="hk">G</span><span>→ G</span></div>
+      </div>
+      <div class="help-row" style="margin-top:10px">
+        <div class="help-chip">Shift + key</div>
+        <span>Play the sharp (♯) of that note — e.g. Shift+C = C♯</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">Alt + key</div>
+        <span>Play the flat (♭) of that note — e.g. Alt+D = D♭</span>
+      </div>
+      <p style="margin-top:8px; font-size:11px; color:var(--text-dim)">You can swap Shift and Alt in Settings → Sharp Key.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">🎵 Changing Octave</div>
+      <div class="help-row">
+        <div class="help-chip">↑ / ]</div><span>Octave up</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">↓ / [</div><span>Octave down</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">+/− buttons</div><span>Octave up/down (touch)</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">Space / Tab</div><span>Octave up/down on the touch pad</span>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">📋 Song Sheet</div>
+      <p>Enable Song Sheet in Settings to see a scrolling strip of notes to play along with. The highlighted note is the one to play next. Tap any note in the strip to jump to it.</p>
+      <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. 21 songs included — from Twinkle Twinkle to Für Elise.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">⚙️ Settings</div>
+      <div class="help-row"><div class="help-chip">Expanded Keyboard</div><span>Show multiple octaves on the piano at once</span></div>
+      <div class="help-row"><div class="help-chip">Octave Range</div><span>Set which octaves appear when Expanded is on</span></div>
+      <div class="help-row"><div class="help-chip">Sustain Mode</div><span>Notes ring until the next key is pressed</span></div>
+      <div class="help-row"><div class="help-chip">Waveform</div><span>Sine (pure) · Triangle (soft) · Sawtooth (bright) · Square (harsh)</span></div>
+      <div class="help-row"><div class="help-chip">Note Colors</div><span>Customize the color each note flashes when pressed</span></div>
+      <div class="help-row"><div class="help-chip">Volume</div><span>Master output volume</span></div>
+    </div>
+
+    <div class="help-section">
+      <div class="help-section-title">📱 Mobile Tips</div>
+      <p>On iPhone, rotate to <strong>landscape</strong> for a wider keyboard and more comfortable playing. Portrait mode works well for quick practice. Make sure your <strong>ringer switch</strong> is not muted — it silences Web Audio on iOS.</p>
+    </div>
+
+    <button class="close-settings" onclick="closeHelp()">Got it</button>
   </div>
 </div>
 
@@ -1789,8 +1968,8 @@ function buildPiano() {
     group.appendChild(lbl);
   }
 
-  // Position black keys after DOM insert using requestAnimationFrame
-  requestAnimationFrame(() => positionBlackKeys());
+  // Position black keys after DOM insert using double-rAF to guarantee layout flush
+  schedulePositionBlackKeys();
   updateLabels();
 }
 
@@ -1806,8 +1985,10 @@ function positionBlackKeys() {
     if (blackKeys.length === 0) return;
 
     if (expandedKeyboard) {
-      // Flex layout: use getBoundingClientRect
+      // Flex layout: measure actual rendered positions
       const rowRect = whiteRow.getBoundingClientRect();
+      if (rowRect.width === 0) return; // layout not ready yet
+      const rowH = rowRect.height;
       blackKeys.forEach(bk => {
         const whitesBefore = parseInt(bk.dataset.whitesBefore);
         const refWhite = whiteKeys[whitesBefore];
@@ -1816,9 +1997,12 @@ function positionBlackKeys() {
         const leftRect = refWhite.getBoundingClientRect();
         const rightRect = nextWhite.getBoundingClientRect();
         const center = (leftRect.right + rightRect.left) / 2;
-        const bkW = leftRect.width * 0.6;
+        const bkW = Math.max(leftRect.width * 0.6, 10);
+        const bkH = rowH * 0.62;
         bk.style.left = (center - rowRect.left - bkW / 2) + 'px';
         bk.style.width = bkW + 'px';
+        bk.style.height = bkH + 'px';
+        bk.style.borderRadius = '0 0 4px 4px';
       });
     } else {
       // Fixed layout: calculate from fixed key width + gap
@@ -1827,15 +2011,20 @@ function positionBlackKeys() {
       const BKW = 38;
       blackKeys.forEach(bk => {
         const whitesBefore = parseInt(bk.dataset.whitesBefore);
-        // Center of gap between whitesBefore and whitesBefore+1
         const leftEdge = whitesBefore * (WKW + GAP);
         const rightEdge = leftEdge + WKW + GAP;
         const center = (leftEdge + rightEdge) / 2 + WKW * 0.05;
         bk.style.left = (center - BKW / 2) + 'px';
         bk.style.width = BKW + 'px';
+        bk.style.height = ''; // let CSS rule apply
       });
     }
   });
+}
+
+// Double-rAF ensures layout is fully flushed before we measure
+function schedulePositionBlackKeys() {
+  requestAnimationFrame(() => requestAnimationFrame(() => positionBlackKeys()));
 }
 
 function updateActiveOctave() {
@@ -2103,7 +2292,7 @@ function highlightQKey(letter, on, note) {
 const heldKeys = {};
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') { closeSettings(); return; }
+  if (e.key === 'Escape') { closeSettings(); closeHelp(); return; }
   if (mode !== 'keyboard') return;
   const key = e.key;
 
@@ -2239,12 +2428,14 @@ function setMode(m) {
   mode = m;
   document.getElementById('btnKeyboard').classList.toggle('active', m === 'keyboard');
   document.getElementById('btnTouch').classList.toggle('active', m === 'touch');
+  document.getElementById('btnPiano').classList.toggle('active', m === 'piano');
+  // QWERTY pad: only show in touch mode
   document.getElementById('qwertyArea').style.display = m === 'touch' ? 'block' : 'none';
+  // Modifier hint: only show in keyboard mode
   document.getElementById('modHint').style.display = m === 'keyboard' ? 'block' : 'none';
 
   if (m === 'touch') {
     buildQwerty();
-    document.getElementById('modHint').style.display = 'none';
   }
   stopAllNotes();
 }
@@ -2258,6 +2449,13 @@ function closeSettings() {
   waveform = document.getElementById('waveformSelect').value;
   sharpKey = document.getElementById('sharpKey').value;
   updateModHint();
+}
+
+function openHelp() {
+  document.getElementById('helpPanel').classList.add('open');
+}
+function closeHelp() {
+  document.getElementById('helpPanel').classList.remove('open');
 }
 
 // ──────────────────────────────────────────
@@ -2976,7 +3174,7 @@ document.addEventListener('touchend', e => {
 }, { passive: false });
 
 // Rebuild piano on resize
-window.addEventListener('resize', () => { buildPiano(); });
+window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); });
 
 // Register service worker
 if ('serviceWorker' in navigator) {
@@ -2984,9 +3182,12 @@ if ('serviceWorker' in navigator) {
 }
 
 
-// Click outside settings card to close
+// Click outside to close modals
 document.getElementById('settingsPanel').addEventListener('click', function(e) {
   if (e.target === this) closeSettings();
+});
+document.getElementById('helpPanel').addEventListener('click', function(e) {
+  if (e.target === this) closeHelp();
 });
 
 // Prevent context menu on long press
