@@ -1,4 +1,4 @@
-const CACHE = 'arthur-piano-v3';
+const CACHE = 'arthur-piano-v12';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {

@@ -4,38 +4,57 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="theme-color" content="#0a0a0a" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="theme-color" content="#faf6ed" />
   <title>Arthur's Piano</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Syne+Mono&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0a0a;
-      --surface: #111111;
-      --surface2: #1a1a1a;
-      --border: #2a2a2a;
-      --accent: #e03030;
-      --accent2: #ff5555;
-      --white-key: #f0ece4;
-      --white-key-pressed: #e03030;
-      --black-key: #1c1c1c;
-      --black-key-pressed: #e03030;
-      --text: #e8e4dc;
-      --text-dim: #999;
-      --key-radius: 6px;
-      --glow: rgba(224, 48, 48, 0.35);
+      /* Clean white app with red as the brand anchor and a rainbow as the
+         secondary visual language. Tuned for ages 5–8. */
+      --bg: #faf6ed;
+      --bg2: #f5efe0;
+      --surface: #ffffff;
+      --surface2: #f7f5f3;
+      --border: #ececec;
+      --border2: #e0e0e0;
+      --accent: #e63946;        /* warm cherry red — the hero colour */
+      --accent2: #ff6b78;        /* lighter cherry for hovers */
+      --accent-soft: #ffe5e8;   /* very pale red, for soft fills */
+      --accent-deep: #c92a36;   /* deeper red for pressed/active */
+      /* Rainbow — used liberally for decorations & secondary accents */
+      --rb-red:    #e63946;
+      --rb-orange: #ff9800;
+      --rb-yellow: #ffd60a;
+      --rb-green:  #4caf50;
+      --rb-blue:   #2196f3;
+      --rb-purple: #9c27b0;
+      --rb-pink:   #f06292;
+      /* Piano keys */
+      --white-key: #ffffff;
+      --white-key-pressed: var(--accent);
+      --black-key: #3a3a3a;
+      --black-key-pressed: var(--accent);
+      /* Text — neutral dark on white */
+      --text: #1a1a1a;
+      --text-dim: #4a4a4a;
+      --text-dim2: #7a7a7a;
+      --key-radius: 14px;
+      --glow: rgba(230, 57, 70, 0.4);
     }
 
     html, body {
       height: 100%;
       overflow: hidden;
-      background: var(--bg);
+      background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
       color: var(--text);
-      font-family: 'Syne', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       user-select: none;
       -webkit-user-select: none;
     }
@@ -44,6 +63,78 @@
       display: flex;
       flex-direction: column;
       height: 100dvh;
+    }
+
+    /* ── DECORATIVE FLOATING NOTES ── */
+    .bg-decorations {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .bg-note {
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      opacity: 0.55;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0)    rotate(-8deg); }
+      50%      { transform: translateY(-14px) rotate(6deg); }
+    }
+
+    @keyframes float-alt {
+      0%, 100% { transform: translateY(0)    rotate(10deg); }
+      50%      { transform: translateY(-18px) rotate(-6deg); }
+    }
+
+    /* The piano sits at the bottom. The biggest empty area is the middle
+       band (~15-55% from top) above the keyboard — that's where most notes
+       go. Edges get filled too. Center stays slightly clearer so the
+       note-display in the info bar isn't fighting them. */
+    /* Top band — just under header */
+    .bg-note-1  { top: 9%;  left: 4%;   color: var(--rb-red);    width: 34px; height: 34px; animation-delay: 0s;   }
+    .bg-note-2  { top: 11%; left: 18%;  color: var(--rb-orange); width: 28px; height: 28px; animation: float-alt 9s ease-in-out infinite; animation-delay: 1.5s; }
+    .bg-note-3  { top: 8%;  left: 36%;  color: var(--rb-yellow); width: 30px; height: 30px; animation-delay: 2.5s; }
+    .bg-note-4  { top: 12%; left: 60%;  color: var(--rb-green);  width: 32px; height: 32px; animation: float-alt 7.5s ease-in-out infinite; animation-delay: 0.4s; }
+    .bg-note-5  { top: 9%;  left: 78%;  color: var(--rb-blue);   width: 30px; height: 30px; animation-delay: 3s;   }
+    .bg-note-6  { top: 12%; left: 92%;  color: var(--rb-purple); width: 26px; height: 26px; animation: float-alt 8s ease-in-out infinite; animation-delay: 1.8s; }
+    /* Upper-middle band — the most empty space, fill it generously */
+    .bg-note-7  { top: 26%; left: 8%;   color: var(--rb-pink);   width: 36px; height: 36px; animation-delay: 0.8s; }
+    .bg-note-8  { top: 30%; left: 26%;  color: var(--rb-red);    width: 28px; height: 28px; animation: float-alt 8.5s ease-in-out infinite; animation-delay: 2.2s; }
+    .bg-note-9  { top: 24%; left: 48%;  color: var(--rb-orange); width: 32px; height: 32px; animation-delay: 1.2s; }
+    .bg-note-10 { top: 30%; left: 70%;  color: var(--rb-green);  width: 30px; height: 30px; animation: float-alt 9s ease-in-out infinite; animation-delay: 3.4s; }
+    .bg-note-11 { top: 26%; left: 90%;  color: var(--rb-blue);   width: 32px; height: 32px; animation-delay: 0.2s; }
+    /* Middle band — keep the centre slightly clearer (note display lives there) */
+    .bg-note-12 { top: 44%; left: 4%;   color: var(--rb-purple); width: 30px; height: 30px; animation: float-alt 7.5s ease-in-out infinite; animation-delay: 2.6s; }
+    .bg-note-13 { top: 48%; left: 22%;  color: var(--rb-yellow); width: 28px; height: 28px; animation-delay: 0.6s; }
+    .bg-note-14 { top: 46%; left: 76%;  color: var(--rb-pink);   width: 30px; height: 30px; animation: float-alt 8s ease-in-out infinite; animation-delay: 3.8s; }
+    .bg-note-15 { top: 50%; left: 94%;  color: var(--rb-red);    width: 26px; height: 26px; animation-delay: 1.4s; }
+    /* Lower band — close to keyboard, leave a gap, only put on far edges */
+    .bg-note-16 { top: 64%; left: 3%;   color: var(--rb-orange); width: 32px; height: 32px; animation: float-alt 9.5s ease-in-out infinite; animation-delay: 1.6s; }
+    .bg-note-17 { top: 68%; left: 96%;  color: var(--rb-green);  width: 30px; height: 30px; animation-delay: 2.8s; }
+    /* Bottom edge — by the song sheet area */
+    .bg-note-18 { top: 78%; left: 7%;   color: var(--rb-blue);   width: 26px; height: 26px; animation-delay: 0.9s; }
+    .bg-note-19 { top: 82%; left: 25%;  color: var(--rb-purple); width: 30px; height: 30px; animation: float-alt 8s ease-in-out infinite; animation-delay: 3s;   }
+    .bg-note-20 { top: 80%; left: 50%;  color: var(--rb-pink);   width: 28px; height: 28px; animation-delay: 1.8s; }
+    .bg-note-21 { top: 82%; left: 74%;  color: var(--rb-yellow); width: 30px; height: 30px; animation: float-alt 7.5s ease-in-out infinite; animation-delay: 2.4s; }
+    .bg-note-22 { top: 79%; left: 93%;  color: var(--rb-red);    width: 28px; height: 28px; animation-delay: 0.4s; }
+
+    /* Mobile: keep the note count up but smaller & dimmer */
+    @media (max-width: 430px) {
+      .bg-note { opacity: 0.42; }
+      /* hide a few middle-band notes that crowd narrow phones */
+      .bg-note-8, .bg-note-10, .bg-note-13, .bg-note-14, .bg-note-19, .bg-note-21 { display: none; }
+    }
+
+    /* Ensure all main content sits above decorations */
+    header, .info-bar, .piano-area, .qwerty-area, #songSheet, #settingsPanel, #helpPanel, #splash {
+      position: relative;
+      z-index: 1;
     }
 
     /* ── HEADER ── */
@@ -55,19 +146,54 @@
       border-bottom: 1px solid var(--border);
       background: var(--surface);
       flex-shrink: 0;
+      position: relative;
+    }
+
+    /* Rainbow stripe under header */
+    header::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -3px;
+      height: 3px;
+      background: linear-gradient(to right,
+        #e63946 0%, #e63946 14%,
+        #ff9800 14%, #ff9800 28%,
+        #ffeb3b 28%, #ffeb3b 42%,
+        #4caf50 42%, #4caf50 57%,
+        #2196f3 57%, #2196f3 71%,
+        #9c27b0 71%, #9c27b0 85%,
+        #f06292 85%, #f06292 100%
+      );
+      z-index: 2;
     }
 
     .logo {
-      font-size: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 20px;
       font-weight: 800;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      letter-spacing: 0.02em;
       color: var(--accent);
     }
 
-    .logo span {
+    .logo-icon {
+      width: 32px;
+      height: 24px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+    }
+
+    .logo-text {
+      display: inline;
+      color: var(--accent);
+    }
+
+    .logo-piano {
       color: var(--text-dim);
-      font-weight: 400;
+      font-weight: 600;
     }
 
     .controls {
@@ -80,53 +206,58 @@
       display: flex;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 999px;
       overflow: hidden;
+      padding: 4px;
+      gap: 2px;
     }
 
     .mode-btn {
-      padding: 6px 14px;
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.08em;
+      padding: 9px 18px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
       background: none;
       border: none;
-      color: var(--text-dim);
+      border-radius: 999px;
+      color: var(--text);
       cursor: pointer;
       transition: all 0.15s;
-      text-transform: uppercase;
     }
 
     .mode-btn.active {
       background: var(--accent);
-      color: #000;
+      color: #ffffff;
+      box-shadow: 0 2px 6px var(--glow);
     }
 
     .settings-btn {
-      padding: 6px 12px;
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
+      padding: 10px 18px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--text-dim);
+      border-radius: 999px;
+      color: var(--text);
       cursor: pointer;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.01em;
       transition: all 0.15s;
     }
 
-    .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .settings-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
     /* ── SETTINGS PANEL ── */
     #settingsPanel {
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(74, 44, 44, 0.4);
       z-index: 100;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
     }
 
     #settingsPanel.open { display: flex; }
@@ -134,14 +265,15 @@
     .settings-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 28px;
+      border-radius: 24px;
+      padding: 32px 28px;
       width: min(420px, 90vw);
       max-height: 80vh;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
     }
 
     .settings-card::-webkit-scrollbar { width: 6px; }
@@ -150,35 +282,51 @@
     .settings-card::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     .settings-card h2 {
-      font-size: 16px;
+      font-size: 22px;
       font-weight: 800;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+      letter-spacing: -0.01em;
       color: var(--accent);
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      position: relative;
+    }
+
+    .settings-card h2::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 80px;
+      height: 4px;
+      border-radius: 2px;
+      background: linear-gradient(to right,
+        #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f06292
+      );
     }
 
     .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 12px 0;
+      padding: 14px 0;
       border-bottom: 1px solid var(--border);
     }
 
     .setting-row:last-child { border-bottom: none; }
 
     .setting-label {
-      font-size: 13px;
+      font-size: 14px;
+      font-weight: 600;
       color: var(--text);
     }
 
     .setting-label small {
       display: block;
-      font-size: 11px;
+      font-size: 12px;
+      font-weight: 400;
       color: var(--text-dim);
       margin-top: 2px;
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
     }
 
     .toggle-switch {
@@ -205,21 +353,22 @@
       height: 18px;
       left: 3px;
       top: 3px;
-      background: var(--text-dim);
+      background: #ffffff;
       border-radius: 50%;
       transition: 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
     }
 
     input:checked + .slider { background: var(--accent); }
-    input:checked + .slider::before { transform: translateX(20px); background: #000; }
+    input:checked + .slider::before { transform: translateX(20px); background: #ffffff; }
 
     select.setting-select {
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-family: 'Syne Mono', monospace;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-family: 'Inter', sans-serif;
       font-size: 12px;
       cursor: pointer;
     }
@@ -227,18 +376,21 @@
     .close-settings {
       margin-top: 20px;
       width: 100%;
-      padding: 10px;
+      padding: 14px;
       background: var(--accent);
       border: none;
-      border-radius: 8px;
-      color: #000;
-      font-family: 'Syne', sans-serif;
+      border-radius: 999px;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
       font-weight: 700;
-      font-size: 13px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 0.04em;
       cursor: pointer;
+      box-shadow: 0 4px 12px var(--glow);
+      transition: transform 0.1s;
     }
+    .close-settings:hover { background: var(--accent-deep); }
+    .close-settings:active { transform: scale(0.98); }
 
     /* ── INFO BAR ── */
     .info-bar {
@@ -252,7 +404,7 @@
     }
 
     .note-display {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 20px;
       font-weight: 700;
       color: var(--accent);
@@ -265,14 +417,20 @@
     .note-display.dim { opacity: 0.2; }
 
     .modifier-hint {
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
-      color: var(--text-dim);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
       text-align: center;
     }
 
+    .modifier-hint strong {
+      color: var(--accent);
+      font-weight: 800;
+    }
+
     .octave-display {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 12px;
       color: var(--text-dim);
       display: flex;
@@ -281,21 +439,23 @@
     }
 
     .octave-btn {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 999px;
       color: var(--text);
       cursor: pointer;
-      font-size: 16px;
+      font-size: 18px;
+      font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       transition: all 0.1s;
     }
 
-    .octave-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .octave-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .octave-btn:active { transform: scale(0.94); }
 
     /* ── PIANO AREA ── */
     .piano-area {
@@ -323,6 +483,26 @@
       height: 100%;
       max-height: 240px;
       gap: 0;
+      padding: 10px 10px 0;
+      background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+      border-radius: 14px 14px 18px 18px;
+      box-shadow:
+        0 8px 24px rgba(0,0,0,0.25),
+        inset 0 2px 0 rgba(255,255,255,0.08),
+        inset 0 -3px 0 rgba(0,0,0,0.4);
+    }
+
+    /* Top-of-piano accent strip — red logo stripe like on the icon */
+    .piano::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 3px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--accent);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
     /* Piano mode: all keys fully lit, no inactive-octave dimming */
@@ -331,11 +511,11 @@
       opacity: 1;
     }
     .piano.piano-mode .white-key {
-      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
-      border-color: #c8c4bc;
+      background: linear-gradient(to bottom, #ffffff, #fafafa);
+      border-color: var(--border);
     }
     .piano.piano-mode .black-key {
-      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
     }
 
     .piano.single-octave {
@@ -350,24 +530,24 @@
       position: relative;
       width: 64px;
       min-width: 48px;
-      background: linear-gradient(to bottom, #d8d4cc, #e0dcd4);
+      background: linear-gradient(to bottom, #f8f8f8, #ececec);
       border-radius: 0 0 var(--key-radius) var(--key-radius);
-      border: 1px solid #b8b4ac;
+      border: 1px solid var(--border);
       border-top: none;
       cursor: pointer;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-end;
-      padding-bottom: 8px;
+      padding-bottom: 10px;
       transition: background 0.06s, transform 0.06s, opacity 0.2s;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5), inset 0 -2px 0 rgba(0,0,0,0.1);
-      opacity: 0.75;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.12), inset 0 -3px 0 rgba(0,0,0,0.05);
+      opacity: 0.85;
     }
 
     .white-key.active-octave {
-      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
-      border-color: #c8c4bc;
+      background: linear-gradient(to bottom, #ffffff, #fafafa);
+      border-color: var(--border);
       opacity: 1;
     }
 
@@ -375,7 +555,7 @@
       background: var(--note-color, var(--accent));
       transform: scaleY(0.97);
       transform-origin: top;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 28px var(--note-color, var(--glow));
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 32px var(--note-color, var(--glow));
     }
 
     .black-key {
@@ -385,9 +565,9 @@
          white keys. JS sets explicit pixel width/height on every black key. */
       width: 0;
       height: 0;
-      background: linear-gradient(to bottom, #222, #161616);
-      border-radius: 0 0 4px 4px;
-      border: 1px solid #111;
+      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+      border-radius: 0 0 8px 8px;
+      border: 1px solid #1a1a1a;
       top: 0;
       z-index: 10;
       cursor: pointer;
@@ -396,13 +576,13 @@
       justify-content: center;
       padding-bottom: 6px;
       transition: background 0.06s, transform 0.06s, opacity 0.2s;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
-      opacity: 0.72;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+      opacity: 0.85;
       overflow: hidden;
     }
 
     .black-key.active-octave {
-      background: linear-gradient(to bottom, #2a2a2a, #1c1c1c);
+      background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
       opacity: 1;
     }
 
@@ -410,33 +590,20 @@
       background: var(--note-color, var(--accent));
       transform: scaleY(0.97);
       transform-origin: top;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5), 0 0 28px var(--note-color, var(--glow));
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 32px var(--note-color, var(--glow));
     }
-
-    .key-label {
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      pointer-events: none;
-    }
-
-    .white-key .key-label { color: #888; }
-    .white-key.pressed .key-label { color: #000; }
-    .black-key .key-label { color: #777; font-size: 9px; }
-    .black-key.pressed .key-label { color: #000; }
 
     .key-note {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-size: 11px;
       font-weight: 700;
-      color: #aaa;
+      color: var(--text-dim);
       margin-bottom: 1px;
       pointer-events: none;
     }
 
-    .white-key.active-octave .key-note { color: #ccc; }
-    .white-key.pressed .key-note { color: #000; }
+    .white-key.active-octave .key-note { color: var(--text); }
+    .white-key.pressed .key-note { color: #ffffff; }
 
     /* ── QWERTY TOUCHPAD ── */
     .qwerty-area {
@@ -454,16 +621,16 @@
     .qkey {
       width: 44px;
       height: 44px;
-      background: var(--surface2);
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all 0.08s;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: 0 2px 0 var(--border2), 0 2px 6px rgba(0,0,0,0.08);
       -webkit-tap-highlight-color: transparent;
       position: relative;
     }
@@ -471,50 +638,51 @@
     .qkey:active, .qkey.pressed {
       background: var(--note-color, var(--accent));
       border-color: var(--note-color, var(--accent2));
-      transform: translateY(1px);
-      box-shadow: 0 1px 0 rgba(0,0,0,0.6), 0 0 16px var(--note-color, var(--glow));
+      transform: translateY(2px);
+      box-shadow: 0 0 0 var(--border2), 0 0 16px var(--note-color, var(--glow));
     }
 
     .qkey .qkey-char {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 700;
       color: var(--text);
       line-height: 1;
     }
 
-    .qkey.pressed .qkey-char { color: #000; }
+    .qkey.pressed .qkey-char { color: #ffffff; }
 
     .qkey .qkey-note {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 8px;
       color: var(--accent);
       line-height: 1;
       margin-top: 2px;
+      font-weight: 600;
     }
 
-    .qkey.pressed .qkey-note { color: rgba(0,0,0,0.7); }
+    .qkey.pressed .qkey-note { color: rgba(255,255,255,0.85); }
 
-    .qkey.no-note .qkey-char { color: var(--text-dim); }
+    .qkey.no-note .qkey-char { color: var(--text-dim2); }
     .qkey.no-note .qkey-note { display: none; }
 
     .qkey.modifier-key {
-      background: var(--surface);
-      border-color: #333;
+      background: var(--surface2);
+      border-color: var(--border);
       width: auto;
-      padding: 0 10px;
+      padding: 0 12px;
       min-width: 54px;
     }
 
     .qkey.modifier-key.active {
       background: var(--accent);
-      border-color: var(--accent2);
+      border-color: var(--accent-deep);
       box-shadow: 0 0 12px var(--glow), 0 0 24px var(--glow);
       transform: none;
     }
 
     .qkey.modifier-key.active .qkey-char {
-      color: #000;
+      color: #ffffff;
       font-weight: 700;
     }
 
@@ -548,14 +716,15 @@
       header {
         padding: 8px 12px 7px;
       }
-      .logo { font-size: 14px; }
-      .mode-btn { padding: 5px 9px; font-size: 10px; }
-      .settings-btn { padding: 5px 9px; font-size: 10px; }
+      .logo { font-size: 14px; gap: 7px; }
+      .logo-icon { width: 22px; height: 16px; }
+      .mode-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
+      .settings-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
 
       /* Slim info bar */
       .info-bar { padding: 5px 12px; }
       .note-display { font-size: 16px; min-width: 100px; }
-      .modifier-hint { font-size: 10px; }
+      .modifier-hint { font-size: 12px; }
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
 
       /* Piano area — less vertical padding */
@@ -563,19 +732,18 @@
       .piano-wrapper { padding-bottom: 6px; }
       .piano { max-height: 160px; }
 
-      /* Smaller white keys so more octaves fit */
+      /* Smaller white keys so more octaves fit, but keep labels readable */
       .white-key { width: 38px; min-width: 28px; padding-bottom: 5px; }
-      .key-note { font-size: 8px; }
-      .key-label { font-size: 7px; }
+      .key-note { font-size: 10px; }
 
       /* QWERTY keys — compact but still tappable */
       .qwerty-area { padding: 6px 0 10px; }
       .qwerty-row { gap: 3px; margin-bottom: 3px; }
       .qkey { width: 30px; height: 38px; border-radius: 6px; }
-      .qkey .qkey-char { font-size: 11px; }
-      .qkey .qkey-note { font-size: 7px; }
+      .qkey .qkey-char { font-size: 12px; }
+      .qkey .qkey-note { font-size: 9px; }
       .qkey.modifier-key { min-width: 36px; padding: 0 6px; }
-      .qkey.modifier-key .qkey-char { font-size: 9px; }
+      .qkey.modifier-key .qkey-char { font-size: 10px; }
 
       /* Song sheet — slimmer */
       #songSheet { padding: 6px 10px; }
@@ -599,9 +767,10 @@
         padding: 4px 12px;
         flex-shrink: 0;
       }
-      .logo { font-size: 13px; }
-      .mode-btn { padding: 4px 8px; font-size: 10px; }
-      .settings-btn { padding: 4px 8px; font-size: 10px; }
+      .logo { font-size: 13px; gap: 6px; }
+      .logo-icon { width: 20px; height: 15px; }
+      .mode-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
+      .settings-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
 
       /* Info bar: merge octave controls inline, reduce height */
       .info-bar { padding: 3px 10px; }
@@ -615,17 +784,16 @@
       .piano-wrapper { padding-bottom: 4px; }
       .piano { max-height: 130px; }
       .white-key { width: 36px; min-width: 26px; padding-bottom: 4px; }
-      .key-note { font-size: 7px; }
-      .key-label { font-size: 6px; }
+      .key-note { font-size: 9px; }
 
       /* QWERTY: very tight, 3 rows must fit below piano */
       .qwerty-area { padding: 2px 0 4px; flex-shrink: 0; }
       .qwerty-row { gap: 2px; margin-bottom: 2px; }
       .qkey { width: 28px; height: 32px; border-radius: 5px; }
-      .qkey .qkey-char { font-size: 10px; }
-      .qkey .qkey-note { font-size: 6px; margin-top: 1px; }
+      .qkey .qkey-char { font-size: 11px; }
+      .qkey .qkey-note { font-size: 8px; margin-top: 1px; }
       .qkey.modifier-key { min-width: 32px; padding: 0 4px; }
-      .qkey.modifier-key .qkey-char { font-size: 8px; }
+      .qkey.modifier-key .qkey-char { font-size: 9px; }
 
       /* Song sheet: single-line strip, hide title */
       #songSheet { padding: 3px 8px; }
@@ -647,11 +815,11 @@
       display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(74, 44, 44, 0.4);
       z-index: 100;
       align-items: center;
       justify-content: center;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(6px);
     }
     #helpPanel.open { display: flex; }
 
@@ -660,23 +828,22 @@
     }
 
     .help-section {
-      padding: 12px 0;
+      padding: 14px 0;
       border-bottom: 1px solid var(--border);
     }
     .help-section:last-of-type { border-bottom: none; }
 
     .help-section p {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-dim);
       line-height: 1.6;
       margin-top: 6px;
     }
 
     .help-section-title {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      letter-spacing: -0.01em;
       color: var(--accent);
       margin-bottom: 8px;
     }
@@ -686,7 +853,7 @@
       align-items: center;
       gap: 10px;
       margin-bottom: 5px;
-      font-size: 12px;
+      font-size: 13px;
       color: var(--text-dim);
     }
 
@@ -694,10 +861,11 @@
       flex-shrink: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 5px;
-      padding: 2px 8px;
-      font-family: 'Syne Mono', monospace;
-      font-size: 10px;
+      border-radius: 999px;
+      padding: 3px 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--text);
       white-space: nowrap;
     }
@@ -713,7 +881,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
-      font-size: 11px;
+      font-size: 12px;
       color: var(--text-dim);
     }
 
@@ -721,12 +889,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      font-family: 'Syne Mono', monospace;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
       font-size: 11px;
       font-weight: 700;
       color: var(--accent);
@@ -737,7 +905,7 @@
     #splash {
       position: fixed;
       inset: 0;
-      background: var(--bg);
+      background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
       z-index: 999;
       display: flex;
       flex-direction: column;
@@ -748,40 +916,53 @@
     }
 
     #splash .splash-title {
-      font-size: 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 36px;
       font-weight: 800;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--accent);
     }
 
+    #splash .splash-logo-icon {
+      width: 56px;
+      height: 42px;
+      flex-shrink: 0;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+    }
+
+    @media (max-width: 430px) {
+      #splash .splash-title { font-size: 28px; gap: 10px; }
+      #splash .splash-logo-icon { width: 44px; height: 33px; }
+    }
+
     #splash .splash-sub {
-      font-family: 'Syne Mono', monospace;
-      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
       color: var(--text-dim);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.04em;
     }
 
     #splash .splash-btn {
       margin-top: 16px;
-      padding: 16px 48px;
+      padding: 18px 52px;
       background: var(--accent);
       border: none;
-      border-radius: 12px;
-      color: #000;
-      font-family: 'Syne', sans-serif;
+      border-radius: 999px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
       font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
+      font-size: 18px;
+      letter-spacing: 0;
       cursor: pointer;
-      box-shadow: 0 0 32px var(--glow);
+      box-shadow: 0 8px 24px var(--glow), 0 2px 0 var(--accent-deep);
       animation: pulse-btn 2s ease-in-out infinite;
     }
 
     @keyframes pulse-btn {
-      0%, 100% { box-shadow: 0 0 20px var(--glow); }
-      50% { box-shadow: 0 0 48px rgba(200,169,110,0.6); }
+      0%, 100% { box-shadow: 0 8px 24px var(--glow), 0 2px 0 var(--accent-deep); }
+      50% { box-shadow: 0 8px 36px rgba(230,57,70,0.55), 0 2px 0 var(--accent-deep); }
     }
 
     #splash .splash-keys {
@@ -791,20 +972,40 @@
     }
 
     #splash .splash-key {
-      width: 36px;
-      height: 48px;
-      background: linear-gradient(to bottom, #e8e4dc, #f0ece4);
-      border-radius: 0 0 4px 4px;
-      border: 1px solid #c8c4bc;
+      width: 38px;
+      height: 52px;
+      background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+      border-radius: 0 0 12px 12px;
+      border: 1px solid var(--border);
       display: flex;
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 6px;
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
-      color: #888;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      color: var(--text-dim);
       font-weight: 700;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
     }
+
+    /* Rainbow strip across the top of each splash key */
+    #splash .splash-key::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 8px;
+    }
+    #splash .splash-keys .splash-key:nth-child(1)::before { background: #e63946; }
+    #splash .splash-keys .splash-key:nth-child(2)::before { background: #ff9800; }
+    #splash .splash-keys .splash-key:nth-child(3)::before { background: #ffeb3b; }
+    #splash .splash-keys .splash-key:nth-child(4)::before { background: #4caf50; }
+    #splash .splash-keys .splash-key:nth-child(5)::before { background: #2196f3; }
+    #splash .splash-keys .splash-key:nth-child(6)::before { background: #9c27b0; }
+    #splash .splash-keys .splash-key:nth-child(7)::before { background: #f06292; }
 
     #splash.hidden {
       opacity: 0;
@@ -829,39 +1030,40 @@
     }
 
     .color-swatch-row label {
-      font-family: 'Syne Mono', monospace;
-      font-size: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
       color: var(--text-dim);
-      letter-spacing: 0.05em;
+      letter-spacing: 0;
     }
 
     .color-swatch-row input[type="color"] {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border: 2px solid var(--border);
-      border-radius: 8px;
+      border-radius: 999px;
       background: none;
       cursor: pointer;
       padding: 2px;
     }
 
-    .color-swatch-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 6px; }
-    .color-swatch-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 5px; }
+    .color-swatch-row input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 999px; }
+    .color-swatch-row input[type="color"]::-webkit-color-swatch { border: none; border-radius: 999px; }
 
     .reset-colors-btn {
       margin-top: 8px;
-      padding: 6px 14px;
+      padding: 8px 16px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 999px;
       color: var(--text-dim);
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
-      letter-spacing: 0.05em;
     }
 
-    .reset-colors-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .reset-colors-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
     /* ── OCTAVE GROUPS ── */
     .octave-group {
@@ -876,13 +1078,13 @@
     .octave-group:first-child { border-left: none; }
 
     .octave-group.active-octave-group {
-      border-left: 1px solid rgba(200,169,110,0.2);
-      border-right: 1px solid rgba(200,169,110,0.2);
+      border-left: 1px solid rgba(230,57,70,0.25);
+      border-right: 1px solid rgba(230,57,70,0.25);
     }
 
     .octave-label {
       text-align: center;
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 9px;
       color: var(--text-dim);
       padding: 2px 0 0;
@@ -923,25 +1125,25 @@
       position: absolute;
       top: 50%;
       transform: translate(-50%, -50%);
-      width: 18px;
-      height: 18px;
+      width: 20px;
+      height: 20px;
       background: var(--accent);
       border-radius: 50%;
-      border: 2px solid #000;
+      border: 2px solid #ffffff;
       cursor: pointer;
-      box-shadow: 0 0 8px var(--glow);
+      box-shadow: 0 2px 8px var(--glow), 0 0 0 1px var(--accent-deep);
     }
 
     .octave-labels {
       display: flex;
       justify-content: space-between;
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 10px;
       color: var(--text-dim);
     }
 
     .octave-range-display {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 12px;
       color: var(--accent);
       text-align: center;
@@ -960,7 +1162,7 @@
     }
 
     .octave-slider-label {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 11px;
       color: var(--text-dim);
       width: 36px;
@@ -968,7 +1170,7 @@
     }
 
     .octave-slider-val {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 13px;
       font-weight: 700;
       color: var(--accent);
@@ -993,7 +1195,7 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      background: rgba(200,169,110,0.4);
+      background: rgba(230,57,70,0.4);
       pointer-events: none;
       animation: ripple 0.4s ease-out forwards;
       transform-origin: center;
@@ -1021,10 +1223,9 @@
     }
 
     .song-title {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
       color: var(--accent);
       flex: 1;
     }
@@ -1033,26 +1234,27 @@
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 5px 8px;
-      border-radius: 6px;
-      font-family: 'Syne Mono', monospace;
-      font-size: 11px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       max-width: 180px;
     }
 
     .song-close-btn {
-      background: none;
+      background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 999px;
       color: var(--text-dim);
       cursor: pointer;
       font-size: 14px;
-      padding: 3px 8px;
+      padding: 5px 10px;
       line-height: 1;
     }
 
-    .song-close-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .song-close-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
     /* Scrolling note strip */
     .note-strip-wrapper {
@@ -1071,7 +1273,7 @@
       flex-shrink: 0;
       width: 52px;
       height: 64px;
-      border-radius: 10px;
+      border-radius: 14px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1079,32 +1281,33 @@
       border: 2px solid transparent;
       transition: all 0.15s;
       position: relative;
-      opacity: 0.35;
+      opacity: 0.55;
       cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
 
     .strip-note.current {
       opacity: 1;
       border-color: var(--accent);
-      box-shadow: 0 0 16px rgba(200,169,110,0.3);
+      box-shadow: 0 4px 16px var(--glow);
       transform: scale(1.08);
     }
 
     .strip-note.played {
-      opacity: 0.6;
+      opacity: 0.4;
     }
 
     .strip-note.rest {
       background: var(--surface2) !important;
+      border-color: var(--border);
     }
 
     .strip-note .sn-note {
-      font-family: 'Syne', sans-serif;
+      font-family: 'Inter', sans-serif;
       font-size: 18px;
       font-weight: 800;
-      color: #000;
+      color: rgba(0,0,0,0.78);
       line-height: 1;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
     .strip-note.rest .sn-note {
@@ -1113,7 +1316,7 @@
     }
 
     .strip-note .sn-key {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 9px;
       color: rgba(0,0,0,0.55);
       margin-top: 3px;
@@ -1123,9 +1326,9 @@
     .strip-note.rest .sn-key { color: var(--text-dim); }
 
     .strip-note .sn-oct {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 8px;
-      color: rgba(0,0,0,0.4);
+      color: rgba(0,0,0,0.45);
     }
 
     .strip-note .sn-rhythm {
@@ -1134,19 +1337,19 @@
       left: 4px;
       right: 4px;
       height: 5px;
-      background: rgba(0,0,0,0.2);
-      border-radius: 0 0 8px 8px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 0 0 10px 10px;
       overflow: hidden;
     }
 
     .strip-note .sn-rhythm-fill {
       height: 100%;
-      background: rgba(0,0,0,0.35);
-      border-radius: 0 0 8px 8px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 0 0 10px 10px;
     }
 
     .strip-note.current .sn-rhythm-fill {
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.45);
     }
 
     .strip-note.rest .sn-rhythm-fill {
@@ -1176,13 +1379,25 @@
 
     .song-complete {
       text-align: center;
-      font-family: 'Syne', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--accent);
-      padding: 4px 0;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      padding: 6px 0;
       animation: celebrate 0.5s ease 3;
       display: none;
+      background: linear-gradient(to right,
+        #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f06292, #e63946
+      );
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: celebrate 0.5s ease 3, rainbow-shift 3s linear infinite;
+    }
+
+    @keyframes rainbow-shift {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
     }
 
     /* ── TEMPO CONTROLS ── */
@@ -1194,11 +1409,11 @@
     }
 
     .tempo-btn {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       background: var(--surface2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: 999px;
       color: var(--text);
       font-size: 16px;
       cursor: pointer;
@@ -1210,23 +1425,25 @@
     }
 
     .tempo-btn.play-btn {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       background: var(--accent);
-      border-color: var(--accent2);
-      color: #000;
+      border-color: var(--accent-deep);
+      color: #ffffff;
       font-size: 14px;
       font-weight: 700;
+      box-shadow: 0 4px 10px var(--glow);
     }
 
     .tempo-btn.play-btn.playing {
-      background: #e05050;
-      border-color: #ff7070;
-      color: #fff;
+      background: var(--accent-deep);
+      border-color: var(--accent-deep);
+      color: #ffffff;
     }
 
-    .tempo-btn:hover { border-color: var(--accent); color: var(--accent); }
-    .tempo-btn.play-btn:hover { opacity: 0.9; color: #000; }
+    .tempo-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .tempo-btn.play-btn:hover { color: #ffffff; background: var(--accent-deep); }
+    .tempo-btn:active { transform: scale(0.94); }
 
     .tempo-slider-wrap {
       flex: 1;
@@ -1236,14 +1453,14 @@
     }
 
     .tempo-label {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 11px;
       color: var(--text-dim);
       white-space: nowrap;
     }
 
     .tempo-val {
-      font-family: 'Syne Mono', monospace;
+      font-family: 'Inter', sans-serif;
       font-size: 12px;
       color: var(--accent);
       font-weight: 700;
@@ -1322,6 +1539,32 @@
 </head>
 <body>
 
+<!-- Decorative floating musical notes — purely visual, behind all content -->
+<div class="bg-decorations" aria-hidden="true">
+  <svg class="bg-note bg-note-1"  viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-2"  viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-3"  viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-4"  viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-5"  viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-6"  viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-7"  viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-8"  viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-9"  viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-10" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-11" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-12" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-13" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-14" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-15" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-16" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-17" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-18" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-19" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-20" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+  <svg class="bg-note bg-note-21" viewBox="0 0 24 24"><path d="M9 17.5V6l11-2v9.5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="2.5" fill="currentColor"/><circle cx="17.5" cy="13.5" r="2.5" fill="currentColor"/></svg>
+  <svg class="bg-note bg-note-22" viewBox="0 0 24 24"><path d="M9 18V5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="6" cy="18" r="3" fill="currentColor"/><path d="M9 5c3 0 6 1 6 4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+</div>
+
 <!-- SPLASH SCREEN -->
 <div id="splash">
   <div class="splash-keys">
@@ -1333,14 +1576,65 @@
     <div class="splash-key">F</div>
     <div class="splash-key">G</div>
   </div>
-  <div class="splash-title">Arthur's Piano</div>
+  <div class="splash-title">
+    <svg class="splash-logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
+      <rect x="2.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="6.7" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="10.9" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="15.1" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="19.3" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="23.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="2.5" y="9" width="4" height="3" fill="#e63946"/>
+      <rect x="6.7" y="9" width="4" height="3" fill="#ff9800"/>
+      <rect x="10.9" y="9" width="4" height="3" fill="#ffeb3b"/>
+      <rect x="15.1" y="9" width="4" height="3" fill="#4caf50"/>
+      <rect x="19.3" y="9" width="4" height="3" fill="#2196f3"/>
+      <rect x="23.5" y="9" width="4" height="3" fill="#9c27b0"/>
+      <rect x="5.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="9.4" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="17.8" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="22.0" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="26.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
+    </svg>
+    <span>Arthur's Piano</span>
+  </div>
   <div class="splash-sub">Arthur's personal piano — any screen, any device</div>
   <button class="splash-btn" id="splashBtn">Tap to Play</button>
 </div>
 
 <!-- HEADER -->
 <header>
-  <div class="logo">Arthur's <span>Piano</span></div>
+  <div class="logo">
+    <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <!-- piano body -->
+      <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a" stroke="#3a2a2a" stroke-width="0.5"/>
+      <!-- white keys with rainbow tops -->
+      <rect x="2.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="6.7" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="10.9" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="15.1" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="19.3" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <rect x="23.5" y="9" width="4" height="13" rx="0.8" fill="#ffffff"/>
+      <!-- rainbow color band on keys -->
+      <rect x="2.5" y="9" width="4" height="3" fill="#e63946"/>
+      <rect x="6.7" y="9" width="4" height="3" fill="#ff9800"/>
+      <rect x="10.9" y="9" width="4" height="3" fill="#ffeb3b"/>
+      <rect x="15.1" y="9" width="4" height="3" fill="#4caf50"/>
+      <rect x="19.3" y="9" width="4" height="3" fill="#2196f3"/>
+      <rect x="23.5" y="9" width="4" height="3" fill="#9c27b0"/>
+      <!-- black keys -->
+      <rect x="5.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="9.4" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="17.8" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="22.0" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <rect x="26.2" y="9" width="2.4" height="7" rx="0.4" fill="#2a1a1a"/>
+      <!-- top stripe -->
+      <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
+    </svg>
+    <span class="logo-text">Arthur's <span class="logo-piano">Piano</span></span>
+  </div>
   <div class="controls">
     <div class="mode-toggle">
       <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">⌨ Keyboard</button>
@@ -1468,17 +1762,6 @@
       </div>
       <label class="toggle-switch">
         <input type="checkbox" id="showNotes" checked onchange="updateLabels()" />
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="setting-row">
-      <div class="setting-label">
-        Show Key Labels
-        <small>Display keyboard letters on piano keys</small>
-      </div>
-      <label class="toggle-switch">
-        <input type="checkbox" id="showKeys" checked onchange="updateLabels()" />
         <span class="slider"></span>
       </label>
     </div>
@@ -1701,9 +1984,10 @@ function stopAllNotes() {
 // ──────────────────────────────────────────
 //  NOTE COLORS
 // ──────────────────────────────────────────
-// Default colors inspired by synesthesia / Newton's color-note mapping
+// Bold rainbow inspired by synesthesia / Newton's color-note mapping.
+// C anchors on the brand cherry red.
 const DEFAULT_NOTE_COLORS = {
-  'C':  '#e63946', // red
+  'C':  '#e63946', // red — anchor of the brand
   'C#': '#f4511e', // red-orange (between C red and D orange)
   'D':  '#ff9800', // orange
   'D#': '#ffc107', // amber (between D orange and E yellow)
@@ -1722,10 +2006,10 @@ let noteColors = { ...DEFAULT_NOTE_COLORS };
 function loadColors() {
   try {
     const version = localStorage.getItem('pianoColorVersion');
-    if (version !== '2') {
-      // New color scheme — clear old saved colors and adopt new defaults
+    if (version !== '4') {
+      // Restored saturated colors — clear any saved colors and adopt these
       localStorage.removeItem('pianoNoteColors');
-      localStorage.setItem('pianoColorVersion', '2');
+      localStorage.setItem('pianoColorVersion', '4');
     }
     const saved = localStorage.getItem('pianoNoteColors');
     if (saved) noteColors = { ...DEFAULT_NOTE_COLORS, ...JSON.parse(saved) };
@@ -1743,9 +2027,9 @@ function resetColors() {
 }
 
 function applyNoteColor(el, note) {
-  const color = noteColors[note] || '#c8a96e';
+  const color = noteColors[note] || '#e63946';
   el.style.background = color;
-  el.style.boxShadow = `0 2px 6px rgba(0,0,0,0.5), 0 0 28px ${color}99`;
+  el.style.boxShadow = `0 4px 12px rgba(0,0,0,0.25), 0 0 28px ${color}99`;
 }
 
 function clearNoteColor(el) {
@@ -1851,6 +2135,10 @@ const ABSOLUTE_MAX_OCTAVE = 7;
 let minOctave = 2;
 let maxOctave = 6;
 let expandedKeyboard = false;
+// True when piano mode auto-turned expanded keyboard on. Cleared if the user
+// manually toggles the expanded-keyboard checkbox (so we respect their choice
+// when they later leave piano mode).
+let pianoModeAutoExpanded = false;
 
 function calcOctaveRange() {
   if (!expandedKeyboard) {
@@ -1901,11 +2189,7 @@ function buildPiano() {
       el.dataset.note = k.note;
       el.dataset.oct = oct;
 
-      const letterKey = isActive ? Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.note) : null;
-      el.innerHTML = `
-        <span class="key-note show-note">${k.note}</span>
-        <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
-      `;
+      el.innerHTML = `<span class="key-note show-note">${k.note}</span>`;
       // Touch events — track touch identifier so we only release when THIS finger lifts
       el.addEventListener('touchstart', e => {
         e.preventDefault();
@@ -1945,7 +2229,8 @@ function buildPiano() {
       el.dataset.note = k.note;
       el.dataset.oct = oct;
       el.dataset.whitesBefore = whitesBefore;
-      el.innerHTML = `<span class="key-label show-key"></span>`;
+      // Black keys have no label content — sharps/flats are typed via modifier
+      // keys, not single letters. The element is left empty by design.
       // Touch events — track touch identifier so we only release when THIS finger lifts
       el.addEventListener('touchstart', e => {
         e.preventDefault();
@@ -2009,8 +2294,14 @@ function positionBlackKeys(retryCount) {
     // portrait shrinks white keys to 38px, which made the math walk every
     // black key further off to the right.
     const rowRect = whiteRow.getBoundingClientRect();
-    const rowH = piano.offsetHeight;
-    if (rowRect.width === 0 || rowH === 0) { needsRetry = true; return; }
+    if (rowRect.width === 0) { needsRetry = true; return; }
+
+    // Prefer the row's own height (excludes any piano frame padding). Fall
+    // back to piano.offsetHeight if the flex chain hasn't committed row
+    // heights yet, which happens on first paint.
+    let rowH = rowRect.height;
+    if (rowH === 0) rowH = piano.offsetHeight;
+    if (rowH === 0) { needsRetry = true; return; }
 
     const firstWidth = whiteKeys[0].getBoundingClientRect().width;
     if (firstWidth === 0) { needsRetry = true; return; }
@@ -2090,12 +2381,7 @@ function updateActiveOctave() {
 
   // Update active styling
   piano.querySelectorAll('.white-key').forEach(k => {
-    const koct = parseInt(k.dataset.oct);
-    k.classList.toggle('active-octave', koct === octave);
-    // Update letter labels
-    const letterKey = koct === octave ? Object.entries(KEY_TO_NOTE).find(([l,n]) => n === k.dataset.note) : null;
-    const lbl = k.querySelector('.key-label');
-    if (lbl) lbl.textContent = letterKey ? letterKey[0] : '';
+    k.classList.toggle('active-octave', parseInt(k.dataset.oct) === octave);
   });
   piano.querySelectorAll('.black-key').forEach(k => {
     k.classList.toggle('active-octave', parseInt(k.dataset.oct) === octave);
@@ -2117,7 +2403,7 @@ function triggerNoteByPianoKey(note, oct) {
   noteTouchTime[id] = performance.now();
   playNote(id, freq);
   highlightPianoKey(note, oct, true);
-  const color = noteColors[note] || '#c8a96e';
+  const color = noteColors[note] || '#e63946';
   showNoteDisplay(note, color);
   pulseViz(color);
   advanceSongNote(note);
@@ -2247,7 +2533,7 @@ function buildQwerty() {
 
   // Hint for touch mode
   const hint = document.createElement('div');
-  hint.style.cssText = 'text-align:center; font-family: Syne Mono, monospace; font-size:11px; color:var(--text-dim); margin-top:4px';
+  hint.style.cssText = 'text-align:center; font-family: Inter, sans-serif; font-size:11px; color:var(--text-dim); margin-top:4px';
   hint.textContent = '⇧ Shift = sharp ♯  |  Caps Lock = flat ♭  |  Tab = Oct−  |  Space = Oct+';
   area.appendChild(hint);
 }
@@ -2309,7 +2595,7 @@ function handleNoteOn(letter, isSharp, isFlat) {
   playNote(id, freq);
   highlightPianoKey(note, octave, true);
   highlightQKey(letter, true, note);
-  const color = noteColors[note] || '#c8a96e';
+  const color = noteColors[note] || '#e63946';
   showNoteDisplay(buildNoteLabel(letter, note, isSharp, isFlat), color);
   pulseViz(color);
   advanceSongNote(note);
@@ -2422,9 +2708,9 @@ function updateModHint() {
   const sharpActive = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
   const flatActive = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
   if (sharpActive) {
-    hint.innerHTML = '<span style="background:var(--accent);color:#000;padding:3px 10px;border-radius:6px;font-weight:700;font-size:13px">♯ SHARP</span>';
+    hint.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♯ SHARP</span>';
   } else if (flatActive) {
-    hint.innerHTML = '<span style="background:var(--accent);color:#000;padding:3px 10px;border-radius:6px;font-weight:700;font-size:13px">♭ FLAT</span>';
+    hint.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♭ FLAT</span>';
   } else {
     hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯)</div><div>Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭)</div>`;
   }
@@ -2432,9 +2718,7 @@ function updateModHint() {
 
 function updateLabels() {
   const showNote = document.getElementById('showNotes').checked;
-  const showKey = document.getElementById('showKeys').checked;
   document.querySelectorAll('.show-note').forEach(el => el.style.display = showNote ? '' : 'none');
-  document.querySelectorAll('.show-key').forEach(el => el.style.display = showKey ? '' : 'none');
 }
 
 function changeOctave(delta) {
@@ -2446,6 +2730,8 @@ function changeOctave(delta) {
 function toggleExpandedKeyboard() {
   expandedKeyboard = document.getElementById('expandedKeyboard').checked;
   document.getElementById('octaveRangeSection').style.display = expandedKeyboard ? 'block' : 'none';
+  // User has manually expressed intent — don't auto-revert this on piano-mode exit
+  pianoModeAutoExpanded = false;
   buildPiano();
 }
 
@@ -2478,6 +2764,7 @@ function toggleSustain() {
 }
 
 function setMode(m) {
+  const prevMode = mode;
   mode = m;
   document.getElementById('btnKeyboard').classList.toggle('active', m === 'keyboard');
   document.getElementById('btnTouch').classList.toggle('active', m === 'touch');
@@ -2492,6 +2779,8 @@ function setMode(m) {
   if (m === 'piano') {
     pianoEl.classList.add('piano-mode');
     if (!expandedKeyboard) {
+      // Remember that *we* turned expanded on, so we can turn it off on exit
+      pianoModeAutoExpanded = true;
       expandedKeyboard = true;
       document.getElementById('expandedKeyboard').checked = true;
       document.getElementById('octaveRangeSection').style.display = 'block';
@@ -2499,6 +2788,16 @@ function setMode(m) {
     }
   } else {
     pianoEl.classList.remove('piano-mode');
+    // When leaving piano mode, only revert expanded keyboard if piano mode
+    // is the thing that turned it on. If the user manually re-checked the
+    // box while in piano mode, leave it as they set it.
+    if (prevMode === 'piano' && pianoModeAutoExpanded && expandedKeyboard) {
+      expandedKeyboard = false;
+      document.getElementById('expandedKeyboard').checked = false;
+      document.getElementById('octaveRangeSection').style.display = 'none';
+      buildPiano();
+    }
+    pianoModeAutoExpanded = false;
   }
 
   if (m === 'touch') {
@@ -2929,7 +3228,7 @@ function renderNoteStrip() {
     el.style.width = (baseW * Math.max(dur, 0.5)) + 'px';
 
     if (!isRest) {
-      const color = noteColors[n.n] || '#c8a96e';
+      const color = noteColors[n.n] || '#e63946';
       el.style.background = color;
       el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
     }
