@@ -1673,11 +1673,27 @@ function buildPiano() {
         <span class="key-note show-note">${k.note}</span>
         <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
       `;
-      // Touch events for mobile (iOS/Android)
-      el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
-      // Pointer events ONLY for mouse — touch devices fire pointer AND touch, causing instant note-start + note-stop
+      // Touch events — track touch identifier so we only release when THIS finger lifts
+      el.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        el.dataset.touchId = t.identifier;
+        triggerNoteByPianoKey(k.note, oct);
+      }, { passive: false });
+      el.addEventListener('touchend', e => {
+        e.preventDefault();
+        const ids = Array.from(e.touches).map(t => t.identifier);
+        // Only release if the finger that started this note has lifted
+        if (!ids.includes(parseInt(el.dataset.touchId))) {
+          if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
+          el.dataset.touchId = '';
+        }
+      }, { passive: false });
+      el.addEventListener('touchcancel', e => {
+        if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
+        el.dataset.touchId = '';
+      });
+      // Pointer events ONLY for mouse
       el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse' && !sustainMode) releaseNoteByPianoKey(k.note, oct); });
@@ -1697,10 +1713,25 @@ function buildPiano() {
       el.dataset.oct = oct;
       el.dataset.whitesBefore = whitesBefore;
       el.innerHTML = `<span class="key-label show-key"></span>`;
-      // Touch events for mobile
-      el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
-      el.addEventListener('touchcancel', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      // Touch events — track touch identifier so we only release when THIS finger lifts
+      el.addEventListener('touchstart', e => {
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        el.dataset.touchId = t.identifier;
+        triggerNoteByPianoKey(k.note, oct);
+      }, { passive: false });
+      el.addEventListener('touchend', e => {
+        e.preventDefault();
+        const ids = Array.from(e.touches).map(t => t.identifier);
+        if (!ids.includes(parseInt(el.dataset.touchId))) {
+          if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
+          el.dataset.touchId = '';
+        }
+      }, { passive: false });
+      el.addEventListener('touchcancel', e => {
+        if (!sustainMode) releaseNoteByPianoKey(k.note, oct);
+        el.dataset.touchId = '';
+      });
       // Pointer events ONLY for mouse
       el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); } });
       el.addEventListener('pointerup', e => { if (e.pointerType === 'mouse') { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); } });
