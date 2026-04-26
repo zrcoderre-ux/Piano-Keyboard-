@@ -1,0 +1,27 @@
+# Cloudflare Pages _headers file
+# https://developers.cloudflare.com/pages/configuration/headers/
+
+# The service worker MUST NOT be cached by browsers, otherwise version bumps
+# never take effect — the browser keeps serving the old sw.js for up to a day
+# and never notices the cache version string changed.
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+  Service-Worker-Allowed: /
+
+# manifest.json should also be revalidated on every load — it changes
+# infrequently but when it does (new icons, new name), staleness is annoying.
+/manifest.json
+  Cache-Control: no-cache, must-revalidate
+
+# index.html should always check for updates so users get app changes promptly.
+# The service worker will still serve the cached copy when offline.
+/index.html
+  Cache-Control: no-cache, must-revalidate
+
+/
+  Cache-Control: no-cache, must-revalidate
+
+# Icons can be cached aggressively — they're versioned implicitly via the
+# manifest. If we ever change icon designs we'll change filenames too.
+/icons/*
+  Cache-Control: public, max-age=31536000, immutable

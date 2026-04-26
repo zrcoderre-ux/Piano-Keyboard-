@@ -407,9 +407,12 @@
     .close-settings:hover { background: var(--accent-deep); }
     .close-settings:active { transform: scale(0.98); }
 
-    /* Big played-note display, sits above the piano. The fixed line-height
-       reserves vertical space whether or not a note is showing, so the piano
-       below doesn't jump. */
+    /* Big played-note display, sits above the piano. The flex:1 + flex
+       centering lets the text float vertically centred in the space between
+       the info-bar (or song sheet) and the piano frame, rather than sticking
+       to the very top of the area. min-height:0 lets it shrink if the screen
+       is tight. The piano below is still anchored to the bottom of its own
+       wrapper, so it stays in place. */
     .big-note-display {
       font-family: 'Inter', sans-serif;
       font-size: 72px;
@@ -418,10 +421,13 @@
       text-align: center;
       color: var(--accent);
       letter-spacing: -0.02em;
-      padding: 12px 0 16px;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: opacity 0.2s, transform 0.1s, color 0.05s;
       pointer-events: none;
-      flex-shrink: 0;
       text-shadow: 0 4px 14px rgba(0,0,0,0.08);
     }
 
@@ -780,8 +786,10 @@
       .modifier-hint { font-size: 12px; }
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
 
-      /* Big note display — smaller on iPhone but still prominent */
-      .big-note-display { font-size: 48px; padding: 6px 0 8px; }
+      /* Big note display — smaller on iPhone but still prominent.
+         Flex:1 + centering inherited from base rule, so it floats
+         vertically centred in the available space. */
+      .big-note-display { font-size: 48px; }
 
       /* On iPhone portrait, the screen is short — the big note display only
          fits in keyboard and piano modes. In touch mode (QWERTY pad takes up
@@ -2447,6 +2455,16 @@ function updateActiveOctave() {
 const noteTouchTime = {}; // noteId -> timestamp when note started
 const MIN_NOTE_MS = 300;  // minimum audible duration for touch taps
 
+// Format a note name for display when tapped directly on a piano key.
+// Black keys show both sharp and flat enharmonic equivalents (e.g.
+// "C♯ / D♭") since either name is valid. White keys just show the letter.
+function formatTappedNote(note) {
+  if (!note.includes('#')) return note;
+  const sharp = note.replace('#', '♯');
+  const flat = ENHARMONICS[note]; // already includes the ♭ symbol
+  return flat ? `${sharp} / ${flat}` : sharp;
+}
+
 function triggerNoteByPianoKey(note, oct) {
   const freq = noteToFreq(note, oct);
   if (!freq) return;
@@ -2455,7 +2473,7 @@ function triggerNoteByPianoKey(note, oct) {
   playNote(id, freq);
   highlightPianoKey(note, oct, true);
   const color = noteColors[note] || '#e63946';
-  showNoteDisplay(note, color);
+  showNoteDisplay(formatTappedNote(note), color);
   pulseViz(color);
   advanceSongNote(note);
 }
@@ -2744,8 +2762,9 @@ function pulseViz(color) {
 function showNoteDisplay(note, color) {
   const small = document.getElementById('noteDisplay');
   const big = document.getElementById('bigNoteDisplay');
-  // Notes like "G=Ab" (sharp/flat enharmonic display) shrink so they fit.
-  const isCompact = note.includes('=');
+  // Long display names ("G♯=A♭" or "C♯ / D♭") shrink so they fit in the
+  // narrow info-bar slot.
+  const isCompact = note.includes('=') || note.includes('/');
   if (small) {
     small.textContent = note;
     small.style.color = color || 'var(--accent)';
@@ -3816,9 +3835,41 @@ window.addEventListener('orientationchange', () => {
   setTimeout(schedulePositionBlackKeys, 500);
 });
 
-// Register service worker
+// Register service worker.
+//
+// Three pieces work together for reliable updates:
+//   1. The _headers file tells Cloudflare to serve sw.js with no-cache, so
+//      the browser fetches a fresh copy on every page load.
+//   2. We explicitly call reg.update() to nudge the browser to compare the
+//      remote sw.js byte-for-byte against the registered one, even if some
+//      proxy did manage to cache the old script.
+//   3. When the SW takes over (controllerchange), reload the page so the
+//      user immediately sees the new version. Without this the new SW only
+//      governs new tabs, not the current one.
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {});
+  // If the page already has a controller at load time, an existing SW was
+  // governing. A subsequent controllerchange means "upgraded to a new
+  // version" → reload to pick up new app code. If there's no controller at
+  // load time, this is a first install — controllerchange there is normal
+  // and we should NOT reload (would cause a flash on first visit).
+  const wasControlled = !!navigator.serviceWorker.controller;
+  let _swReloaded = false;
+
+  navigator.serviceWorker.register('./sw.js').then(reg => {
+    // Check for updates on every page load
+    reg.update().catch(() => {});
+
+    // Also re-check periodically while the app stays open (e.g. PWA left
+    // running for hours). Once an hour is plenty.
+    setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
+  }).catch(() => {});
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!wasControlled) return;  // first install — don't reload
+    if (_swReloaded) return;
+    _swReloaded = true;
+    window.location.reload();
+  });
 }
 
 
