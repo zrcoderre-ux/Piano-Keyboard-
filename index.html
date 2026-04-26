@@ -2642,11 +2642,10 @@ function hideSplash() {
   }
 }
 
-// Bind to touchstart (not touchend) — fires earlier and is more reliably treated
-// as a user gesture by iOS Safari for AudioContext unlock.
-// Also bind click as fallback for desktop / non-touch.
+// iOS grants AudioContext gesture trust on touchend and click, NOT touchstart.
+// resume() called from touchstart returns a promise that never resolves on iOS.
 const splashBtn = document.getElementById('splashBtn');
-splashBtn.addEventListener('touchstart', unlockAndStart, { passive: false });
+splashBtn.addEventListener('touchend', unlockAndStart, { passive: false });
 splashBtn.addEventListener('click', unlockAndStart);
 
 // Also allow any keypress to dismiss splash on desktop
