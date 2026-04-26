@@ -38,7 +38,6 @@
       font-family: 'Syne', sans-serif;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: none;
     }
 
     body {
@@ -1350,7 +1349,7 @@ let sustainMode = false;
 let waveform = 'sine';
 
 function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioCtx) return null; // never create outside a gesture on iOS
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
@@ -1367,6 +1366,7 @@ function noteToFreq(note, oct) {
 function playNote(noteId, freq) {
   if (activeOscillators[noteId]) return;
   const ctx = getAudioCtx();
+  if (!ctx) return;
   const osc = ctx.createOscillator();
   const gainNode = ctx.createGain();
 
@@ -1605,7 +1605,9 @@ function buildPiano() {
         <span class="key-label show-key">${letterKey ? letterKey[0] : ''}</span>
       `;
       el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
       el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
       el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
@@ -1624,7 +1626,9 @@ function buildPiano() {
       el.dataset.whitesBefore = whitesBefore;
       el.innerHTML = `<span class="key-label show-key"></span>`;
       el.addEventListener('pointerdown', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchstart', e => { e.preventDefault(); triggerNoteByPianoKey(k.note, oct); }, { passive: false });
       el.addEventListener('pointerup', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
+      el.addEventListener('touchend', e => { e.preventDefault(); if (!sustainMode) releaseNoteByPianoKey(k.note, oct); }, { passive: false });
       el.addEventListener('pointerleave', e => { if (!sustainMode) releaseNoteByPianoKey(k.note, oct); });
       whiteRow.appendChild(el);
     });
@@ -2485,23 +2489,37 @@ populateSongSelect();
 
 buildPiano();
 
-document.getElementById('splashBtn').addEventListener('click', function() {
-  // Create AND resume AudioContext inside direct user gesture — required by iOS
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  audioCtx.resume().then(() => {
-    // Play a silent buffer to fully unlock iOS audio
-    const buf = audioCtx.createBuffer(1, 1, 22050);
-    const src = audioCtx.createBufferSource();
-    src.buffer = buf;
-    src.connect(audioCtx.destination);
-    src.start(0);
+document.getElementById('splashBtn').addEventListener('touchend', unlockAndStart, { passive: false });
+document.getElementById('splashBtn').addEventListener('click', unlockAndStart);
 
-    // Hide splash
-    const splash = document.getElementById('splash');
+function unlockAndStart(e) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Must create AND use AudioContext synchronously inside the gesture
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  // Play silent buffer synchronously — this is the iOS unlock gesture
+  const buf = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+
+  // Resume if suspended (Android/desktop may need this)
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  // Hide splash
+  const splash = document.getElementById('splash');
+  if (splash) {
     splash.classList.add('hidden');
-    setTimeout(() => splash.remove(), 400);
-  });
-});
+    setTimeout(() => { if (splash.parentNode) splash.remove(); }, 400);
+  }
+}
 
 // Also allow any keypress to dismiss splash on desktop
 document.addEventListener('keydown', function dismissSplash(e) {
