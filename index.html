@@ -446,6 +446,63 @@
       100% { transform: scale(1.0); }
     }
 
+    /* ── SHEET MUSIC DISPLAY ──
+       Live notation: shows currently-played notes on a grand staff. Hidden
+       by default; appears when the "Sheet Music" setting is on, in which
+       case it replaces the big note letter display.
+
+       Sits in the same flex slot as .big-note-display so the piano area
+       layout is identical regardless of which one is visible. */
+    .sheet-music-display {
+      display: none;
+      flex: 1;
+      min-height: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 0;
+      pointer-events: none;
+    }
+    body.sheet-music-on .sheet-music-display { display: flex; }
+    body.sheet-music-on .big-note-display { display: none; }
+
+    .sheet-music-svg {
+      width: 100%;
+      max-width: 520px;
+      max-height: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Stave lines and clefs use the deep text color so they read as
+       authoritative notation, not decorative. Notes inherit the per-note
+       brand color (set inline by the renderer). */
+    .sheet-music-svg .staff-line,
+    .sheet-music-svg .ledger-line,
+    .sheet-music-svg .stem,
+    .sheet-music-svg .barline {
+      stroke: var(--text);
+      stroke-width: 1.2;
+      fill: none;
+    }
+    .sheet-music-svg .clef {
+      fill: var(--text);
+    }
+    .sheet-music-svg .notehead {
+      stroke-width: 1.2;
+    }
+    .sheet-music-svg .accidental {
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 22px;
+    }
+    .sheet-music-svg .empty-hint {
+      fill: var(--text-dim2);
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
     /* Hide the tiny info-bar note display by default (the big one above the
        piano takes its place). It reappears in landscape touch mode where
        there's no vertical room for the big display. */
@@ -821,6 +878,15 @@
       body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
 
+      /* Sheet music follows the same hide rules — info-bar fallback in touch
+         mode and when the song sheet is open. (Sheet music shows current
+         notes; the small note-display in the info-bar covers the same job
+         when there's no room.) */
+      body.sheet-music-on.mode-touch .sheet-music-display,
+      body.sheet-music-on.song-sheet-open .sheet-music-display { display: none; }
+      body.sheet-music-on.mode-touch .info-bar .note-display,
+      body.sheet-music-on.song-sheet-open .info-bar .note-display { display: block; }
+
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
       .piano-wrapper { padding-bottom: 6px; }
@@ -830,13 +896,17 @@
       .white-key { width: 38px; min-width: 28px; padding-bottom: 5px; }
       .key-note { font-size: 10px; }
 
-      /* iPhone portrait: revert single-octave to fixed-width keys (the
-         desktop fluid sizing would push the keys too wide here). */
-      .piano.single-octave { width: auto; }
+      /* iPhone portrait: single-octave keys flex-fill to span most of the
+         screen. The piano itself takes full width (minus piano-area padding
+         and frame padding), and 7 white keys split that space — sized to
+         match what expanded mode would show with no extra octaves overflowing
+         the screen. Black-key positioner re-measures actual rendered widths,
+         so this works automatically. */
+      .piano.single-octave { width: 100%; }
       .piano.single-octave .white-key {
-        flex: 0 0 auto;
-        width: 38px;
-        min-width: 28px;
+        flex: 1;
+        min-width: 0;
+        width: auto;
       }
 
       /* QWERTY keys — compact but still tappable */
@@ -896,6 +966,17 @@
       body.song-sheet-open .big-note-display { display: none; }
       body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
+
+      /* Sheet music in landscape — compact and follows same hide rules. */
+      .sheet-music-display {
+        flex: 0 0 auto;
+        padding: 2px 0;
+      }
+      .sheet-music-svg { max-height: 110px; }
+      body.sheet-music-on.mode-touch .sheet-music-display,
+      body.sheet-music-on.song-sheet-open .sheet-music-display { display: none; }
+      body.sheet-music-on.mode-touch .info-bar .note-display,
+      body.sheet-music-on.song-sheet-open .info-bar .note-display { display: block; }
 
       /* Piano: take up most of the vertical space. iPhone landscape is wide
          (~850px) but short (~390px). 8 keys × 64px = 512px, plus piano frame
@@ -1827,7 +1908,16 @@
 
 <!-- PIANO AREA -->
 <div class="piano-area">
+  <!-- Big note letter display (default). Replaced by the sheet-music-display
+       below when the user enables the Sheet Music setting. -->
   <div class="big-note-display dim" id="bigNoteDisplay">—</div>
+  <!-- Sheet music staff — hidden unless body.sheet-music-on is set. The SVG
+       contents are rendered by renderSheetMusic() whenever active notes
+       change. -->
+  <div class="sheet-music-display" id="sheetMusicDisplay" aria-hidden="true">
+    <svg class="sheet-music-svg" id="sheetMusicSvg" viewBox="0 -30 520 230"
+         preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
   <div class="piano-wrapper">
     <div class="piano" id="piano"></div>
   </div>
@@ -1899,6 +1989,17 @@
       </div>
       <label class="toggle-switch">
         <input type="checkbox" id="showNotes" checked onchange="updateLabels()" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        Sheet Music
+        <small>Show notes on a music staff while playing</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="sheetMusicMode" onchange="toggleSheetMusic()" />
         <span class="slider"></span>
       </label>
     </div>
@@ -2116,6 +2217,10 @@ function stopNote(noteId) {
 
 function stopAllNotes() {
   Object.keys(activeOscillators).forEach(stopNote);
+  // Clear any lingering note display state too — otherwise after a mode
+  // switch or audio-recovery zombie kill, the staff/big-note would still
+  // show the old notes even though no audio is playing.
+  if (typeof dimNoteDisplay === 'function') dimNoteDisplay();
 }
 
 // ──────────────────────────────────────────
@@ -2511,11 +2616,16 @@ const MIN_NOTE_MS = 300;  // minimum audible duration for touch taps
 // Format a note name for display when tapped directly on a piano key.
 // Black keys show both sharp and flat enharmonic equivalents (e.g.
 // "C♯ / D♭") since either name is valid. White keys just show the letter.
+// Returns { full, short } — short is used in chord/multi-note display where
+// the slash form is too long (so we drop the flat alternative).
 function formatTappedNote(note) {
-  if (!note.includes('#')) return note;
+  if (!note.includes('#')) return { full: note, short: note };
   const sharp = note.replace('#', '♯');
   const flat = ENHARMONICS[note]; // already includes the ♭ symbol
-  return flat ? `${sharp} / ${flat}` : sharp;
+  return {
+    full: flat ? `${sharp} / ${flat}` : sharp,
+    short: sharp,
+  };
 }
 
 function triggerNoteByPianoKey(note, oct) {
@@ -2526,7 +2636,9 @@ function triggerNoteByPianoKey(note, oct) {
   playNote(id, freq);
   highlightPianoKey(note, oct, true);
   const color = noteColors[note] || '#e63946';
-  showNoteDisplay(formatTappedNote(note), color);
+  const labels = formatTappedNote(note);
+  showNoteDisplay(id, labels.full, labels.short, color);
+  trackActiveSheetNote(id, note, oct, color);
   pulseViz(color);
   advanceSongNote(note);
 }
@@ -2534,7 +2646,12 @@ function triggerNoteByPianoKey(note, oct) {
 function releaseNoteByPianoKey(note, oct) {
   const id = note + oct + '_piano';
   highlightPianoKey(note, oct, false);
-  dimNoteDisplay();
+  // In sustain mode, the note is still ringing — leave it in the display
+  // until another note replaces it. Otherwise remove it from the chord set.
+  if (!sustainMode) {
+    clearNoteDisplay(id);
+    untrackActiveSheetNote(id);
+  }
   if (sustainMode) return;
   // Enforce minimum audible duration — iOS taps can be <50ms which is inaudible
   const elapsed = performance.now() - (noteTouchTime[id] || 0);
@@ -2682,10 +2799,13 @@ const ENHARMONICS = {
   'F':  'E#',  // F natural = E# (only shown when sharp modifier used on E)
 };
 
-// Show equals sign whenever the typed name and the played note name differ.
-// e.g. B♭ plays A# → show "B♭ = A♯". A♯ plays A# → show "A♯". E♯ plays F → show "E♯ = F".
+// Show slash whenever the typed name and the played note name differ.
+// e.g. B♭ plays A# → show "B♭ / A♯". A♯ plays A# → show "A♯". E♯ plays F → show "E♯ / F".
+// We use "/" everywhere (matches the piano-tap display) so the convention is
+// consistent across modes. Returns { full, short } — short is used in chord
+// display where the slash form is too long.
 function buildNoteLabel(baseLetter, note, isSharp, isFlat) {
-  if (!isSharp && !isFlat) return baseLetter;
+  if (!isSharp && !isFlat) return { full: baseLetter, short: baseLetter };
 
   const typedName = baseLetter + (isSharp ? '♯' : '♭');
 
@@ -2694,14 +2814,17 @@ function buildNoteLabel(baseLetter, note, isSharp, isFlat) {
 
   // If what you typed and what plays are the same thing, just show the typed name
   // e.g. A♯ plays A# — same note, no explanation needed
-  const typedBase = baseLetter + (isSharp ? '#' : 'b');
   const isSame = (isSharp && note === baseLetter + '#') ||
                  (isFlat  && note === baseLetter + 'b');
 
-  if (isSame) return typedName;
+  if (isSame) return { full: typedName, short: typedName };
 
-  // Otherwise the key pressed is not the note that plays — show the equals sign
-  return `${typedName} = ${playedDisplay}`;
+  // Otherwise the key pressed is not the note that plays — show the slash
+  // form when alone, played-note name when in a chord.
+  return {
+    full: `${typedName} / ${playedDisplay}`,
+    short: playedDisplay,
+  };
 }
 
 // ──────────────────────────────────────────
@@ -2713,12 +2836,19 @@ function handleNoteOn(letter, isSharp, isFlat) {
   const freq = noteToFreq(note, octave);
   if (!freq) return;
   const id = note + octave + letter;
-  if (sustainMode) stopAllNotes();
+  if (sustainMode) {
+    // In sustain mode, every new keypress stops the previous notes — so
+    // the display resets too (no stale chord buildup). stopAllNotes()
+    // handles clearing both audio and display state.
+    stopAllNotes();
+  }
   playNote(id, freq);
   highlightPianoKey(note, octave, true);
   highlightQKey(letter, true, note);
   const color = noteColors[note] || '#e63946';
-  showNoteDisplay(buildNoteLabel(letter, note, isSharp, isFlat), color);
+  const labels = buildNoteLabel(letter, note, isSharp, isFlat);
+  showNoteDisplay(id, labels.full, labels.short, color);
+  trackActiveSheetNote(id, note, octave, color);
   pulseViz(color);
   advanceSongNote(note);
   pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
@@ -2728,11 +2858,14 @@ function handleNoteOff(letter, isSharp, isFlat) {
   const note = getNoteForKey(letter, isSharp, isFlat);
   if (!note) return;
   const id = note + octave + letter;
-  if (!sustainMode) stopNote(id);
+  if (!sustainMode) {
+    stopNote(id);
+    clearNoteDisplay(id);
+    untrackActiveSheetNote(id);
+  }
   highlightPianoKey(note, octave, false);
   highlightQKey(letter, false, null);
   pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
-  if (pressedKeys.size === 0) dimNoteDisplay();
 }
 
 function highlightQKey(letter, on, note) {
@@ -2812,21 +2945,46 @@ function pulseViz(color) {
   vizTimeout = setTimeout(() => { fill.style.width = '0'; fill.style.opacity = '0.5'; }, 600);
 }
 
-function showNoteDisplay(note, color) {
+// Track all currently-active notes so the display can show chords.
+// id → { full, short, color }
+//   full  = display when this is the ONLY active note (e.g. "C♯ / D♭")
+//   short = display when multiple notes are active (e.g. "C♯") — slashes
+//           drop out so the list reads as a clean chord
+//   color = note color (most recent press's color is used as the display tint)
+const activeDisplayNotes = new Map();
+
+function renderNoteDisplay() {
   const small = document.getElementById('noteDisplay');
   const big = document.getElementById('bigNoteDisplay');
-  // Long display names ("G♯=A♭" or "C♯ / D♭") shrink so they fit in the
-  // narrow info-bar slot.
-  const isCompact = note.includes('=') || note.includes('/');
+
+  if (activeDisplayNotes.size === 0) {
+    if (small) small.classList.add('dim');
+    if (big) big.classList.add('dim');
+    return;
+  }
+
+  // Use insertion order (Map preserves it). Most-recent press = last entry,
+  // its color tints the whole display.
+  const entries = Array.from(activeDisplayNotes.values());
+  const last = entries[entries.length - 1];
+  const color = last.color || 'var(--accent)';
+
+  let text;
+  if (entries.length === 1) {
+    text = entries[0].full;
+  } else {
+    // Multiple notes — show short forms space-separated as a chord
+    text = entries.map(e => e.short).join('  ');
+  }
+
   if (small) {
-    small.textContent = note;
-    small.style.color = color || 'var(--accent)';
-    small.style.fontSize = isCompact ? '14px' : '20px';
+    small.textContent = text;
+    small.style.color = color;
     small.classList.remove('dim');
   }
   if (big) {
-    big.textContent = note;
-    big.style.color = color || 'var(--accent)';
+    big.textContent = text;
+    big.style.color = color;
     big.classList.remove('dim');
     // Re-trigger the pulse animation
     big.classList.remove('pulse');
@@ -2835,11 +2993,295 @@ function showNoteDisplay(note, color) {
   }
 }
 
+function showNoteDisplay(id, full, short, color) {
+  // Map.delete + set re-inserts at the end (most-recent), keeping insertion
+  // order meaningful for which color tints the display.
+  activeDisplayNotes.delete(id);
+  activeDisplayNotes.set(id, { full, short, color });
+  renderNoteDisplay();
+}
+
+function clearNoteDisplay(id) {
+  if (!activeDisplayNotes.has(id)) return;
+  activeDisplayNotes.delete(id);
+  renderNoteDisplay();
+}
+
 function dimNoteDisplay() {
-  const small = document.getElementById('noteDisplay');
-  const big = document.getElementById('bigNoteDisplay');
-  if (small) small.classList.add('dim');
-  if (big) big.classList.add('dim');
+  // Forcibly clear all (used when notes are stopped wholesale, e.g. mode
+  // switch or audio interruption).
+  activeDisplayNotes.clear();
+  activeSheetNotes.clear();
+  renderNoteDisplay();
+  if (sheetMusicEnabled) renderSheetMusic();
+}
+
+// ──────────────────────────────────────────
+//  SHEET MUSIC NOTATION
+// ──────────────────────────────────────────
+// Live notation: a grand staff (treble + bass) showing whichever notes are
+// currently being played. Toggled via the "Sheet Music" setting; when on,
+// it replaces the big note letter display.
+//
+// Coordinate system (SVG viewBox 0 0 520 180):
+//   - Treble staff: 5 lines at y = 20, 32, 44, 56, 68 (top→bottom: F5 D5 B4 G4 E4)
+//   - Middle C ledger position: y = 80 (one line below treble's E4)
+//   - Bass staff: 5 lines at y = 92, 104, 116, 128, 140 (top→bottom: A3 F3 D3 B2 G2)
+//   - Line spacing = 12px, half-step (per diatonic step) = 6px
+//
+// Notes are placed using "diatonic steps" — every white-key-letter increments
+// the step by 1 (C0=0, D0=1, ..., B0=6, C1=7, ...). Sharps share the same
+// step as the natural and add an accidental glyph.
+
+const DIATONIC = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+// Active sheet-music notes: id → { note, oct, color }
+const activeSheetNotes = new Map();
+let sheetMusicEnabled = false;
+
+function trackActiveSheetNote(id, note, oct, color) {
+  activeSheetNotes.set(id, { note, oct, color });
+  if (sheetMusicEnabled) renderSheetMusic();
+}
+
+function untrackActiveSheetNote(id) {
+  if (!activeSheetNotes.has(id)) return;
+  activeSheetNotes.delete(id);
+  if (sheetMusicEnabled) renderSheetMusic();
+}
+
+function toggleSheetMusic() {
+  sheetMusicEnabled = document.getElementById('sheetMusicMode').checked;
+  document.body.classList.toggle('sheet-music-on', sheetMusicEnabled);
+  try { localStorage.setItem('pianoSheetMusic', sheetMusicEnabled ? '1' : '0'); } catch(e) {}
+  if (sheetMusicEnabled) renderSheetMusic();
+  // Switching the staff in/out changes the piano area's available height,
+  // so the black-key positioner needs a re-run.
+  if (typeof schedulePositionBlackKeys === 'function') schedulePositionBlackKeys();
+}
+
+function loadSheetMusicSetting() {
+  try {
+    const v = localStorage.getItem('pianoSheetMusic');
+    if (v === '1') {
+      sheetMusicEnabled = true;
+      const cb = document.getElementById('sheetMusicMode');
+      if (cb) cb.checked = true;
+      document.body.classList.add('sheet-music-on');
+    }
+  } catch(e) {}
+}
+
+// Convert a note ("C", "C#", etc.) + octave to a diatonic step.
+// Sharps share the natural's step (so C# sits on the C line + a sharp glyph).
+function noteToStep(note, oct) {
+  const letter = note.charAt(0);
+  return 7 * oct + (DIATONIC[letter] ?? 0);
+}
+
+// Y coordinate for a given diatonic step.
+// Reference: F5 = step 7*5 + DIATONIC.F = 38 → y = 20.
+// Each step decrement is +6 (notes go down on the staff as Y increases).
+const STEP_F5 = 38;
+function stepToY(step) {
+  return 20 + (STEP_F5 - step) * 6;
+}
+
+// Build SVG element with proper namespace.
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  if (attrs) {
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+  }
+  return el;
+}
+
+// Treble clef Unicode glyph (𝄞). Anchored to G4 line via its baseline.
+function drawTrebleClef(g, cx, gLineY) {
+  // The glyph baseline aligns with the G4 line when y is set to gLineY + ~16.
+  // Tuned visually: font-size 60px, baseline ≈ 16px below the swirl centre.
+  const t = svgEl('text', {
+    class: 'clef',
+    x: cx,
+    y: gLineY + 18,
+    'font-size': '54',
+    'text-anchor': 'middle',
+    'font-family': "'Bravura', 'Noto Music', 'Segoe UI Symbol', 'Apple Symbols', serif",
+  });
+  t.textContent = '\uD834\uDD1E'; // 𝄞
+  g.appendChild(t);
+}
+
+// Bass clef Unicode glyph (𝄢). Anchored to F3 line via its dot zone.
+function drawBassClef(g, cx, fLineY) {
+  const t = svgEl('text', {
+    class: 'clef',
+    x: cx,
+    y: fLineY + 8,
+    'font-size': '40',
+    'text-anchor': 'middle',
+    'font-family': "'Bravura', 'Noto Music', 'Segoe UI Symbol', 'Apple Symbols', serif",
+  });
+  t.textContent = '\uD834\uDD22'; // 𝄢
+  g.appendChild(t);
+}
+
+// Render the staff (lines, clefs, brace) once. Notes are appended on top.
+function renderSheetMusicStaff(svg) {
+  // Brace on the far left tying the two staves together
+  const brace = svgEl('path', {
+    class: 'staff-line',
+    d: 'M 16 18 C 6 32, 6 70, 14 80 C 6 90, 6 128, 16 142',
+    'stroke-width': 1.4,
+  });
+  svg.appendChild(brace);
+
+  // Staff lines
+  // Treble: y = 20, 32, 44, 56, 68
+  // Bass:   y = 92, 104, 116, 128, 140
+  const lineXStart = 22;
+  const lineXEnd = 510;
+  const lineYs = [20, 32, 44, 56, 68, 92, 104, 116, 128, 140];
+  lineYs.forEach(y => {
+    svg.appendChild(svgEl('line', {
+      class: 'staff-line',
+      x1: lineXStart, y1: y, x2: lineXEnd, y2: y,
+    }));
+  });
+
+  // Connect the two staves with vertical barlines at start and end
+  svg.appendChild(svgEl('line', {
+    class: 'barline',
+    x1: lineXStart, y1: 20, x2: lineXStart, y2: 140,
+    'stroke-width': 1.4,
+  }));
+  svg.appendChild(svgEl('line', {
+    class: 'barline',
+    x1: lineXEnd, y1: 20, x2: lineXEnd, y2: 140,
+    'stroke-width': 1.4,
+  }));
+
+  // Treble clef — placed on left of treble staff. Anchored to G4 line (y=56).
+  drawTrebleClef(svg, 50, 56);
+
+  // Bass clef — placed on left of bass staff. Anchored to F3 line (y=104).
+  drawBassClef(svg, 50, 104);
+}
+
+// Render a single note on the staff. Returns the X-position consumed (so
+// multiple notes don't overlap horizontally if they would clash).
+function renderSingleNote(svg, note, oct, color, x) {
+  const step = noteToStep(note, oct);
+  const y = stepToY(step);
+  const isSharp = note.includes('#');
+
+  // Ledger lines: every other step outside the staves.
+  // Above treble: steps > 38 (F5). First ledger at step 40 (A5), then 42 (C6), etc.
+  // Between staves: step 28 (C4 / middle C) gets a single ledger.
+  // Below bass:  steps < 18 (G2). First ledger at step 16 (E2), etc.
+  // Notes in the staves themselves (or in the gap between them at steps 27/29)
+  // need no ledgers.
+  const ledgerXs = x - 9, ledgerXe = x + 9;
+  const ledgers = [];
+  if (step > 38) {
+    for (let s = 40; s <= step; s += 2) ledgers.push(stepToY(s));
+  } else if (step === 28) {
+    ledgers.push(80); // middle C
+  } else if (step < 18) {
+    for (let s = 16; s >= step; s -= 2) ledgers.push(stepToY(s));
+  }
+  ledgers.forEach(ly => {
+    svg.appendChild(svgEl('line', {
+      class: 'ledger-line',
+      x1: ledgerXs, y1: ly, x2: ledgerXe, y2: ly,
+    }));
+  });
+
+  // Accidental (sharp) — drawn just to the left of the notehead.
+  if (isSharp) {
+    const acc = svgEl('text', {
+      class: 'accidental',
+      x: x - 14,
+      y: y + 5,
+      fill: color,
+      'text-anchor': 'middle',
+    });
+    acc.textContent = '♯';
+    svg.appendChild(acc);
+  }
+
+  // Notehead — filled ellipse. Tilted slightly via rotation for a classical look.
+  const head = svgEl('ellipse', {
+    class: 'notehead',
+    cx: x, cy: y,
+    rx: 6.2, ry: 4.6,
+    fill: color,
+    stroke: color,
+    transform: `rotate(-20 ${x} ${y})`,
+  });
+  svg.appendChild(head);
+
+  // Stem: up if note is below middle line, down if above. Treble middle line
+  // is B4 (step 34); bass middle line is D3 (step 22). For grand staff,
+  // pick stem direction based on whether note is in upper or lower staff.
+  // Simple rule: stems up for notes below B4 (step 34), stems down above.
+  const stemUp = step < 34;
+  const stemX = stemUp ? x + 6 : x - 6;
+  const stemY1 = y;
+  const stemY2 = stemUp ? y - 30 : y + 30;
+  svg.appendChild(svgEl('line', {
+    class: 'stem',
+    x1: stemX, y1: stemY1, x2: stemX, y2: stemY2,
+    stroke: color,
+  }));
+}
+
+// Empty hint shown when no notes are active.
+function renderEmptyHint(svg) {
+  const t = svgEl('text', {
+    class: 'empty-hint',
+    x: 260,
+    y: 168,
+    'text-anchor': 'middle',
+  });
+  t.textContent = 'Play a note';
+  svg.appendChild(t);
+}
+
+function renderSheetMusic() {
+  const svg = document.getElementById('sheetMusicSvg');
+  if (!svg) return;
+  // Clear and rebuild
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  renderSheetMusicStaff(svg);
+
+  if (activeSheetNotes.size === 0) {
+    renderEmptyHint(svg);
+    return;
+  }
+
+  // Sort by step (low → high) so chords stack from bass up (helpful when a
+  // chord has a bass note + treble notes — they appear in pitch order).
+  const entries = Array.from(activeSheetNotes.values())
+    .map(e => ({ ...e, step: noteToStep(e.note, e.oct) }))
+    .sort((a, b) => a.step - b.step);
+
+  // Spacing: if all notes are within 6 steps (a sixth), stack them vertically
+  // at the same X (true chord). Otherwise spread them across the staff so
+  // wide-range chords don't pile up. We pick a base X near the centre.
+  const stepRange = entries[entries.length - 1].step - entries[0].step;
+  const baseX = 140;
+  if (stepRange <= 6) {
+    // Stacked chord — all at same X
+    entries.forEach(e => renderSingleNote(svg, e.note, e.oct, e.color, baseX));
+  } else {
+    // Spread — gentle horizontal spacing. Width budget ~340px, divide evenly.
+    const xs = 100;
+    const xe = 470;
+    entries.forEach((e, i) => {
+      const x = entries.length === 1 ? baseX : xs + ((xe - xs) * i) / (entries.length - 1);
+      renderSingleNote(svg, e.note, e.oct, e.color, x);
+    });
+  }
 }
 
 function updateModHint() {
@@ -3602,6 +4044,11 @@ function scheduleNextNote(immediate) {
 populateSongSelect();
 
 buildPiano();
+
+// Restore the persisted sheet-music setting (off by default; if the user
+// turned it on previously, restore that state and render the empty staff).
+loadSheetMusicSetting();
+if (sheetMusicEnabled) renderSheetMusic();
 
 // ──────────────────────────────────────────
 //  AUDIO RECOVERY — surviving backgrounding (iOS / Android)
