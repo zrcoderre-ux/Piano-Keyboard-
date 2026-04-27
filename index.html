@@ -877,33 +877,43 @@
 
       /* Info bar: merge octave controls inline, reduce height */
       .info-bar { padding: 3px 10px; }
-      /* In landscape there's no vertical room for the big display above
-         the piano, so we fall back to the compact info-bar version. */
-      .info-bar .note-display { display: block; }
-      .big-note-display { display: none; }
       .note-display { font-size: 14px; min-width: 80px; }
       .modifier-hint { display: none; } /* no room */
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
+      /* In landscape we can show the big note display in keyboard and piano
+         modes — but it has to be compact (smaller font, no vertical-fill
+         flex) since landscape iPhones are short. In touch mode (QWERTY pad
+         eats the bottom) and with the song sheet open (note strip eats the
+         top) there's no room — fall back to the compact info-bar version. */
+      .big-note-display {
+        font-size: 36px;
+        flex: 0 0 auto;
+        padding: 4px 0;
+      }
+      body.mode-touch .big-note-display,
+      body.song-sheet-open .big-note-display { display: none; }
+      body.mode-touch .info-bar .note-display,
+      body.song-sheet-open .info-bar .note-display { display: block; }
+
       /* Piano: take up most of the vertical space. iPhone landscape is wide
-         (~850px) but short (~390px). Old values cramped the piano to
-         ~290px wide / 130px tall — only a third of the screen. We can do
-         much better horizontally since there's so much room. The 160px
-         vertical cap leaves room for header + info-bar + qwerty pad +
-         song sheet to stack without overflow. */
+         (~850px) but short (~390px). 8 keys × 64px = 512px, plus piano frame
+         = ~532px — about 63% of screen width. The 175px vertical cap leaves
+         room for header + info-bar + qwerty pad + song sheet to stack
+         without overflow even in the worst-case (touch + song-sheet-open). */
       .piano-area { padding: 4px 8px 0; flex: 1; min-height: 0; }
       .piano-wrapper { padding-bottom: 4px; }
-      .piano { max-height: 160px; }
-      .white-key { width: 56px; min-width: 40px; padding-bottom: 4px; }
-      .key-note { font-size: 11px; }
+      .piano { max-height: 175px; }
+      .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
+      .key-note { font-size: 12px; }
 
       /* iPhone landscape: revert single-octave to fixed-width keys */
       .piano.single-octave { width: auto; }
       .piano.single-octave .white-key {
         flex: 0 0 auto;
-        width: 56px;
-        min-width: 40px;
+        width: 64px;
+        min-width: 44px;
       }
 
       /* QWERTY: very tight, 3 rows must fit below piano */

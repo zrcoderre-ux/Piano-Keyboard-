@@ -1,4 +1,4 @@
-const CACHE = 'arthur-piano-v28';
+const CACHE = 'arthur-piano-v30';
 const ASSETS = [
   './',
   './index.html',
