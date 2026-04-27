@@ -886,19 +886,24 @@
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
-      /* Piano: take up most of the vertical space */
+      /* Piano: take up most of the vertical space. iPhone landscape is wide
+         (~850px) but short (~390px). Old values cramped the piano to
+         ~290px wide / 130px tall — only a third of the screen. We can do
+         much better horizontally since there's so much room. The 160px
+         vertical cap leaves room for header + info-bar + qwerty pad +
+         song sheet to stack without overflow. */
       .piano-area { padding: 4px 8px 0; flex: 1; min-height: 0; }
       .piano-wrapper { padding-bottom: 4px; }
-      .piano { max-height: 130px; }
-      .white-key { width: 36px; min-width: 26px; padding-bottom: 4px; }
-      .key-note { font-size: 9px; }
+      .piano { max-height: 160px; }
+      .white-key { width: 56px; min-width: 40px; padding-bottom: 4px; }
+      .key-note { font-size: 11px; }
 
       /* iPhone landscape: revert single-octave to fixed-width keys */
       .piano.single-octave { width: auto; }
       .piano.single-octave .white-key {
         flex: 0 0 auto;
-        width: 36px;
-        min-width: 26px;
+        width: 56px;
+        min-width: 40px;
       }
 
       /* QWERTY: very tight, 3 rows must fit below piano */
