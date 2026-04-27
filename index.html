@@ -878,14 +878,15 @@
       body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
 
-      /* Sheet music follows the same hide rules — info-bar fallback in touch
-         mode and when the song sheet is open. (Sheet music shows current
-         notes; the small note-display in the info-bar covers the same job
-         when there's no room.) */
-      body.sheet-music-on.mode-touch .sheet-music-display,
-      body.sheet-music-on.song-sheet-open .sheet-music-display { display: none; }
-      body.sheet-music-on.mode-touch .info-bar .note-display,
-      body.sheet-music-on.song-sheet-open .info-bar .note-display { display: block; }
+      /* Sheet music behaviour on iPhone portrait:
+         - In touch mode, the QWERTY pad takes a chunk of vertical room, so
+           the staff falls back to the small info-bar note display.
+         - When the song sheet is open, the staff STAYS visible — and
+           switches to song-mode rendering (upcoming-notes view), giving the
+           user the staff-notation equivalent of the note strip. The big
+           letter display still gets hidden because the staff replaces it. */
+      body.sheet-music-on.mode-touch .sheet-music-display { display: none; }
+      body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
@@ -967,16 +968,19 @@
       body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
 
-      /* Sheet music in landscape — compact and follows same hide rules. */
+      /* Sheet music in landscape — compact. Touch mode still hides it
+         (QWERTY pad needs the vertical room). When the song sheet is open
+         in landscape, the staff stays visible and shrinks to whatever
+         vertical space remains; the song-mode rendering replaces the
+         scrolling note-strip's role for staff-aware learners. */
       .sheet-music-display {
         flex: 0 0 auto;
         padding: 2px 0;
       }
       .sheet-music-svg { max-height: 110px; }
-      body.sheet-music-on.mode-touch .sheet-music-display,
-      body.sheet-music-on.song-sheet-open .sheet-music-display { display: none; }
-      body.sheet-music-on.mode-touch .info-bar .note-display,
-      body.sheet-music-on.song-sheet-open .info-bar .note-display { display: block; }
+      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 80px; }
+      body.sheet-music-on.mode-touch .sheet-music-display { display: none; }
+      body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
       /* Piano: take up most of the vertical space. iPhone landscape is wide
          (~850px) but short (~390px). 8 keys × 64px = 512px, plus piano frame
@@ -989,12 +993,17 @@
       .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
       .key-note { font-size: 12px; }
 
-      /* iPhone landscape: revert single-octave to fixed-width keys */
-      .piano.single-octave { width: auto; }
+      /* iPhone landscape: single-octave keys flex-fill the available width.
+         The screen is wide (~850px) but currently a fixed 64px-key piano
+         only used ~450px of it, leaving lots of empty space. With flex-fill
+         and a sensible cap (95% / 720px), 7 keys grow to ~100-115px each,
+         filling the screen more comfortably without becoming cartoonish.
+         Expanded mode is unaffected — its rule (.piano.expanded) wins. */
+      .piano.single-octave { width: min(95%, 720px); }
       .piano.single-octave .white-key {
-        flex: 0 0 auto;
-        width: 64px;
-        min-width: 44px;
+        flex: 1;
+        min-width: 0;
+        width: auto;
       }
 
       /* QWERTY: very tight, 3 rows must fit below piano */
@@ -1009,7 +1018,8 @@
       /* Song sheet: single-line strip, hide title */
       #songSheet { padding: 3px 8px; }
       .song-header { margin-bottom: 3px; }
-      .song-title { display: none; }
+      .song-title, .song-tempo-hint { display: none; }
+      .song-title-wrap { flex: 0 1 auto; }
       .strip-note { width: 36px; height: 44px; border-radius: 6px; }
       .strip-note .sn-note { font-size: 12px; }
       .strip-note .sn-oct { font-size: 8px; }
@@ -1433,13 +1443,42 @@
       gap: 8px;
     }
 
+    .song-title-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
     .song-title {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.01em;
       color: var(--accent);
-      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
+
+    /* Suggested tempo badge — small chip showing the song's traditional
+       tempo (e.g. "♩ = 120"). The quarter-note glyph mirrors how tempos
+       are written on real sheet music, so it doubles as a tiny education
+       moment for the player. Ghosted style so it never competes with the
+       title for attention. */
+    .song-tempo-hint {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-dim);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 999px;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+    .song-tempo-hint:empty { display: none; }
 
     .song-select {
       background: var(--surface2);
@@ -1540,6 +1579,44 @@
       font-family: 'Inter', sans-serif;
       font-size: 8px;
       color: rgba(0,0,0,0.45);
+    }
+
+    /* ── CHORD STRIP NOTES ──
+       For two-note (or more) entries like Chopsticks "F+G", the label
+       becomes a row of letters joined by small "+" separators. The chord's
+       background is a vertical gradient through each note's color (set
+       inline by the renderer), so the chip reads as a stack of notes.
+
+       Within the active chord, individual letters can be either:
+         • pending  (default) — bold, fully opaque
+         • satisfied          — that note has been pressed; dimmed + line
+                                through, so the player can see what's left.
+       Past and upcoming chords don't use the satisfied state. */
+    .strip-note.chord {
+      /* Slightly more breathing room for the wider label */
+      padding: 0 4px;
+    }
+    .strip-note.chord .sn-chord-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      font-size: 16px;
+    }
+    .strip-note .sn-cn {
+      font-weight: 800;
+      color: rgba(0,0,0,0.78);
+      transition: opacity 0.15s, color 0.15s;
+    }
+    .strip-note.current .sn-cn.satisfied {
+      opacity: 0.45;
+      text-decoration: line-through;
+      text-decoration-thickness: 1.5px;
+    }
+    .strip-note .sn-plus {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(0,0,0,0.4);
+      margin: 0 2px;
     }
 
     .strip-note .sn-rhythm {
@@ -1656,18 +1733,60 @@
     .tempo-btn.play-btn:hover { color: #ffffff; background: var(--accent-deep); }
     .tempo-btn:active { transform: scale(0.94); }
 
+    /* ── REPEAT-N-TIMES BUTTON ──
+       Same shape as the other circular tempo buttons. Inactive (1×) it's
+       a quiet "off" state; once the user bumps it to 2×+ it lights up in
+       the brand red so they can see at a glance that the song will loop
+       multiple times. While inside a multi-loop run, the active iteration
+       overlays as a small dot+number badge so the kid can see progress. */
+    .tempo-repeat-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0;
+      position: relative;
+    }
+    .tempo-repeat-btn .repeat-count {
+      line-height: 1;
+    }
+    .tempo-repeat-btn.armed {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-deep);
+    }
+    .tempo-repeat-btn.armed:hover {
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent-deep);
+    }
+    /* Mid-loop progress badge: tiny circle in the corner showing "you're on
+       iteration N" while the loop is running. Drawn as a ::after so it
+       doesn't disturb the main count text. */
+    .tempo-repeat-btn.looping::after {
+      content: attr(data-current);
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1.5px solid var(--surface);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
     .tempo-slider-wrap {
       flex: 1;
       display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tempo-label {
-      font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      color: var(--text-dim);
-      white-space: nowrap;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
     }
 
     .tempo-val {
@@ -1677,12 +1796,229 @@
       font-weight: 700;
       white-space: nowrap;
       min-width: 52px;
+      text-align: right;
     }
 
-    input#tempoSlider[type="range"] {
-      flex: 1;
-      accent-color: var(--accent);
+    /* ── TEMPO SLIDER — 4-SEGMENT COLORED TRACK ──
+       The slider itself is fully draggable for fine control. Its track is
+       painted in four colored segments (green/red/orange/yellow) corresponding
+       to the four tempo ranges. The four <button>s below the slider sit
+       directly under their segment and act as quick-jump labels — clicking
+       a label snaps to the middle BPM of that range.
+
+       Segment boundaries (equal quarters of the 20-160 BPM range):
+         Adagio   (slow)      20-55  → green   #4caf50 → mid 40
+         Moderato (medium)    55-90  → red     #e63946 → mid 70
+         Allegro  (fast)      90-125 → orange  #ff9800 → mid 110
+         Presto   (very fast) 125-160→ yellow  #ffeb3b → mid 145
+
+       Cross-browser slider styling: Chrome/Safari use ::-webkit-slider-*,
+       Firefox uses ::-moz-range-*. Both pseudo-element trees get the same
+       4-segment gradient so the look is consistent. */
+
+    /* Hard-stop gradient — same string used for both vendor pseudo-elements
+       below. CSS custom property keeps it DRY and lets us re-use anywhere. */
+    :root {
+      --tempo-track-gradient: linear-gradient(to right,
+        #4caf50 0%, #4caf50 25%,
+        #e63946 25%, #e63946 50%,
+        #ff9800 50%, #ff9800 75%,
+        #ffeb3b 75%, #ffeb3b 100%);
+    }
+
+    input#tempoSlider.tempo-slider-segmented {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 14px;
+      background: transparent; /* track is drawn by ::-webkit-slider-runnable-track */
       cursor: pointer;
+      padding: 0;
+      margin: 0;
+      /* Reset accent-color so our gradient track shows through. */
+      accent-color: transparent;
+    }
+
+    /* Webkit (Chrome/Safari/iOS Safari) ── */
+    input#tempoSlider.tempo-slider-segmented::-webkit-slider-runnable-track {
+      height: 14px;
+      border-radius: 7px;
+      background: var(--tempo-track-gradient);
+      border: 1px solid rgba(0,0,0,0.15);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
+    }
+    input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--text);
+      margin-top: -5px; /* center on track (track 14 + border 2 = 16; thumb 22 → -3 visually, tweaked) */
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+      cursor: grab;
+      transition: transform 0.08s;
+    }
+    input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.1);
+    }
+
+    /* Firefox ── */
+    input#tempoSlider.tempo-slider-segmented::-moz-range-track {
+      height: 14px;
+      border-radius: 7px;
+      background: var(--tempo-track-gradient);
+      border: 1px solid rgba(0,0,0,0.15);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
+    }
+    input#tempoSlider.tempo-slider-segmented::-moz-range-progress {
+      /* Hide the default "filled" portion — we want the full gradient visible
+         regardless of position; the thumb alone indicates current value. */
+      background: transparent;
+      height: 14px;
+      border-radius: 7px;
+    }
+    input#tempoSlider.tempo-slider-segmented::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--text);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+      cursor: grab;
+    }
+
+    /* ── TEMPO RANGE LABELS / SNAP BUTTONS ──
+       Four chip-shaped buttons sit directly beneath their slider segment.
+       Each is tinted in its range's color so the visual link to the bar
+       above is immediate. Hover deepens the tint; the active button (the
+       one whose range contains current BPM) flips to a fully saturated
+       fill so it reads as the current selection.
+
+       Per-range CSS variables let us reuse the same color in three places:
+       the soft inactive tint, the hover tint, and the active fill. This
+       keeps each range's identity consistent across all three visual states. */
+    .tempo-range-labels {
+      display: flex;
+      gap: 4px;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .tempo-range-btn {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 4px 4px 5px;
+      background: var(--tr-tint);
+      border: 1.5px solid var(--tr-border);
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
+      transition: background 0.12s, border-color 0.12s, transform 0.08s, box-shadow 0.12s;
+      /* Defaults — overridden per-range below. */
+      --tr-color: #888;
+      --tr-tint: #f0f0f0;
+      --tr-border: #ddd;
+    }
+
+    /* Per-range color tokens. Each button picks its values via [data-range]. */
+    .tempo-range-btn[data-range="adagio"] {
+      --tr-color: #4caf50;
+      --tr-tint:  #e8f5e9; /* very soft green */
+      --tr-border:#a5d6a7; /* mid green border for definition */
+    }
+    .tempo-range-btn[data-range="moderato"] {
+      --tr-color: #e63946;
+      --tr-tint:  #fde9eb; /* very soft red */
+      --tr-border:#f4a8ad;
+    }
+    .tempo-range-btn[data-range="allegro"] {
+      --tr-color: #ff9800;
+      --tr-tint:  #fff1dc; /* very soft orange */
+      --tr-border:#ffcc80;
+    }
+    .tempo-range-btn[data-range="presto"] {
+      --tr-color: #ffd600; /* slightly deeper than the bar yellow for legibility */
+      --tr-tint:  #fffae0; /* very soft yellow */
+      --tr-border:#fff176;
+    }
+
+    .tempo-range-btn .tr-name {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      line-height: 1.15;
+      color: var(--text);
+    }
+
+    .tempo-range-btn .tr-hint {
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--text-dim);
+      line-height: 1.1;
+      opacity: 0.8;
+    }
+
+    /* Hover — deepen the tint and bump the border to the full color.
+       Static per-range colors handle browsers without color-mix() support
+       (anything pre-iOS-16.2 / pre-Chrome-111). The @supports block below
+       upgrades to color-mix where available for harmonised tints. */
+    .tempo-range-btn:hover {
+      border-color: var(--tr-color);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5);
+    }
+    .tempo-range-btn[data-range="adagio"]:hover   { background: #c5e8c7; }
+    .tempo-range-btn[data-range="moderato"]:hover { background: #f8c6cb; }
+    .tempo-range-btn[data-range="allegro"]:hover  { background: #ffe0b3; }
+    .tempo-range-btn[data-range="presto"]:hover   { background: #fff3a0; }
+    @supports (background: color-mix(in srgb, red, blue)) {
+      .tempo-range-btn:hover {
+        background: color-mix(in srgb, var(--tr-color) 22%, white);
+      }
+    }
+
+    /* Pressed — scale + sink the shadow */
+    .tempo-range-btn:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1) inset;
+    }
+
+    /* Active = the range that contains current BPM. Full-saturation fill,
+       darker border, lifted shadow — so it visibly "pops" out of the row of
+       four like a selected segmented control. */
+    .tempo-range-btn.active {
+      background: var(--tr-color);
+      border-color: var(--tr-color);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.18),
+                  inset 0 1px 0 rgba(255,255,255,0.35);
+    }
+    /* Tinted glow on the active button (where supported) — matches the
+       button's own color so the selection feels lit-up, not just dark. */
+    @supports (background: color-mix(in srgb, red, blue)) {
+      .tempo-range-btn.active {
+        box-shadow: 0 3px 8px color-mix(in srgb, var(--tr-color) 45%, transparent),
+                    inset 0 1px 0 rgba(255,255,255,0.35);
+      }
+    }
+    .tempo-range-btn.active .tr-name,
+    .tempo-range-btn.active .tr-hint {
+      color: #ffffff;
+      opacity: 1;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+    }
+    /* Yellow needs dark text — white on yellow is illegible. */
+    .tempo-range-btn.active[data-range="presto"] .tr-name,
+    .tempo-range-btn.active[data-range="presto"] .tr-hint {
+      color: #4a3500;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.3);
     }
 
     /* Above-strip ticker bar */
@@ -1884,7 +2220,10 @@
 <!-- SONG SHEET -->
 <div id="songSheet">
   <div class="song-header">
-    <div class="song-title" id="songTitle">Twinkle Twinkle</div>
+    <div class="song-title-wrap">
+      <span class="song-title" id="songTitle">Twinkle Twinkle</span>
+      <span class="song-tempo-hint" id="songTempoHint" title="Traditional tempo — feel free to start slower"></span>
+    </div>
     <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
     <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
   </div>
@@ -1895,12 +2234,44 @@
   <div class="tempo-bar">
     <button class="tempo-btn play-btn" id="tempoPlayBtn" onclick="toggleTempo()">▶</button>
     <button class="tempo-btn" onclick="restartSong()" title="Restart">↺</button>
+    <!-- Repeat-N-times: cycles 1× → 2× → 3× → 4× → 5× → 1× on each click.
+         When the song completes, it loops seamlessly until the target count
+         is hit. The small dot before the number lights up while playing to
+         show "you're inside a multi-loop." -->
+    <button class="tempo-btn tempo-repeat-btn" id="tempoRepeatBtn"
+            onclick="cycleRepeat()" title="Play this many times in a row">
+      <span class="repeat-count" id="repeatCount">1×</span>
+    </button>
+    <!-- The slider is still the source of truth for tempo and is fully
+         draggable. Its track is painted in four colored segments matching
+         the tempo ranges below. The four range buttons sit directly beneath
+         their segment of the bar and act as quick-snaps: clicking jumps the
+         tempo to the middle BPM of that range.
+            Adagio  (slow)       green  → 35 BPM
+            Moderato (medium)    red    → 65 BPM
+            Allegro  (fast)      orange → 100 BPM
+            Presto   (very fast) yellow → 140 BPM
+         Each button highlights when current BPM is in its range. -->
     <div class="tempo-slider-wrap">
-      <span class="tempo-label">TEMPO</span>
-      <input type="range" id="tempoSlider" min="20" max="160" value="60"
+      <input type="range" id="tempoSlider" class="tempo-slider-segmented"
+        min="20" max="160" value="70" step="1"
         oninput="updateTempo(this.value)" />
-      <span class="tempo-val" id="tempoVal">60 BPM</span>
+      <div class="tempo-range-labels" id="tempoRangeGroup">
+        <button class="tempo-range-btn" data-range="adagio"   onclick="setTempoRange('adagio')">
+          <span class="tr-name">Adagio</span><span class="tr-hint">slow</span>
+        </button>
+        <button class="tempo-range-btn" data-range="moderato" onclick="setTempoRange('moderato')">
+          <span class="tr-name">Moderato</span><span class="tr-hint">medium</span>
+        </button>
+        <button class="tempo-range-btn" data-range="allegro"  onclick="setTempoRange('allegro')">
+          <span class="tr-name">Allegro</span><span class="tr-hint">fast</span>
+        </button>
+        <button class="tempo-range-btn" data-range="presto"   onclick="setTempoRange('presto')">
+          <span class="tr-name">Presto</span><span class="tr-hint">very fast</span>
+        </button>
+      </div>
     </div>
+    <span class="tempo-val" id="tempoVal">70 BPM</span>
   </div>
   <div class="song-progress"><div class="song-progress-fill" id="songProgressFill"></div></div>
   <div class="song-complete" id="songComplete">🎉 Well done! Play again?</div>
@@ -2126,7 +2497,8 @@
     <div class="help-section">
       <div class="help-section-title">📋 Song Sheet</div>
       <p>Enable Song Sheet in Settings to see a scrolling strip of notes to play along with. The highlighted note is the one to play next. Tap any note in the strip to jump to it.</p>
-      <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. 21 songs included — from Twinkle Twinkle to Für Elise.</p>
+      <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. Each song remembers its last tempo for next time. 23 songs included — from Twinkle Twinkle to Chopsticks.</p>
+      <p style="margin-top:6px">Some songs have <strong>chords</strong> — two notes played at the same time, shown as <strong>F+G</strong>. Press both together to advance.</p>
     </div>
 
     <div class="help-section">
@@ -3167,12 +3539,34 @@ function renderSheetMusicStaff(svg) {
   drawBassClef(svg, 50, 104);
 }
 
-// Render a single note on the staff. Returns the X-position consumed (so
-// multiple notes don't overlap horizontally if they would clash).
-function renderSingleNote(svg, note, oct, color, x) {
+// Render a single note on the staff at position (x, derived-y).
+// opts (optional):
+//   opacity   — render with this opacity. Used by song mode to dim past notes.
+//   emphasize — wrap the notehead in a translucent glow ring. Used by song
+//               mode to mark the current note the player is on.
+function renderSingleNote(svg, note, oct, color, x, opts) {
+  opts = opts || {};
+  const opacity = opts.opacity != null ? opts.opacity : 1.0;
+  const emphasize = !!opts.emphasize;
+
   const step = noteToStep(note, oct);
   const y = stepToY(step);
   const isSharp = note.includes('#');
+
+  // Group everything for this note so opacity applies uniformly.
+  const g = svgEl('g', { opacity: opacity });
+
+  // Glow ring behind the notehead for current-song-position emphasis.
+  if (emphasize) {
+    g.appendChild(svgEl('circle', {
+      cx: x, cy: y, r: 11,
+      fill: color, opacity: 0.25,
+    }));
+    g.appendChild(svgEl('circle', {
+      cx: x, cy: y, r: 9,
+      fill: 'none', stroke: color, 'stroke-width': 1.5,
+    }));
+  }
 
   // Ledger lines: every other step outside the staves.
   // Above treble: steps > 38 (F5). First ledger at step 40 (A5), then 42 (C6), etc.
@@ -3190,7 +3584,7 @@ function renderSingleNote(svg, note, oct, color, x) {
     for (let s = 16; s >= step; s -= 2) ledgers.push(stepToY(s));
   }
   ledgers.forEach(ly => {
-    svg.appendChild(svgEl('line', {
+    g.appendChild(svgEl('line', {
       class: 'ledger-line',
       x1: ledgerXs, y1: ly, x2: ledgerXe, y2: ly,
     }));
@@ -3206,19 +3600,18 @@ function renderSingleNote(svg, note, oct, color, x) {
       'text-anchor': 'middle',
     });
     acc.textContent = '♯';
-    svg.appendChild(acc);
+    g.appendChild(acc);
   }
 
   // Notehead — filled ellipse. Tilted slightly via rotation for a classical look.
-  const head = svgEl('ellipse', {
+  g.appendChild(svgEl('ellipse', {
     class: 'notehead',
     cx: x, cy: y,
     rx: 6.2, ry: 4.6,
     fill: color,
     stroke: color,
     transform: `rotate(-20 ${x} ${y})`,
-  });
-  svg.appendChild(head);
+  }));
 
   // Stem: up if note is below middle line, down if above. Treble middle line
   // is B4 (step 34); bass middle line is D3 (step 22). For grand staff,
@@ -3228,58 +3621,171 @@ function renderSingleNote(svg, note, oct, color, x) {
   const stemX = stemUp ? x + 6 : x - 6;
   const stemY1 = y;
   const stemY2 = stemUp ? y - 30 : y + 30;
-  svg.appendChild(svgEl('line', {
+  g.appendChild(svgEl('line', {
     class: 'stem',
     x1: stemX, y1: stemY1, x2: stemX, y2: stemY2,
     stroke: color,
   }));
+
+  svg.appendChild(g);
 }
 
-// Empty hint shown when no notes are active.
-function renderEmptyHint(svg) {
+// Empty hint shown when no notes are active. Optional message override.
+function renderEmptyHint(svg, message) {
   const t = svgEl('text', {
     class: 'empty-hint',
     x: 260,
     y: 168,
     'text-anchor': 'middle',
   });
-  t.textContent = 'Play a note';
+  t.textContent = message || 'Play a note';
   svg.appendChild(t);
 }
 
+// Top-level renderer — picks between two paths:
+//   • Song mode: when the song sheet is open and a song is loaded, the
+//     staff shows a window of song notes (played / current / upcoming),
+//     mirroring the colored note-strip that already exists.
+//   • Live mode: otherwise, the staff shows whichever notes are currently
+//     being played (free-play / chord display).
+// Both paths share the same staff drawing — only the note placement differs.
 function renderSheetMusic() {
   const svg = document.getElementById('sheetMusicSvg');
   if (!svg) return;
-  // Clear and rebuild
+  // Clear and rebuild the staff foundation
   while (svg.firstChild) svg.removeChild(svg.firstChild);
   renderSheetMusicStaff(svg);
 
-  if (activeSheetNotes.size === 0) {
-    renderEmptyHint(svg);
+  // Song mode: only when a song is actively loaded AND the song sheet is
+  // visible. Free-play with no song gets the live-notes view even if
+  // currentSong was loaded earlier and the sheet is hidden.
+  if (currentSong && songSheetVisible) {
+    renderSheetMusicSong(svg);
     return;
   }
 
-  // Sort by step (low → high) so chords stack from bass up (helpful when a
-  // chord has a bass note + treble notes — they appear in pitch order).
+  renderSheetMusicLive(svg);
+}
+
+// LIVE mode: show whichever notes are currently being held / pressed.
+// Chord-aware: stacks notes at the same X if they're within a sixth,
+// spreads them horizontally otherwise.
+function renderSheetMusicLive(svg) {
+  if (activeSheetNotes.size === 0) {
+    renderEmptyHint(svg, 'Play a note');
+    return;
+  }
+
+  // Sort by step (low → high) so chords stack from bass up.
   const entries = Array.from(activeSheetNotes.values())
     .map(e => ({ ...e, step: noteToStep(e.note, e.oct) }))
     .sort((a, b) => a.step - b.step);
 
-  // Spacing: if all notes are within 6 steps (a sixth), stack them vertically
-  // at the same X (true chord). Otherwise spread them across the staff so
-  // wide-range chords don't pile up. We pick a base X near the centre.
   const stepRange = entries[entries.length - 1].step - entries[0].step;
   const baseX = 140;
   if (stepRange <= 6) {
     // Stacked chord — all at same X
     entries.forEach(e => renderSingleNote(svg, e.note, e.oct, e.color, baseX));
   } else {
-    // Spread — gentle horizontal spacing. Width budget ~340px, divide evenly.
+    // Spread — gentle horizontal spacing
     const xs = 100;
     const xe = 470;
     entries.forEach((e, i) => {
       const x = entries.length === 1 ? baseX : xs + ((xe - xs) * i) / (entries.length - 1);
       renderSingleNote(svg, e.note, e.oct, e.color, x);
+    });
+  }
+}
+
+// SONG mode: show a sliding window of song notes around the current
+// position. Played notes are dimmed, the current note has a glow ring +
+// downward arrow above it, upcoming notes are full opacity. As
+// currentNoteIdx advances (via tempo or by playing the right note), the
+// window scrolls.
+function renderSheetMusicSong(svg) {
+  const notes = currentSong.notes;
+  if (!notes || notes.length === 0) {
+    renderEmptyHint(svg, 'No notes');
+    return;
+  }
+
+  // Find the next non-rest note at or after currentNoteIdx — that's the one
+  // the player is "on." Rests in the strip are skipped by advanceSongNote
+  // already, but during render we need the same skip behaviour to avoid
+  // pointing at a rest.
+  let curIdx = currentNoteIdx;
+  while (curIdx < notes.length && isRestEntry(notes[curIdx])) curIdx++;
+  if (curIdx >= notes.length) curIdx = notes.length - 1;
+
+  // Window: 2 played notes to the left of the current note, 5 upcoming
+  // notes to the right. Total of 8. We trim the window if we're near
+  // either end of the song.
+  const PAST = 2, FUTURE = 5;
+  let start = Math.max(0, curIdx - PAST);
+  let end   = Math.min(notes.length - 1, curIdx + FUTURE);
+
+  // Build the X-position grid. Usable area is ~95 to ~485 (between clefs
+  // and the right barline). The current note sits roughly 1/3 from the
+  // left so upcoming notes have more room.
+  const X_START = 95, X_END = 485;
+  const slotCount = (PAST + 1 + FUTURE); // logical slots even at edges
+  const slotWidth = (X_END - X_START) / slotCount;
+  // Align so currentIdx sits at slot index PAST (regardless of trimming).
+  // i.e. slot for note i = (i - curIdx + PAST)
+  const slotX = (i) => X_START + (i - curIdx + PAST + 0.5) * slotWidth;
+
+  // Current-note position highlight: a translucent vertical band behind
+  // the current note + a downward-pointing arrow above the staff.
+  const cx = slotX(curIdx);
+  const highlight = svgEl('rect', {
+    x: cx - slotWidth * 0.45,
+    y: -10,
+    width: slotWidth * 0.9,
+    height: 160,
+    rx: 6, ry: 6,
+    fill: 'rgba(230, 57, 70, 0.10)',
+  });
+  svg.appendChild(highlight);
+  const arrow = svgEl('path', {
+    d: `M ${cx - 6} -22 L ${cx + 6} -22 L ${cx} -12 Z`,
+    fill: 'var(--accent)',
+  });
+  svg.appendChild(arrow);
+
+  // Render each entry in the window. Chords stack multiple noteheads at
+  // the same X; single notes render as before.
+  for (let i = start; i <= end; i++) {
+    const n = notes[i];
+    const x = slotX(i);
+    if (isRestEntry(n)) {
+      // Rest — small dim glyph at middle-staff position (between the staves)
+      const rest = svgEl('text', {
+        class: 'rest-glyph',
+        x: x, y: 86,
+        'text-anchor': 'middle',
+        'font-size': '20',
+        'font-family': "'Bravura', 'Noto Music', 'Segoe UI Symbol', serif",
+        fill: 'var(--text-dim2)',
+        opacity: i < curIdx ? '0.35' : '0.7',
+      });
+      rest.textContent = '\uD834\uDD3D'; // 𝄽 quarter rest
+      svg.appendChild(rest);
+      continue;
+    }
+
+    const isPast = i < curIdx;
+    const isCurrent = i === curIdx;
+    const opacity = isPast ? 0.55 : 1.0;
+    const entries = noteEntries(n);
+
+    // Render every chord note at this X. The emphasize ring on the current
+    // chord wraps each notehead individually — visually shows the whole
+    // chord is "the one to play." Past notes desaturate to gray; future
+    // notes use their per-note colors.
+    entries.forEach(e => {
+      const baseColor = noteColors[e.n] || '#e63946';
+      const color = isPast ? '#9a9a9a' : baseColor;
+      renderSingleNote(svg, e.n, e.o, color, x, { opacity, emphasize: isCurrent });
     });
   }
 }
@@ -3345,6 +3851,11 @@ function toggleSustain() {
 }
 
 function setMode(m) {
+  // If the song's actively running, switching modes pauses it. The user can
+  // resume by hitting Play again — currentNoteIdx and the repeat counter
+  // are preserved so they pick up exactly where they were.
+  if (tempoPlaying) stopTempo();
+
   const prevMode = mode;
   mode = m;
   document.body.classList.remove('mode-keyboard', 'mode-touch', 'mode-piano');
@@ -3394,6 +3905,9 @@ function setMode(m) {
 }
 
 function openSettings() {
+  // Opening settings pauses the song so the user doesn't lose tempo
+  // tracking while they're configuring something.
+  if (tempoPlaying) stopTempo();
   buildColorGrid();
   document.getElementById('settingsPanel').classList.add('open');
 }
@@ -3405,6 +3919,9 @@ function closeSettings() {
 }
 
 function openHelp() {
+  // Same as settings — pause the song so the player doesn't fall behind
+  // while reading help.
+  if (tempoPlaying) stopTempo();
   document.getElementById('helpPanel').classList.add('open');
 }
 function closeHelp() {
@@ -3415,8 +3932,39 @@ function closeHelp() {
 //  SONG SHEET
 // ──────────────────────────────────────────
 
-// Each note: { note, oct, key } where key is the letter to press (null for rests)
-// All songs use only A-G natural notes for simplicity (no sharps/flats needed)
+// Songs use a simple object format. Each entry in `notes` is either:
+//   • A single note:  { n: 'C', o: 4, k: 'C', d: 1 }
+//   • A rest:         { n: '-', d: 1 }
+//   • A chord (multiple notes played simultaneously):
+//       { chord: [ {n:'F',o:4,k:'F'}, {n:'G',o:4,k:'G'} ], d: 1 }
+//
+// Most songs only use natural notes (A-G) and keep the simple form.
+// Chopsticks is the first song to use the chord form.
+//
+// Helper: normalise any entry into an array of {n,o,k} so callers can
+// iterate uniformly. Rests return an empty array.
+function noteEntries(n) {
+  if (!n) return [];
+  if (n.chord) return n.chord;
+  if (n.n === '-') return [];
+  return [{ n: n.n, o: n.o, k: n.k }];
+}
+// Is this entry a rest? Works for both formats.
+function isRestEntry(n) { return !!n && !n.chord && n.n === '-'; }
+// Display string for the strip / sheet music labels: "F+G" for chords,
+// "C" for single notes, "—" for rests.
+function entryLabel(n) {
+  if (isRestEntry(n)) return '—';
+  return noteEntries(n).map(x => x.n).join('+');
+}
+// Primary display color for an entry (the color of the lowest pitched note
+// if a chord). Used for tempo ticker tinting where one color is needed.
+function entryPrimaryNote(n) {
+  const entries = noteEntries(n);
+  if (entries.length === 0) return null;
+  return entries[0].n;
+}
+
 const SONGS = [
   {
     id: 'twinkle',
@@ -3752,6 +4300,46 @@ const SONGS = [
       {n:'C',o:4,k:'C',d:1},{n:'G',o:3,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
     ]
   },
+  {
+    id: 'chopsticks',
+    title: '🥢 Chopsticks (Chop Waltz)',
+    // Classic Chopsticks "expanding interval" pattern:
+    //   F+G (2nd) → E+A (4th) → D+B (6th) → C+C5 (octave resolution)
+    // Each chord is two notes played simultaneously. The C+C5 octave
+    // reaches across two octaves — best played in Piano mode (direct
+    // tap) or with the keyboard in expanded view. Tempo memory will
+    // remember whichever speed the player settles on.
+    notes: [
+      // Descend: F+G → E+A → D+B → C+C5 (held)
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'C',o:4,k:'C'},{n:'C',o:5,k:'C'}],d:4},
+      // Ascend back: D+B → E+A → F+G → C+C5 (held)
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'D',o:4,k:'D'},{n:'B',o:4,k:'B'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'E',o:4,k:'E'},{n:'A',o:4,k:'A'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'F',o:4,k:'F'},{n:'G',o:4,k:'G'}],d:1},
+      {chord:[{n:'C',o:4,k:'C'},{n:'C',o:5,k:'C'}],d:4},
+    ]
+  },
 ];
 
 let currentSong = null;
@@ -3771,6 +4359,8 @@ function toggleSongSheet() {
   }
   // Song sheet shows/hides above the piano, changing its available height.
   schedulePositionBlackKeys();
+  // Sheet music staff swaps between song-mode and live-mode rendering.
+  if (sheetMusicEnabled) renderSheetMusic();
 }
 
 function hideSongSheet() {
@@ -3780,6 +4370,7 @@ function hideSongSheet() {
   document.body.classList.remove('song-sheet-open');
   songSheetVisible = false;
   schedulePositionBlackKeys();
+  if (sheetMusicEnabled) renderSheetMusic();
 }
 
 function populateSongSelect() {
@@ -3797,9 +4388,30 @@ function loadSong(id) {
   stopTempo();
   currentSong = SONGS.find(s => s.id === id) || SONGS[0];
   currentNoteIdx = 0;
+  currentRepeat = 1; // reset repeat progress for the new song
+  refreshPendingChord();
   document.getElementById('songTitle').textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
   document.getElementById('songComplete').style.display = 'none';
+  // Suggested-tempo badge: shows the song's traditional tempo as a hint.
+  // Uses the quarter-note glyph (♩) the way real sheet music does.
+  const hint = document.getElementById('songTempoHint');
+  const sBPM = SUGGESTED_TEMPOS[currentSong.id];
+  if (hint) {
+    hint.textContent = sBPM ? `\u2669 = ${sBPM}` : '';
+  }
+  // Restore the user's last-used tempo for this song, if any. If the song
+  // hasn't been played before, the current tempo carries through — so
+  // browsing from one song to a new one feels natural rather than jumpy.
+  const savedBPM = loadTempoForSong(currentSong.id);
+  if (savedBPM != null) {
+    const slider = document.getElementById('tempoSlider');
+    if (slider) slider.value = savedBPM;
+    tempoBPM = savedBPM;
+    document.getElementById('tempoVal').textContent = tempoBPM + ' BPM';
+    updateActiveTempoRange();
+  }
+  updateRepeatBtn();
   renderNoteStrip();
 }
 
@@ -3808,41 +4420,89 @@ function renderNoteStrip() {
   strip.innerHTML = '';
   if (!currentSong) return;
 
+  // Max duration is used to scale the rhythm bar fill, so compute once.
+  const maxDur = Math.max(...currentSong.notes.map(x => x.d || 1));
+
   currentSong.notes.forEach((n, i) => {
     const el = document.createElement('div');
-    const isRest = n.n === '-';
-    el.className = 'strip-note' + (isRest ? ' rest' : '') +
+    const rest = isRestEntry(n);
+    const entries = noteEntries(n);
+    const isChord = entries.length > 1;
+    el.className = 'strip-note' + (rest ? ' rest' : '') +
+                   (isChord ? ' chord' : '') +
                    (i === currentNoteIdx ? ' current' : '') +
                    (i < currentNoteIdx ? ' played' : '');
 
-    // Width proportional to duration (base 52px for quarter note d=1)
+    // Width proportional to duration (base 52px for quarter note d=1).
+    // Chords get extra width for the multi-letter label.
     const dur = n.d || 1;
     const baseW = 52;
-    el.style.width = (baseW * Math.max(dur, 0.5)) + 'px';
+    const chordPad = isChord ? 14 : 0;
+    el.style.width = (baseW * Math.max(dur, 0.5) + chordPad) + 'px';
 
-    if (!isRest) {
-      const color = noteColors[n.n] || '#e63946';
-      el.style.background = color;
-      el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
+    if (!rest) {
+      if (isChord) {
+        // Vertical gradient through each chord note's color so the chip
+        // visually reads as a stack of notes (top→bottom = bottom→top of
+        // the chord, since chord arrays are typically written low-pitch
+        // first and we want low pitch on the bottom).
+        const stops = entries.slice().reverse().map((e, k) => {
+          const c = noteColors[e.n] || '#e63946';
+          const pct = (k * 100) / Math.max(1, entries.length - 1);
+          return `${c} ${pct}%`;
+        }).join(', ');
+        el.style.background = `linear-gradient(to bottom, ${stops})`;
+        if (i === currentNoteIdx) {
+          const c = noteColors[entries[0].n] || '#e63946';
+          el.style.boxShadow = `0 0 16px ${c}88`;
+        }
+      } else {
+        const color = noteColors[entries[0].n] || '#e63946';
+        el.style.background = color;
+        el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
+      }
     }
 
-    // Rhythm bar: fill width represents duration relative to max duration in song
-    const maxDur = Math.max(...currentSong.notes.map(x => x.d || 1));
     const rhythmPct = (dur / maxDur) * 100;
 
-    el.innerHTML = isRest
-      ? `<span class="sn-note">—</span>
-         <div class="sn-rhythm"><div class="sn-rhythm-fill" style="width:${rhythmPct}%"></div></div>
-         <div class="sn-ticker"></div>`
-      : `<span class="sn-note">${n.n}</span>
-         <span class="sn-key">key ${n.k}</span>
-         <span class="sn-oct">oct ${n.o}</span>
+    if (rest) {
+      el.innerHTML =
+        `<span class="sn-note">—</span>
          <div class="sn-rhythm"><div class="sn-rhythm-fill" style="width:${rhythmPct}%"></div></div>
          <div class="sn-ticker"></div>`;
+    } else if (isChord) {
+      // For the active chord, mark notes that have been pressed in the
+      // current attempt as "satisfied" so the player can see what's left.
+      // Non-current chords show all notes neutrally.
+      const isCur = i === currentNoteIdx;
+      const labelHTML = entries.map(e => {
+        const satisfied = isCur && !pendingChordNotes.has(e.n);
+        const cls = satisfied ? 'sn-cn satisfied' : 'sn-cn';
+        return `<span class="${cls}">${e.n}</span>`;
+      }).join('<span class="sn-plus">+</span>');
+      // Octaves: collapse if all the same, else show distinct list
+      const octs = Array.from(new Set(entries.map(e => e.o)));
+      const octText = octs.length === 1 ? `oct ${octs[0]}` : `oct ${octs.join('·')}`;
+      el.innerHTML =
+        `<span class="sn-note sn-chord-note">${labelHTML}</span>
+         <span class="sn-key">${entries.length} keys</span>
+         <span class="sn-oct">${octText}</span>
+         <div class="sn-rhythm"><div class="sn-rhythm-fill" style="width:${rhythmPct}%"></div></div>
+         <div class="sn-ticker"></div>`;
+    } else {
+      const e = entries[0];
+      el.innerHTML =
+        `<span class="sn-note">${e.n}</span>
+         <span class="sn-key">key ${e.k}</span>
+         <span class="sn-oct">oct ${e.o}</span>
+         <div class="sn-rhythm"><div class="sn-rhythm-fill" style="width:${rhythmPct}%"></div></div>
+         <div class="sn-ticker"></div>`;
+    }
 
     // Clicking a note in the strip jumps to it
     el.addEventListener('click', () => {
       currentNoteIdx = i;
+      refreshPendingChord();
       renderNoteStrip();
       scrollStripToCurrentNote();
     });
@@ -3852,6 +4512,9 @@ function renderNoteStrip() {
 
   updateSongProgress();
   scrollStripToCurrentNote();
+  // Sheet music staff (when enabled in song mode) re-renders here so it
+  // tracks the same currentNoteIdx the strip just rendered.
+  if (sheetMusicEnabled) renderSheetMusic();
 }
 
 function scrollStripToCurrentNote() {
@@ -3872,63 +4535,269 @@ function updateSongProgress() {
   document.getElementById('songProgressFill').style.width = pct + '%';
 }
 
+// Tracks which notes of the current entry still need to be played to
+// advance. Single-note entries → set of one. Chords → set of all chord
+// notes. Repopulated whenever currentNoteIdx changes.
+let pendingChordNotes = new Set();
+
+function refreshPendingChord() {
+  pendingChordNotes.clear();
+  if (!currentSong) return;
+  const cur = currentSong.notes[currentNoteIdx];
+  if (!cur) return;
+  noteEntries(cur).forEach(e => pendingChordNotes.add(e.n));
+}
+
 function advanceSongNote(playedNote) {
   if (!currentSong || !songSheetVisible) return;
 
-  // Skip forward past any rests at current position
-  while (currentNoteIdx < currentSong.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
+  // Skip forward past any rests at current position. Refresh the pending
+  // set after skipping so we're tracking the *next playable* entry.
+  let skipped = false;
+  while (currentNoteIdx < currentSong.notes.length &&
+         isRestEntry(currentSong.notes[currentNoteIdx])) {
     currentNoteIdx++;
+    skipped = true;
   }
+  if (skipped) refreshPendingChord();
 
   const current = currentSong.notes[currentNoteIdx];
   if (!current) return;
 
-  // If tempo is running, keypresses don't advance — timer owns that
+  // If tempo is running, keypresses don't advance — timer owns that.
   if (tempoPlaying) return;
 
-  // Playing the first note starts the tempo automatically
-  if (playedNote === current.n && currentNoteIdx === 0) {
+  // Lazy-init the pending set if it's empty but the entry has notes
+  // (happens on first call for a new song or after a manual jump).
+  if (pendingChordNotes.size === 0) refreshPendingChord();
+
+  // Is the played note one of the pending chord notes? If not, ignore.
+  if (!pendingChordNotes.has(playedNote)) return;
+
+  // Mark this note as played within the chord. If there are still other
+  // chord notes to play, wait — don't advance yet.
+  pendingChordNotes.delete(playedNote);
+  if (pendingChordNotes.size > 0) {
+    // For chords, re-render the strip so a played-but-incomplete state
+    // could be styled. For now we just re-highlight the current entry.
+    renderNoteStrip();
+    return;
+  }
+
+  // Whole chord (or single note) is satisfied — advance.
+  // Special case: completing the very first note of the *first* iteration
+  // auto-starts the tempo so the kid gets metronome guidance from the
+  // very first beat. We deliberately don't re-trigger this on later
+  // iterations of a multi-loop — the user is mid-momentum and a sudden
+  // tempo kick-in would feel intrusive.
+  if (currentNoteIdx === 0 && currentRepeat === 1) {
     currentNoteIdx++;
+    refreshPendingChord();
     renderNoteStrip();
     startTempo();
     return;
   }
 
-  // Check if correct note played
-  if (playedNote === current.n) {
+  currentNoteIdx++;
+  // Skip past any rests we land on
+  while (currentNoteIdx < currentSong.notes.length &&
+         isRestEntry(currentSong.notes[currentNoteIdx])) {
     currentNoteIdx++;
-    while (currentNoteIdx < currentSong.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
-      currentNoteIdx++;
-    }
-    if (currentNoteIdx >= currentSong.notes.length) {
+  }
+  refreshPendingChord();
+
+  if (currentNoteIdx >= currentSong.notes.length) {
+    // Reached the end of one play-through. If the user dialed in a multi-
+    // loop (targetRepeats > 1) and we still have iterations to go, restart
+    // the song silently — no popup, no pause — and bump the iteration
+    // counter so they can build momentum across loops.
+    if (currentRepeat < targetRepeats) {
+      currentRepeat++;
+      currentNoteIdx = 0;
+      // Skip leading rests in case the song starts on one
+      while (currentNoteIdx < currentSong.notes.length &&
+             isRestEntry(currentSong.notes[currentNoteIdx])) {
+        currentNoteIdx++;
+      }
+      refreshPendingChord();
+      updateRepeatBtn();
       renderNoteStrip();
-      const completeEl = document.getElementById('songComplete');
-      completeEl.style.display = 'block';
-      setTimeout(() => { completeEl.style.display = 'none'; currentNoteIdx = 0; renderNoteStrip(); }, 3500);
-    } else {
-      renderNoteStrip();
+      return;
     }
+    // Otherwise this was the last (or only) iteration — celebrate.
+    renderNoteStrip();
+    const completeEl = document.getElementById('songComplete');
+    completeEl.style.display = 'block';
+    setTimeout(() => {
+      completeEl.style.display = 'none';
+      currentNoteIdx = 0;
+      currentRepeat = 1;
+      refreshPendingChord();
+      updateRepeatBtn();
+      renderNoteStrip();
+    }, 3500);
+  } else {
+    renderNoteStrip();
   }
 }
 
 // ──────────────────────────────────────────
 //  TEMPO ENGINE
 // ──────────────────────────────────────────
-let tempoBPM = 60;
+// The tempo space (20-160 BPM) is divided into four equal-width ranges,
+// each labeled with a classical-music tempo term. The slider is fully
+// continuous within these ranges; the colored segments + range buttons
+// underneath are visual aids and quick-snap controls.
+//
+// Ranges (boundaries are inclusive at the low end, exclusive at the high
+// end, with Presto's high boundary inclusive):
+const TEMPO_RANGES = [
+  { id: 'adagio',   label: 'Adagio',   min: 20,  max: 55,  mid: 40,  color: '#4caf50' },
+  { id: 'moderato', label: 'Moderato', min: 55,  max: 90,  mid: 70,  color: '#e63946' },
+  { id: 'allegro',  label: 'Allegro',  min: 90,  max: 125, mid: 110, color: '#ff9800' },
+  { id: 'presto',   label: 'Presto',   min: 125, max: 160, mid: 145, color: '#ffeb3b' },
+];
+
+// Traditional / typical performance tempos for each song. Shown as a small
+// badge next to the song title — a hint, not a constraint. Learners often
+// start slower (Adagio range) and work up to the suggested speed. These
+// are conventional kid-piano-pedagogy tempos, picked to land roughly where
+// the song is recognisable but still playable by an 8-year-old.
+const SUGGESTED_TEMPOS = {
+  twinkle:        90,
+  mary:           90,
+  abc:            90,
+  bingo:         110,
+  happybirthday: 100,
+  hotcrossbuns:  100,
+  ode:            90,
+  itsy:          100,
+  jinglebells:   130,
+  silent_night:   65,
+  we_wish:       120,
+  ode_ode:       140, // Deck the Halls
+  london_bridge: 110,
+  scarborough:    75,
+  greensleeves:   70,
+  minuet_g:      115,
+  fur_elise:      90,
+  canon:          65,
+  row_boat:      120,
+  yankee_doodle: 130,
+  joy_world:     115,
+  frere_jacques: 105,
+  chopsticks:    140,
+};
+
+// Default tempo: middle of Moderato. This matches what kid pianists are
+// most comfortable practicing at.
+let tempoBPM = 70;
 let tempoPlaying = false;
 let tempoTimer = null;
 let tickerAnimFrame = null;
 let currentNoteStartTime = null;
 let currentNoteDuration = null;
 
+// ── Repeat-N-times ──
+// targetRepeats = how many full play-throughs the user wants in a row.
+// currentRepeat = which iteration we're on right now (1-based).
+// On each completion, if currentRepeat < targetRepeats we loop seamlessly
+// (no popup, no pause) and bump currentRepeat. The button cycles 1→5→1.
+let targetRepeats = 1;
+let currentRepeat = 1;
+
+function updateRepeatBtn() {
+  const btn = document.getElementById('tempoRepeatBtn');
+  const lbl = document.getElementById('repeatCount');
+  if (!btn || !lbl) return;
+  lbl.textContent = targetRepeats + '\u00d7'; // "1×"
+  // "Armed" = the user has dialed in more than 1 play-through. Lights up
+  // in red so it's visible the song will loop.
+  btn.classList.toggle('armed', targetRepeats > 1);
+  // "Looping" = we're currently inside a multi-loop run. Adds the small
+  // iteration badge on the corner of the button (data-current → ::after).
+  const looping = targetRepeats > 1 && tempoPlaying;
+  btn.classList.toggle('looping', looping);
+  btn.dataset.current = String(currentRepeat);
+}
+
+function cycleRepeat() {
+  // 1 → 2 → 3 → 4 → 5 → 1
+  targetRepeats = (targetRepeats % 5) + 1;
+  // Changing the goal resets the iteration counter — feels right because
+  // the user is signalling intent for a new run.
+  currentRepeat = 1;
+  updateRepeatBtn();
+}
+
+// Which range does a given BPM fall into? Used to highlight the active
+// label button. Boundary at exactly e.g. BPM=55 lands in Moderato (the
+// higher range), matching how the slider thumb would visually appear.
+function rangeForBPM(bpm) {
+  for (let i = TEMPO_RANGES.length - 1; i >= 0; i--) {
+    if (bpm >= TEMPO_RANGES[i].min) return TEMPO_RANGES[i];
+  }
+  return TEMPO_RANGES[0];
+}
+
+function updateActiveTempoRange() {
+  const active = rangeForBPM(tempoBPM);
+  document.querySelectorAll('.tempo-range-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.range === active.id);
+  });
+}
+
 function updateTempo(val) {
   tempoBPM = parseInt(val);
   document.getElementById('tempoVal').textContent = tempoBPM + ' BPM';
+  updateActiveTempoRange();
+  // Persist under the current song's id so this BPM is remembered next
+  // time the song is loaded. We only save when a song is actually loaded —
+  // adjusting tempo with no song open doesn't get persisted (there's
+  // nothing to key it under, and the next song-load will either restore
+  // its own saved value or carry the current one through).
+  saveTempoForCurrentSong();
   // If playing, restart the current note timer with new tempo
   if (tempoPlaying) {
     clearTempoTimer();
     scheduleNextNote(true);
   }
+}
+
+// ── Per-song tempo memory ──
+// localStorage key: 'pianoSongTempos' → JSON map { songId: bpm, ... }
+// Read once into an in-memory cache, then mutated through these helpers
+// and flushed back on every change. Wrapped in try/catch because Safari
+// throws on localStorage in private mode.
+let songTempos = (() => {
+  try {
+    const raw = localStorage.getItem('pianoSongTempos');
+    return raw ? (JSON.parse(raw) || {}) : {};
+  } catch (e) { return {}; }
+})();
+
+function saveTempoForCurrentSong() {
+  if (!currentSong) return;
+  songTempos[currentSong.id] = tempoBPM;
+  try { localStorage.setItem('pianoSongTempos', JSON.stringify(songTempos)); } catch (e) {}
+}
+
+// Returns the saved BPM for a song id, or null if none stored. Caller
+// decides whether to apply it or keep the current tempo.
+function loadTempoForSong(id) {
+  const v = songTempos[id];
+  if (typeof v === 'number' && v >= 20 && v <= 160) return v;
+  return null;
+}
+
+// Snap to the middle BPM of a named range. Updates both the slider thumb
+// and the underlying tempo state, then re-renders highlights.
+function setTempoRange(rangeId) {
+  const r = TEMPO_RANGES.find(x => x.id === rangeId);
+  if (!r) return;
+  const slider = document.getElementById('tempoSlider');
+  if (slider) slider.value = r.mid;
+  updateTempo(r.mid);
 }
 
 function toggleTempo() {
@@ -3943,6 +4812,7 @@ function startTempo() {
   tempoPlaying = true;
   document.getElementById('tempoPlayBtn').textContent = '■';
   document.getElementById('tempoPlayBtn').classList.add('playing');
+  updateRepeatBtn();
   scheduleNextNote(true);
 }
 
@@ -3960,15 +4830,20 @@ function stopTempo() {
     const t = el.querySelector('.sn-ticker');
     if (t) t.style.animation = 'none';
   });
+  updateRepeatBtn();
 }
 
 function restartSong() {
   stopTempo();
   currentNoteIdx = 0;
+  currentRepeat = 1;
   // Skip leading rests
-  while (currentNoteIdx < currentSong?.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
+  while (currentNoteIdx < currentSong?.notes.length &&
+         isRestEntry(currentSong.notes[currentNoteIdx])) {
     currentNoteIdx++;
   }
+  refreshPendingChord();
+  updateRepeatBtn();
   renderNoteStrip();
   document.getElementById('songComplete').style.display = 'none';
 }
@@ -3982,23 +4857,49 @@ function scheduleNextNote(immediate) {
   if (!currentSong || !tempoPlaying) return;
 
   // Skip rests
-  while (currentNoteIdx < currentSong.notes.length && currentSong.notes[currentNoteIdx].n === '-') {
+  while (currentNoteIdx < currentSong.notes.length &&
+         isRestEntry(currentSong.notes[currentNoteIdx])) {
     currentNoteIdx++;
   }
 
   if (currentNoteIdx >= currentSong.notes.length) {
-    // Song finished
-    stopTempo();
-    renderNoteStrip();
-    const completeEl = document.getElementById('songComplete');
-    completeEl.style.display = 'block';
-    setTimeout(() => {
-      completeEl.style.display = 'none';
+    // End of one play-through. If we have more iterations to go, restart
+    // silently and keep the timer running. The tempo never pauses — the
+    // last note's duration elapses, then we drop straight into note 0 of
+    // the next iteration. That's what gives the kid momentum.
+    if (currentRepeat < targetRepeats) {
+      currentRepeat++;
       currentNoteIdx = 0;
+      while (currentNoteIdx < currentSong.notes.length &&
+             isRestEntry(currentSong.notes[currentNoteIdx])) {
+        currentNoteIdx++;
+      }
+      refreshPendingChord();
+      updateRepeatBtn();
+      // Fall through to the normal note-scheduling code below — it'll
+      // pick up the new currentNoteIdx (=0) and tick the next note.
+    } else {
+      // Final iteration done — show the celebration and reset.
+      stopTempo();
       renderNoteStrip();
-    }, 3500);
-    return;
+      const completeEl = document.getElementById('songComplete');
+      completeEl.style.display = 'block';
+      setTimeout(() => {
+        completeEl.style.display = 'none';
+        currentNoteIdx = 0;
+        currentRepeat = 1;
+        refreshPendingChord();
+        updateRepeatBtn();
+        renderNoteStrip();
+      }, 3500);
+      return;
+    }
   }
+
+  // Refresh chord-pending state for the new entry. (When tempo is playing
+  // the chord-completion gate doesn't fire, but we keep this in sync so
+  // pausing tempo mid-song hands off cleanly to keypress-driven advance.)
+  refreshPendingChord();
 
   const note = currentSong.notes[currentNoteIdx];
   const quarterMs = (60 / tempoBPM) * 1000;
@@ -4006,10 +4907,12 @@ function scheduleNextNote(immediate) {
 
   renderNoteStrip();
 
-  // Animate ticker bar above strip
+  // Animate ticker bar above strip — uses the entry's primary note color
+  // (lowest note in a chord) for tinting.
   const tickerBar = document.getElementById('tickerBarFill');
   if (tickerBar) {
-    const noteColor = (note.n !== '-') ? (noteColors[note.n] || 'var(--accent)') : 'var(--text-dim)';
+    const primary = entryPrimaryNote(note);
+    const noteColor = primary ? (noteColors[primary] || 'var(--accent)') : 'var(--text-dim)';
     tickerBar.style.background = noteColor;
     tickerBar.classList.remove('sweeping');
     tickerBar.style.animation = 'none';
@@ -4049,6 +4952,11 @@ buildPiano();
 // turned it on previously, restore that state and render the empty staff).
 loadSheetMusicSetting();
 if (sheetMusicEnabled) renderSheetMusic();
+
+// Highlight the tempo range that contains the default BPM (Moderato).
+updateActiveTempoRange();
+// Initial repeat button state ("1×", not armed).
+updateRepeatBtn();
 
 // ──────────────────────────────────────────
 //  AUDIO RECOVERY — surviving backgrounding (iOS / Android)
