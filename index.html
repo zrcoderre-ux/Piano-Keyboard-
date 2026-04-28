@@ -538,12 +538,93 @@
       font-weight: 500;
       color: var(--text);
       text-align: center;
+      display: none;
     }
+    /* The Shift→sharp / Alt→flat reminder is only relevant in keyboard
+       mode (Touch and Piano modes don't use those modifiers). The body
+       class is set by setMode() — switching to keyboard surfaces the
+       hint, switching away hides it. Media queries can hide it further
+       (e.g. landscape iPhone) without inline-style fights. */
+    body.mode-keyboard .modifier-hint { display: block; }
 
     .modifier-hint strong {
       color: var(--accent);
       font-weight: 800;
     }
+
+    /* ── ROTATE-TO-PORTRAIT OVERLAY ──
+       Hidden by default. Becomes visible only when the user is in touch
+       mode AND is using a feature that needs vertical room (sheet music
+       or song sheet) AND the device is in landscape AND the screen is
+       short enough to be a phone. The combination of all four is what
+       makes the layout impossible — the overlay covers everything until
+       the user rotates back. */
+    #rotateOverlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .rotate-card {
+      max-width: 420px;
+      text-align: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    }
+    .rotate-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: rotateIconSpin 2s ease-in-out infinite;
+    }
+    @keyframes rotateIconSpin {
+      0%, 100% { transform: rotate(0deg); }
+      50%      { transform: rotate(-90deg); }
+    }
+    .rotate-card h3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent);
+      margin: 0 0 8px;
+    }
+    .rotate-card p {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin: 0;
+      line-height: 1.45;
+    }
+    .rotate-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .rotate-action-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1.5px solid var(--accent);
+      border-radius: 999px;
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, transform 0.08s;
+    }
+    .rotate-action-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+    }
+    .rotate-action-btn:active { transform: scale(0.97); }
 
     .octave-display {
       font-family: 'Inter', sans-serif;
@@ -879,14 +960,34 @@
       body.song-sheet-open .info-bar .note-display { display: block; }
 
       /* Sheet music behaviour on iPhone portrait:
-         - In touch mode, the QWERTY pad takes a chunk of vertical room, so
-           the staff falls back to the small info-bar note display.
-         - When the song sheet is open, the staff STAYS visible — and
-           switches to song-mode rendering (upcoming-notes view), giving the
-           user the staff-notation equivalent of the note strip. The big
-           letter display still gets hidden because the staff replaces it. */
-      body.sheet-music-on.mode-touch .sheet-music-display { display: none; }
+         - In touch mode the QWERTY pad takes a chunk of room, so by
+           default the staff falls back to the small info-bar note display.
+         - WHEN sheet music is on AND we're in touch mode AND/or the song
+           sheet is open, the staff stays visible (the user explicitly
+           wants the notation feedback) — but the piano and song sheet
+           shrink to make vertical room. The combination of all three is
+           the tightest case and gets the most aggressive shrink. */
+      body.sheet-music-on.mode-touch .sheet-music-display { display: flex; }
+      body.sheet-music-on.mode-touch .big-note-display { display: none; }
       body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
+
+      /* Sheet music itself is short on iPhone — give the staff a fixed,
+         compact height so it doesn't fight with the piano and QWERTY pad. */
+      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 90px; }
+      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 90px; }
+
+      /* When sheet music is on in touch mode, shrink the piano so the
+         staff has room to breathe. The keys are still finger-tappable. */
+      body.sheet-music-on.mode-touch .piano { max-height: 130px; }
+
+      /* When sheet music is on AND the song sheet is open, the song sheet
+         also shrinks (slimmer note strip, less padding) — every pixel
+         counts in this combination. */
+      body.sheet-music-on.song-sheet-open #songSheet { padding: 4px 8px; }
+      body.sheet-music-on.song-sheet-open .strip-note { width: 36px; height: 46px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 12px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-key { font-size: 8px; margin-top: 1px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 7px; }
 
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
@@ -928,6 +1029,19 @@
       .strip-note .sn-note { font-size: 13px; }
       .strip-note .sn-oct { font-size: 9px; }
 
+      /* Tempo range buttons — at full font size the four chips press up
+         against each other on a ~390px screen. Bring the labels down so
+         each name sits comfortably within its button perimeter and the
+         row breathes. The "very fast" hint also wraps awkwardly at full
+         size, so it gets the same treatment. */
+      .tempo-range-btn { padding: 3px 2px 4px; }
+      .tempo-range-btn .tr-name { font-size: 9px; letter-spacing: 0; }
+      .tempo-range-btn .tr-hint { font-size: 8px; }
+      .tempo-range-labels { gap: 3px; }
+      /* Slider thumb is also a bit big against the squeezed track below */
+      input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -3px; }
+      input#tempoSlider.tempo-slider-segmented::-moz-range-thumb { width: 18px; height: 18px; }
+
       /* Settings card full-width on small screens */
       .settings-card { width: 95vw; padding: 20px 16px; max-height: 85vh; }
     }
@@ -949,7 +1063,9 @@
       /* Info bar: merge octave controls inline, reduce height */
       .info-bar { padding: 3px 10px; }
       .note-display { font-size: 14px; min-width: 80px; }
-      .modifier-hint { display: none; } /* no room */
+      /* Sharp/flat reminder eats vertical room we don't have in landscape.
+         Hide it even when keyboard mode would normally show it. */
+      .modifier-hint, body.mode-keyboard .modifier-hint { display: none; }
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
@@ -968,19 +1084,29 @@
       body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
 
-      /* Sheet music in landscape — compact. Touch mode still hides it
-         (QWERTY pad needs the vertical room). When the song sheet is open
-         in landscape, the staff stays visible and shrinks to whatever
-         vertical space remains; the song-mode rendering replaces the
-         scrolling note-strip's role for staff-aware learners. */
+      /* Sheet music in landscape:
+         - Without song sheet: staff is compact-but-readable
+         - With song sheet: shrink so both fit
+         - Touch mode + (sheet music OR song sheet): the rotate overlay
+           takes over (see below) — these layouts just don't work in
+           landscape, easier to ask the user to rotate. */
       .sheet-music-display {
         flex: 0 0 auto;
         padding: 2px 0;
       }
-      .sheet-music-svg { max-height: 110px; }
+      /* Wider staff in landscape — the screen is ~850px so the default
+         520px max-width left a lot of empty horizontal space. Letting the
+         SVG grow up to ~720px makes the staff feel proportional and gives
+         each notehead more breathing room. */
+      .sheet-music-svg { max-height: 130px; max-width: 720px; }
       body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 80px; }
-      body.sheet-music-on.mode-touch .sheet-music-display { display: none; }
-      body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
+
+      /* Trigger the rotate-to-portrait overlay when the user is in touch
+         mode AND is trying to use the song sheet or sheet music. The
+         QWERTY pad already eats the bottom in landscape, leaving no room
+         for either feature. */
+      body.mode-touch.sheet-music-on #rotateOverlay,
+      body.mode-touch.song-sheet-open #rotateOverlay { display: flex; }
 
       /* Piano: take up most of the vertical space. iPhone landscape is wide
          (~850px) but short (~390px). 8 keys × 64px = 512px, plus piano frame
@@ -1461,11 +1587,12 @@
       text-overflow: ellipsis;
     }
 
-    /* Suggested tempo badge — small chip showing the song's traditional
-       tempo (e.g. "♩ = 120"). The quarter-note glyph mirrors how tempos
-       are written on real sheet music, so it doubles as a tiny education
-       moment for the player. Ghosted style so it never competes with the
-       title for attention. */
+    /* Suggested tempo button — small chip showing the song's traditional
+       tempo (e.g. "♩ = 120"). Clicking it snaps the slider to that BPM,
+       making it a one-tap "play it the right way" affordance. The
+       quarter-note glyph mirrors how tempos are written on real sheet
+       music, so it doubles as a tiny education moment for the player.
+       Ghosted style so it never competes with the title for attention. */
     .song-tempo-hint {
       font-family: 'Inter', sans-serif;
       font-size: 11px;
@@ -1477,7 +1604,15 @@
       border-radius: 999px;
       flex-shrink: 0;
       letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
     }
+    .song-tempo-hint:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-deep);
+    }
+    .song-tempo-hint:active { transform: scale(0.96); }
     .song-tempo-hint:empty { display: none; }
 
     .song-select {
@@ -2222,7 +2357,9 @@
   <div class="song-header">
     <div class="song-title-wrap">
       <span class="song-title" id="songTitle">Twinkle Twinkle</span>
-      <span class="song-tempo-hint" id="songTempoHint" title="Traditional tempo — feel free to start slower"></span>
+      <button class="song-tempo-hint" id="songTempoHint"
+              onclick="useSuggestedTempo()"
+              title="Set tempo to the song's traditional speed"></button>
     </div>
     <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
     <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
@@ -2295,6 +2432,26 @@
   <!-- QWERTY TOUCH AREA -->
   <div class="qwerty-area" id="qwertyArea" style="display:none">
     <!-- Rows rendered by JS -->
+  </div>
+</div>
+
+<!-- ROTATE-TO-PORTRAIT OVERLAY ──
+     Shown only when all of these conditions are true:
+       1. body.mode-touch is set (Touch input mode)
+       2. either body.sheet-music-on or body.song-sheet-open is set
+       3. the viewport is landscape on a mobile-height device
+     In that combo the staff/song-sheet just don't fit alongside the
+     QWERTY pad. We ask the user to rotate, but also offer escape buttons
+     so they aren't stuck if rotating isn't an option. -->
+<div id="rotateOverlay">
+  <div class="rotate-card">
+    <div class="rotate-icon" aria-hidden="true">📱↻</div>
+    <h3>Please rotate to portrait</h3>
+    <p>Touch mode with the song sheet or sheet music needs a taller screen. Turn your phone upright, or use one of these:</p>
+    <div class="rotate-actions">
+      <button class="rotate-action-btn" onclick="setMode('keyboard')">Switch to Keyboard mode</button>
+      <button class="rotate-action-btn" onclick="rotateOverlayClose()">Close song sheet &amp; staff</button>
+    </div>
   </div>
 </div>
 
@@ -3865,8 +4022,9 @@ function setMode(m) {
   document.getElementById('btnPiano').classList.toggle('active', m === 'piano');
   // QWERTY pad: only show in touch mode
   document.getElementById('qwertyArea').style.display = m === 'touch' ? 'block' : 'none';
-  // Modifier hint: only show in keyboard mode
-  document.getElementById('modHint').style.display = m === 'keyboard' ? 'block' : 'none';
+  // Modifier hint: visibility is now governed by CSS via the body's
+  // mode-* class. Setting inline display here would override media-query
+  // rules (e.g. landscape hides it for room).
 
   // Piano mode: all keys lit, default to expanded keyboard
   const pianoEl = document.getElementById('piano');
@@ -4525,8 +4683,40 @@ function scrollStripToCurrentNote() {
   const noteEl = noteEls[currentNoteIdx];
   const noteCenter = noteEl.offsetLeft + noteEl.offsetWidth / 2;
   const wrapperCenter = wrapper.offsetWidth / 2;
-  const offset = Math.max(0, noteCenter - wrapperCenter);
+  let offset = Math.max(0, noteCenter - wrapperCenter);
+
+  // Snap the offset so the leftmost rendered note is always fully visible.
+  // The user reads the strip left-to-right (current → upcoming), so the
+  // first-drawn note matters most — a half-clipped chip at the left edge
+  // is confusing. We accept that this may push the rightmost note off
+  // entirely; that's fine because the strip scrolls as the song progresses
+  // anyway and the trailing notes will come into view soon.
+  // Find the first note whose left edge sits at or after `offset` (fully
+  // visible), and snap offset to that note's left.
+  for (const el of noteEls) {
+    const noteLeft = el.offsetLeft;
+    const noteRight = noteLeft + el.offsetWidth;
+    if (noteRight <= offset) continue;     // entirely off-screen left, skip
+    if (noteLeft >= offset) break;          // fully visible — leave offset alone
+    // This note is partially clipped on the left. Snap offset to its left
+    // edge so it becomes fully visible, then stop.
+    offset = noteLeft;
+    break;
+  }
+
   strip.style.transform = `translateX(-${offset}px)`;
+
+  // Hide notes that would render partially clipped at the right edge.
+  // (Left-edge partials are now impossible thanks to the snap above.)
+  // Setting visibility:hidden preserves layout so the strip's transform
+  // stays consistent — partial chips read as empty gutters at the edge.
+  const wrapperWidth = wrapper.offsetWidth;
+  noteEls.forEach(el => {
+    const left = el.offsetLeft - offset;
+    const right = left + el.offsetWidth;
+    const partial = left < -0.5 || right > wrapperWidth + 0.5;
+    el.style.visibility = partial ? 'hidden' : '';
+  });
 }
 
 function updateSongProgress() {
@@ -4798,6 +4988,32 @@ function setTempoRange(rangeId) {
   const slider = document.getElementById('tempoSlider');
   if (slider) slider.value = r.mid;
   updateTempo(r.mid);
+}
+
+// Snap to the current song's traditional / suggested BPM. Triggered when
+// the user taps the small "♩ = N" badge next to the song title — gives
+// them a one-click way to play at the canonical speed.
+function useSuggestedTempo() {
+  if (!currentSong) return;
+  const bpm = SUGGESTED_TEMPOS[currentSong.id];
+  if (!bpm) return;
+  const slider = document.getElementById('tempoSlider');
+  if (slider) slider.value = bpm;
+  updateTempo(bpm);
+}
+
+// Escape hatch from the rotate-to-portrait overlay: close whatever feature
+// was triggering it (song sheet and/or sheet music). The other escape is
+// the "switch to Keyboard mode" button, which calls setMode() directly.
+function rotateOverlayClose() {
+  if (document.body.classList.contains('song-sheet-open')) {
+    hideSongSheet();
+  }
+  if (document.body.classList.contains('sheet-music-on')) {
+    const cb = document.getElementById('sheetMusicMode');
+    if (cb) cb.checked = false;
+    toggleSheetMusic();
+  }
 }
 
 function toggleTempo() {
