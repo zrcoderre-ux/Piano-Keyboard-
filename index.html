@@ -1029,18 +1029,33 @@
       .strip-note .sn-note { font-size: 13px; }
       .strip-note .sn-oct { font-size: 9px; }
 
-      /* Tempo range buttons — at full font size the four chips press up
-         against each other on a ~390px screen. Bring the labels down so
-         each name sits comfortably within its button perimeter and the
-         row breathes. The "very fast" hint also wraps awkwardly at full
-         size, so it gets the same treatment. */
-      .tempo-range-btn { padding: 3px 2px 4px; }
-      .tempo-range-btn .tr-name { font-size: 9px; letter-spacing: 0; }
-      .tempo-range-btn .tr-hint { font-size: 8px; }
+      /* Tempo range buttons — narrow phone screens (320–430px) leave only
+         ~190px for the four buttons combined, so each gets ~45px. The
+         Italian names ("Moderato" is 8 chars) just barely fit at small
+         font size; the English hints below them ("very fast" is 9 chars
+         including the space) push beyond that and overlap into adjacent
+         buttons. On phones we drop the hints entirely — the colored
+         segments of the slider above already convey the speed scale, and
+         the Italian name carries the rest. The tempo-bar gap is also
+         tightened to claw back a few pixels for the labels. */
+      .tempo-bar { gap: 6px; }
+      .tempo-btn { width: 32px; height: 32px; font-size: 14px; }
+      .tempo-repeat-btn { font-size: 11px; }
+      /* Drop the labels entirely on phones — there's no width for them
+         and they kept overlapping each other. The four colored buttons
+         already convey the same info as the segmented slider track right
+         above (same colors, same order), so the names are redundant on
+         small screens. The buttons stay tappable as quick-snap targets;
+         users who want to know which range is which can long-press for
+         the title tooltip or rotate to landscape where the names show. */
+      .tempo-range-btn { padding: 0; min-height: 22px; }
+      .tempo-range-btn .tr-name,
+      .tempo-range-btn .tr-hint { display: none; }
       .tempo-range-labels { gap: 3px; }
       /* Slider thumb is also a bit big against the squeezed track below */
       input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -3px; }
       input#tempoSlider.tempo-slider-segmented::-moz-range-thumb { width: 18px; height: 18px; }
+      .tempo-val { font-size: 11px; min-width: 46px; }
 
       /* Settings card full-width on small screens */
       .settings-card { width: 95vw; padding: 20px 16px; max-height: 85vh; }
@@ -1587,33 +1602,65 @@
       text-overflow: ellipsis;
     }
 
-    /* Suggested tempo button — small chip showing the song's traditional
-       tempo (e.g. "♩ = 120"). Clicking it snaps the slider to that BPM,
-       making it a one-tap "play it the right way" affordance. The
-       quarter-note glyph mirrors how tempos are written on real sheet
-       music, so it doubles as a tiny education moment for the player.
-       Ghosted style so it never competes with the title for attention. */
+    /* Suggested-tempo button — small action chip showing the song's
+       traditional tempo (e.g. "▸ ♩ = 120"). One tap snaps the slider to
+       that BPM. Designed to look obviously interactive on a touch device:
+         • full-color brand-red border + tinted background at rest (not
+           ghosted, not gray — touch users have no hover so resting state
+           must already say "tap me")
+         • leading ▸ icon hints at the action (apply / play / snap)
+         • a brief one-shot border pulse runs whenever the chip's content
+           changes (i.e. when a new song loads), drawing the eye long
+           enough for the kid to notice it's there
+         • on hover/press the chip flips to a deeper red fill so the click
+           lands obviously */
     .song-tempo-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
       font-family: 'Inter', sans-serif;
       font-size: 11px;
-      font-weight: 600;
-      color: var(--text-dim);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      padding: 2px 8px;
+      font-weight: 700;
+      color: var(--accent-deep);
+      background: var(--accent-soft);
+      border: 1.5px solid var(--accent);
+      padding: 3px 10px 3px 8px;
       border-radius: 999px;
       flex-shrink: 0;
       letter-spacing: 0.02em;
       cursor: pointer;
-      transition: background 0.12s, color 0.12s, border-color 0.12s, transform 0.08s;
+      box-shadow: 0 1px 2px rgba(230, 57, 70, 0.15);
+      transition: background 0.12s, color 0.12s, border-color 0.12s,
+                  transform 0.08s, box-shadow 0.12s;
+    }
+    .song-tempo-hint .sth-icon {
+      font-size: 12px;
+      line-height: 1;
+      transform: translateY(-0.5px);
+    }
+    .song-tempo-hint .sth-label {
+      line-height: 1;
     }
     .song-tempo-hint:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: var(--accent-deep);
+      background: var(--accent);
+      color: #ffffff;
+      border-color: var(--accent-deep);
+      box-shadow: 0 2px 6px rgba(230, 57, 70, 0.35);
     }
     .song-tempo-hint:active { transform: scale(0.96); }
-    .song-tempo-hint:empty { display: none; }
+    .song-tempo-hint.hidden { display: none; }
+
+    /* One-shot attention pulse: outer ring expands and fades. Triggered
+       by adding the .pulse class on song load. The animation runs once
+       (no repeat) so the chip doesn't become annoying noise. */
+    @keyframes tempoHintPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0.55), 0 1px 2px rgba(230, 57, 70, 0.15); }
+      70%  { box-shadow: 0 0 0 8px rgba(230, 57, 70, 0),    0 1px 2px rgba(230, 57, 70, 0.15); }
+      100% { box-shadow: 0 0 0 0 rgba(230, 57, 70, 0),      0 1px 2px rgba(230, 57, 70, 0.15); }
+    }
+    .song-tempo-hint.pulse {
+      animation: tempoHintPulse 1.4s ease-out 1;
+    }
 
     .song-select {
       background: var(--surface2);
@@ -2058,10 +2105,22 @@
       border-radius: 8px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
       transition: background 0.12s, border-color 0.12s, transform 0.08s, box-shadow 0.12s;
+      /* Clip any text that's wider than the button. With min-width:0 above
+         and four buttons sharing a flex row, each button can shrink below
+         its content size on narrow screens — without overflow:hidden the
+         text would spill into adjacent buttons and overlap. */
+      overflow: hidden;
       /* Defaults — overridden per-range below. */
       --tr-color: #888;
       --tr-tint: #f0f0f0;
       --tr-border: #ddd;
+    }
+    .tempo-range-btn .tr-name,
+    .tempo-range-btn .tr-hint {
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Per-range color tokens. Each button picks its values via [data-range]. */
@@ -2359,7 +2418,10 @@
       <span class="song-title" id="songTitle">Twinkle Twinkle</span>
       <button class="song-tempo-hint" id="songTempoHint"
               onclick="useSuggestedTempo()"
-              title="Set tempo to the song's traditional speed"></button>
+              title="Tap to play at the song's traditional speed">
+        <span class="sth-icon" aria-hidden="true">▸</span><!--
+        --><span class="sth-label" id="songTempoHintLabel"></span>
+      </button>
     </div>
     <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
     <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
@@ -4551,12 +4613,27 @@ function loadSong(id) {
   document.getElementById('songTitle').textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
   document.getElementById('songComplete').style.display = 'none';
-  // Suggested-tempo badge: shows the song's traditional tempo as a hint.
-  // Uses the quarter-note glyph (♩) the way real sheet music does.
+  // Suggested-tempo button: shows the song's traditional tempo as a
+  // tappable chip. Uses the quarter-note glyph (♩) the way real sheet
+  // music does. The leading ▸ icon plus a one-shot border pulse signal
+  // "this is interactive" without depending on hover (touch devices
+  // don't have hover).
   const hint = document.getElementById('songTempoHint');
+  const hintLbl = document.getElementById('songTempoHintLabel');
   const sBPM = SUGGESTED_TEMPOS[currentSong.id];
-  if (hint) {
-    hint.textContent = sBPM ? `\u2669 = ${sBPM}` : '';
+  if (hint && hintLbl) {
+    if (sBPM) {
+      hintLbl.textContent = `\u2669 = ${sBPM}`;
+      hint.classList.remove('hidden');
+      // One-shot attention pulse — ride a class addition that triggers
+      // the keyframes, then clear it so it can re-fire next time.
+      hint.classList.remove('pulse');
+      void hint.offsetWidth; // force reflow so removing+adding restarts animation
+      hint.classList.add('pulse');
+    } else {
+      hintLbl.textContent = '';
+      hint.classList.add('hidden');
+    }
   }
   // Restore the user's last-used tempo for this song, if any. If the song
   // hasn't been played before, the current tempo carries through — so
