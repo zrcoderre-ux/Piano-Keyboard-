@@ -639,12 +639,13 @@
       }
 
       /* All-device rule (iPad + desktop touch users): when in Touch mode
-         AND both song-sheet and sheet-music are on, hide the piano keys.
-         The QWERTY pad below is the input source — the user doesn't also
-         need to see the piano keys. The staff (.sheet-music-display) lives
-         in the same .piano-area, so we hide only .piano-wrapper (the keys)
-         rather than the whole area, preserving the staff display. */
-      body.mode-touch.song-sheet-open.sheet-music-on .piano-wrapper {
+         and either song-sheet or sheet-music is on, hide the piano keys.
+         The QWERTY pad is the input source — the user doesn't need the
+         visual piano keys. We hide only .piano-wrapper (the keys) rather
+         than the whole .piano-area so the staff (.sheet-music-display)
+         inside the same container stays visible. */
+      body.mode-touch.song-sheet-open .piano-wrapper,
+      body.mode-touch.sheet-music-on .piano-wrapper {
         display: none !important;
       }
     }
@@ -993,9 +994,9 @@
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave::before {
       content: '';
       position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
+      left: -1px;
+      right: -1px;
+      top: -1px;
       /* 20% of the key's height — a bold, kid-readable band. */
       height: 20%;
       background: var(--key-rest-color, var(--accent));
