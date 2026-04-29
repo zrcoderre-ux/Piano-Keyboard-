@@ -860,6 +860,7 @@
 
     .white-key.pressed {
       background: var(--note-color, var(--accent));
+      border-color: var(--note-color, var(--accent));
       transform: scaleY(0.97);
       transform-origin: top;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 32px var(--note-color, var(--glow));
@@ -958,6 +959,7 @@
     body.keys-inverted .piano.single-octave .white-key.pressed,
     body.keys-inverted .piano.expanded:not(.piano-mode) .white-key.active-octave.pressed {
       background: #ffffff !important;
+      border-color: #ffffff !important;
       box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 0 24px var(--key-rest-color, var(--glow)) !important;
     }
     body.keys-inverted .piano.piano-mode .white-key.pressed .key-note,
@@ -989,13 +991,12 @@
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave::before {
       content: '';
       position: absolute;
-      /* Flush to the key's outer edges (left/right/top). Earlier versions
-         had a rounded-top stripe that looked like a separate label sat on
-         the key; now the stripe is a full-width band that touches the
-         black line between adjacent keys and the piano frame above —
-         matches the app icon's design. */
-      left: 0;
-      right: 0;
+      /* Extend 1px past the padding box on left/right to cover the border
+         itself — without this the stripe is inset by the 1px border and
+         leaves a hairline gap at each side edge. overflow:hidden on the
+         parent clips it cleanly to the key's visual outline. */
+      left: -1px;
+      right: -1px;
       top: 0;
       /* 20% of the key's height — a bold, kid-readable band. */
       height: 20%;
@@ -1010,6 +1011,9 @@
        any seam between stripe and key body. */
     body.keys-logo .white-key.pressed::before {
       box-shadow: none;
+    }
+    body.keys-logo .white-key.pressed {
+      border-color: var(--note-color, var(--accent));
     }
 
     /* ── SEGMENTED CONTROL ──
@@ -2869,10 +2873,13 @@
   <div class="piano-wrapper">
     <div class="piano" id="piano"></div>
   </div>
-  <!-- QWERTY TOUCH AREA -->
-  <div class="qwerty-area" id="qwertyArea" style="display:none">
-    <!-- Rows rendered by JS -->
-  </div>
+</div>
+<!-- QWERTY TOUCH AREA — lives outside piano-area so it stays visible in
+     landscape touch mode even when piano-area is hidden (song-sheet or
+     sheet-music is on). The QWERTY pad is the input source in touch mode;
+     hiding the visual piano is fine but the pad must remain reachable. -->
+<div class="qwerty-area" id="qwertyArea" style="display:none">
+  <!-- Rows rendered by JS -->
 </div>
 
 <!-- SETTINGS PANEL -->
@@ -4860,7 +4867,12 @@ function setMode(m) {
     // When leaving piano mode, only revert expanded keyboard if piano mode
     // is the thing that turned it on. If the user manually re-checked the
     // box while in piano mode, leave it as they set it.
-    if (prevMode === 'piano' && pianoModeAutoExpanded && expandedKeyboard) {
+    // Revert the auto-expand that Piano mode applied when we entered it.
+    // We also need to cover the case where pianoModeAutoSingleOctave then
+    // fired and set expandedKeyboard=false (variable) while leaving the
+    // checkbox at true — so check the checkbox, not just the variable.
+    if (prevMode === 'piano' && pianoModeAutoExpanded &&
+        (expandedKeyboard || document.getElementById('expandedKeyboard').checked)) {
       expandedKeyboard = false;
       document.getElementById('expandedKeyboard').checked = false;
       document.getElementById('octaveRangeSection').style.display = 'none';
@@ -6171,65 +6183,32 @@ function renderNoteStrip() {
       currentNoteIdx = i;
       refreshPendingChord();
       renderNoteStrip();
-      scrollStripToCurrentNote();
     });
 
     strip.appendChild(el);
   });
 
   updateSongProgress();
-  // Pre-hide notes that won't fit before the browser paints them. The
-  // post-render scroll-and-hide pass below also handles this, but it
-  // runs *after* a frame in which the overflowing notes are visible —
-  // that flash is what we're avoiding here. We approximate the offset
-  // the scroll pass will pick (centered on currentNoteIdx, snapped so
-  // the leftmost visible note isn't clipped) and hide the trailing
-  // overflowers up front.
-  prehideOverflowingStripNotes();
-  scrollStripToCurrentNote();
+  // Hide the strip until after the corrected scroll position has been
+  // painted. Two rAFs are needed:
+  //   Frame 1: layout has settled — measure offsetLeft/offsetWidth,
+  //            apply the translateX transform and hide overflowing chips.
+  //   Frame 2: the browser has now painted the corrected state — reveal.
+  // A single rAF isn't enough because setting visibility='' in the same
+  // callback as the transform means the browser can paint the strip at
+  // the old position for one frame before the transform takes effect.
+  strip.style.visibility = 'hidden';
+  requestAnimationFrame(() => {
+    scrollStripToCurrentNote();
+    requestAnimationFrame(() => {
+      strip.style.visibility = '';
+    });
+  });
   // Sheet music staff (when enabled in song mode) re-renders here so it
   // tracks the same currentNoteIdx the strip just rendered.
   if (sheetMusicEnabled) renderSheetMusic();
 }
 
-// Best-effort pre-render hiding for notes that will overflow the right
-// edge after scrolling. Mirrors the logic in scrollStripToCurrentNote
-// but runs synchronously in the same frame as the strip render so the
-// browser never paints the overflowing chips. The post-render pass is
-// still authoritative — if our approximation is off, it fixes things.
-function prehideOverflowingStripNotes() {
-  const strip = document.getElementById('noteStrip');
-  const wrapper = strip.parentElement;
-  if (!wrapper) return;
-  const noteEls = strip.querySelectorAll('.strip-note');
-  if (!noteEls.length) return;
-  const wrapperWidth = wrapper.offsetWidth;
-  if (!wrapperWidth) return;
-  const curEl = noteEls[currentNoteIdx];
-  if (!curEl) return;
-
-  const noteCenter = curEl.offsetLeft + curEl.offsetWidth / 2;
-  const wrapperCenter = wrapperWidth / 2;
-  let offset = Math.max(0, noteCenter - wrapperCenter);
-
-  // Same left-edge snap the scroll pass uses, so the offset estimate
-  // matches what we'll actually transform to.
-  for (const el of noteEls) {
-    const noteLeft = el.offsetLeft;
-    const noteRight = noteLeft + el.offsetWidth;
-    if (noteRight <= offset) continue;
-    if (noteLeft >= offset) break;
-    offset = noteLeft;
-    break;
-  }
-
-  noteEls.forEach(el => {
-    const left = el.offsetLeft - offset;
-    const right = left + el.offsetWidth;
-    const partial = left < -0.5 || right > wrapperWidth + 0.5;
-    if (partial) el.style.visibility = 'hidden';
-  });
-}
 
 function scrollStripToCurrentNote() {
   const strip = document.getElementById('noteStrip');
