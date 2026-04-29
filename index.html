@@ -981,7 +981,7 @@
     body.keys-logo .piano.single-octave .white-key,
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave {
       position: relative;
-      border-color: #ffffff;
+      border-color: transparent;
       /* Make sure the ::before stripe is clipped to the key's boundary —
          the white key has rounded BOTTOM corners (the key shape), but a
          square TOP edge against the piano frame. The stripe needs to
@@ -993,12 +993,8 @@
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave::before {
       content: '';
       position: absolute;
-      /* Extend 1px past the padding box on left/right to cover the border
-         itself — without this the stripe is inset by the 1px border and
-         leaves a hairline gap at each side edge. overflow:hidden on the
-         parent clips it cleanly to the key's visual outline. */
-      left: -1px;
-      right: -1px;
+      left: 0;
+      right: 0;
       top: 0;
       /* 20% of the key's height — a bold, kid-readable band. */
       height: 20%;
@@ -1487,7 +1483,58 @@
       .settings-card { width: 90vw; max-height: 90vh; padding: 16px 14px; }
     }
 
-    /* ── HELP MODAL ── */
+    /* ── ROTATE-TO-PORTRAIT BANNER ──
+       Shown in mobile landscape when touch mode has BOTH song-sheet and
+       sheet-music on simultaneously — there isn't enough vertical room for
+       the note strip, the staff, the QWERTY pad, and a readable piano all
+       at once. Asking the user to rotate is the cleanest solution.
+       Driven entirely by CSS body-class + media-query — no JS needed. */
+    #rotateBanner {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      background: var(--bg);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .rotate-icon {
+      font-size: 52px;
+      line-height: 1;
+      animation: rotate-hint 2s ease-in-out infinite;
+    }
+
+    @keyframes rotate-hint {
+      0%, 100% { transform: rotate(0deg); }
+      40%       { transform: rotate(-90deg); }
+      60%       { transform: rotate(-90deg); }
+    }
+
+    .rotate-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .rotate-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+      max-width: 260px;
+      line-height: 1.5;
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      body.mode-touch.song-sheet-open.sheet-music-on #rotateBanner {
+        display: flex;
+      }
+    }
+
+
     #helpPanel {
       display: none;
       position: fixed;
@@ -2686,6 +2733,14 @@
 </div>
 
 <!-- SPLASH SCREEN -->
+<!-- ROTATE-TO-PORTRAIT BANNER — shown in mobile landscape when both song
+     sheet and sheet music are on in touch mode (not enough vertical room). -->
+<div id="rotateBanner">
+  <div class="rotate-icon">📱</div>
+  <div class="rotate-title">Rotate to portrait</div>
+  <div class="rotate-sub">Song sheet + sheet music together need a taller screen. Flip your device upright to play.</div>
+</div>
+
 <div id="splash">
   <div class="splash-keys">
     <div class="splash-key">A</div>
@@ -3290,11 +3345,13 @@ function resetColors() {
 function applyNoteColor(el, note) {
   const color = noteColors[note] || '#e63946';
   el.style.background = color;
+  el.style.borderColor = color;
   el.style.boxShadow = `0 4px 12px rgba(0,0,0,0.25), 0 0 28px ${color}99`;
 }
 
 function clearNoteColor(el) {
   el.style.background = '';
+  el.style.borderColor = '';
   el.style.boxShadow = '';
 }
 
@@ -4169,6 +4226,7 @@ function dimNoteDisplay() {
   // switch or audio interruption).
   activeDisplayNotes.clear();
   activeSheetNotes.clear();
+  freePlayHistory.length = 0;
   renderNoteDisplay();
   if (sheetMusicEnabled) renderSheetMusic();
 }
@@ -4193,6 +4251,12 @@ function dimNoteDisplay() {
 const DIATONIC = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 // Active sheet-music notes: id → { note, oct, color }
 const activeSheetNotes = new Map();
+// History of recently-played note groups in free-play mode. Each entry is
+// an array of { note, oct, color } objects — a snapshot of what was active
+// just before the last note in a simultaneous group was released. We keep
+// the last 3 groups so the staff shows a short trail of past notes.
+const freePlayHistory = [];
+const FREE_PLAY_HISTORY_MAX = 3;
 let sheetMusicEnabled = false;
 
 function trackActiveSheetNote(id, note, oct, color) {
@@ -4202,6 +4266,15 @@ function trackActiveSheetNote(id, note, oct, color) {
 
 function untrackActiveSheetNote(id) {
   if (!activeSheetNotes.has(id)) return;
+  // Snapshot the current group just before this note leaves, but only if
+  // we're in free-play mode (not song mode). We snapshot when this is the
+  // last (or only) note being released — i.e. activeSheetNotes will be
+  // empty after deletion — so we capture full chords as one history entry.
+  if (!(currentSong && songSheetVisible) && activeSheetNotes.size === 1) {
+    const snapshot = Array.from(activeSheetNotes.values());
+    freePlayHistory.push(snapshot);
+    if (freePlayHistory.length > FREE_PLAY_HISTORY_MAX) freePlayHistory.shift();
+  }
   activeSheetNotes.delete(id);
   if (sheetMusicEnabled) renderSheetMusic();
 }
@@ -4513,31 +4586,49 @@ function renderSheetMusic() {
   renderSheetMusicLive(svg);
 }
 
-// LIVE mode: show whichever notes are currently being held / pressed.
-// Chord-aware: stacks notes at the same X if they're within a sixth,
-// spreads them horizontally otherwise.
+// LIVE mode: show whichever notes are currently being held / pressed,
+// plus a short trail of recently-released note groups shown desaturated
+// (same visual treatment as past notes in song mode).
 function renderSheetMusicLive(svg) {
-  if (activeSheetNotes.size === 0) {
+  const hasActive = activeSheetNotes.size > 0;
+  const hasHistory = freePlayHistory.length > 0;
+
+  if (!hasActive && !hasHistory) {
     renderEmptyHint(svg, 'Play a note');
     return;
   }
 
-  // Sort by step (low → high) so chords stack from bass up.
-  const entries = Array.from(activeSheetNotes.values())
-    .map(e => ({ ...e, step: noteToStep(e.note, e.oct) }))
-    .sort((a, b) => a.step - b.step);
+  // Lay out slots left-to-right: history groups oldest→newest, then current.
+  // Each group occupies one slot. We show up to FREE_PLAY_HISTORY_MAX history
+  // groups plus 1 current slot = FREE_PLAY_HISTORY_MAX + 1 total slots.
+  const totalSlots = FREE_PLAY_HISTORY_MAX + 1; // history slots + current slot
+  const X_START = 60, X_END = 490;
+  const slotWidth = (X_END - X_START) / totalSlots;
+  // Current slot is the rightmost; history slots precede it oldest-first.
+  const currentSlotIdx = totalSlots - 1;
+  const slotX = (slotIdx) => X_START + (slotIdx + 0.5) * slotWidth;
 
-  const stepRange = entries[entries.length - 1].step - entries[0].step;
-  const baseX = 140;
-  if (stepRange <= 6) {
-    // Stacked chord — all at same X
-    entries.forEach(e => renderSingleNote(svg, e.note, e.oct, e.color, baseX));
-  } else {
-    // Spread — gentle horizontal spacing
-    const xs = 100;
-    const xe = 470;
-    entries.forEach((e, i) => {
-      const x = entries.length === 1 ? baseX : xs + ((xe - xs) * i) / (entries.length - 1);
+  // Render history groups (past — desaturated gray, lower opacity).
+  // freePlayHistory[0] is oldest, freePlayHistory[length-1] is most recent.
+  freePlayHistory.forEach((group, hi) => {
+    // Map history index to slot: most-recent history sits just left of current.
+    const slotIdx = currentSlotIdx - (freePlayHistory.length - hi);
+    if (slotIdx < 0) return; // shouldn't happen given FREE_PLAY_HISTORY_MAX
+    const x = slotX(slotIdx);
+    // Fade older notes more, same feel as song-mode past notes.
+    const opacity = 0.35 + (hi / Math.max(1, freePlayHistory.length - 1)) * 0.2;
+    group.forEach(e => {
+      renderSingleNote(svg, e.note, e.oct, '#9a9a9a', x, { opacity });
+    });
+  });
+
+  // Render current active notes (present — full color).
+  if (hasActive) {
+    const entries = Array.from(activeSheetNotes.values())
+      .map(e => ({ ...e, step: noteToStep(e.note, e.oct) }))
+      .sort((a, b) => a.step - b.step);
+    const x = slotX(currentSlotIdx);
+    entries.forEach(e => {
       renderSingleNote(svg, e.note, e.oct, e.color, x);
     });
   }
