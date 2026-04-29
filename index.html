@@ -637,6 +637,16 @@
       body.song-sheet-open .info-bar .note-display {
         display: none !important;
       }
+
+      /* All-device rule (iPad + desktop touch users): when in Touch mode
+         AND both song-sheet and sheet-music are on, hide the piano. The
+         QWERTY pad below is the input source — the user doesn't also
+         need to see the piano keys. This frees the freed space for the
+         staff-as-song-sheet view. The narrower mobile-landscape rule
+         further down hides the piano in more situations on phones. */
+      body.mode-touch.song-sheet-open.sheet-music-on .piano-area {
+        display: none !important;
+      }
     }
 
     /* ── INFO BAR ── */
@@ -696,80 +706,6 @@
       color: var(--accent);
       font-weight: 800;
     }
-
-    /* ── ROTATE-TO-PORTRAIT OVERLAY ──
-       Hidden by default. Becomes visible only when the user is in touch
-       mode AND is using a feature that needs vertical room (sheet music
-       or song sheet) AND the device is in landscape AND the screen is
-       short enough to be a phone. The combination of all four is what
-       makes the layout impossible — the overlay covers everything until
-       the user rotates back. */
-    #rotateOverlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .rotate-card {
-      max-width: 420px;
-      text-align: center;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 28px 24px;
-      box-shadow: 0 8px 28px rgba(0,0,0,0.12);
-    }
-    .rotate-icon {
-      font-size: 56px;
-      margin-bottom: 12px;
-      animation: rotateIconSpin 2s ease-in-out infinite;
-    }
-    @keyframes rotateIconSpin {
-      0%, 100% { transform: rotate(0deg); }
-      50%      { transform: rotate(-90deg); }
-    }
-    .rotate-card h3 {
-      font-family: 'Inter', sans-serif;
-      font-size: 18px;
-      font-weight: 800;
-      color: var(--accent);
-      margin: 0 0 8px;
-    }
-    .rotate-card p {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--text-dim);
-      margin: 0;
-      line-height: 1.45;
-    }
-    .rotate-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-top: 16px;
-    }
-    .rotate-action-btn {
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--accent);
-      background: var(--accent-soft);
-      border: 1.5px solid var(--accent);
-      border-radius: 999px;
-      padding: 9px 18px;
-      cursor: pointer;
-      transition: background 0.12s, color 0.12s, transform 0.08s;
-    }
-    .rotate-action-btn:hover {
-      background: var(--accent);
-      color: #ffffff;
-    }
-    .rotate-action-btn:active { transform: scale(0.97); }
 
     .octave-display {
       font-family: 'Inter', sans-serif;
@@ -1042,26 +978,39 @@
     body.keys-logo .piano.single-octave .white-key,
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave {
       position: relative;
+      /* Make sure the ::before stripe is clipped to the key's boundary —
+         the white key has rounded BOTTOM corners (the key shape), but a
+         square TOP edge against the piano frame. The stripe needs to
+         honor the same outline so it doesn't bleed past the frame. */
+      overflow: hidden;
     }
     body.keys-logo .piano.piano-mode .white-key::before,
     body.keys-logo .piano.single-octave .white-key::before,
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave::before {
       content: '';
       position: absolute;
+      /* Flush to the key's outer edges (left/right/top). Earlier versions
+         had a rounded-top stripe that looked like a separate label sat on
+         the key; now the stripe is a full-width band that touches the
+         black line between adjacent keys and the piano frame above —
+         matches the app icon's design. */
       left: 0;
       right: 0;
       top: 0;
-      height: 12px;
+      /* 20% of the key's height — a bold, kid-readable band. */
+      height: 20%;
       background: var(--key-rest-color, var(--accent));
-      /* Round the top corners to match the key's own border-radius. */
-      border-radius: 4px 4px 0 0;
       pointer-events: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.12);
     }
-    /* When pressed in logo mode, the whole key flashes the note color
-       (matches Default mode's press behaviour). The ::before strip is
-       still drawn but blends with the now-colored key, so visually
-       there's no inconsistency. */
+    /* When the key is pressed in Logo mode, the whole key flashes the
+       note color (applyNoteColor sets background inline). The ::before
+       stripe is the SAME color, so the key reads as a single solid
+       color block during press — matching Default mode's press feel.
+       We also drop the (subtle) stripe shadow during press to remove
+       any seam between stripe and key body. */
+    body.keys-logo .white-key.pressed::before {
+      box-shadow: none;
+    }
 
     /* ── SEGMENTED CONTROL ──
        3-way radio-style picker used by the Piano Key Colors setting.
@@ -1174,6 +1123,14 @@
     .qkey.pressed .qkey-char { color: #ffffff; }
 
     .qkey .qkey-note {
+      /* Note-name labels (e.g. "C", "D♯") are hidden — the QWERTY pad in
+         Touch mode is meant for users who think in keyboard letters
+         (Q/W/E/R/T/Y), and showing both creates visual noise on each
+         key. The keyboard-letter label (.qkey-char) alone is enough.
+         The element is still rendered by buildQwerty() so the existing
+         pressed-state color rules etc. don't break — just visually
+         hidden. */
+      display: none;
       font-family: 'Inter', sans-serif;
       font-size: 8px;
       color: var(--accent);
@@ -1457,23 +1414,20 @@
       .sheet-music-svg { max-height: 130px; max-width: 720px; }
       body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 80px; }
 
-      /* In landscape touch mode, large-format features need vertical room
-         the QWERTY pad doesn't leave. Two distinct strategies:
-           1. Touch + (song sheet OR sheet music) but NOT both: rotate
-              overlay fires — there's no clean way to fit ONE big-format
-              widget alongside the QWERTY pad in landscape phone height.
-           2. Touch + song sheet AND sheet music: hide the piano-area
-              entirely, and let the staff-as-song-sheet take all the
-              freed space. The kid is in touch mode, so the QWERTY pad
-              is their input; they don't need to see the piano keys at
-              all. This matches the user's preferred flow for combined
-              song-sheet + sheet-music + touch in landscape. */
-      body.mode-touch.sheet-music-on:not(.song-sheet-open) #rotateOverlay,
-      body.mode-touch.song-sheet-open:not(.sheet-music-on) #rotateOverlay { display: flex; }
-      /* The triple combo: hide the piano area. The QWERTY pad below
-         remains visible (it's the input source); the song-sheet's staff
-         + tempo bar fill the freed space. */
-      body.mode-touch.song-sheet-open.sheet-music-on .piano-area { display: none; }
+      /* In mobile landscape Touch mode, the piano competes for vertical
+         room with the song sheet, sheet music, and the QWERTY pad. When
+         either feature is on we hide the piano entirely so the song-mode
+         UI can take all the freed space. The QWERTY pad below remains —
+         that's the actual input source in Touch mode, so the user
+         doesn't need the visual piano keys.
+
+         Scoped to mode-touch only: Keyboard mode users play on a real
+         keyboard but still need the on-screen piano as a visual reference
+         for which keys map to which notes (especially for sharps/flats).
+         Piano mode users tap the piano keys directly — hiding them would
+         leave no input source. So those modes keep the piano visible. */
+      body.mode-touch.song-sheet-open .piano-area,
+      body.mode-touch.sheet-music-on .piano-area { display: none; }
 
       /* Piano: take up most of the vertical space. With the info-bar
          absorbed into the song-header row in landscape+song-sheet, we
@@ -2918,26 +2872,6 @@
   <!-- QWERTY TOUCH AREA -->
   <div class="qwerty-area" id="qwertyArea" style="display:none">
     <!-- Rows rendered by JS -->
-  </div>
-</div>
-
-<!-- ROTATE-TO-PORTRAIT OVERLAY ──
-     Shown only when all of these conditions are true:
-       1. body.mode-touch is set (Touch input mode)
-       2. either body.sheet-music-on or body.song-sheet-open is set
-       3. the viewport is landscape on a mobile-height device
-     In that combo the staff/song-sheet just don't fit alongside the
-     QWERTY pad. We ask the user to rotate, but also offer escape buttons
-     so they aren't stuck if rotating isn't an option. -->
-<div id="rotateOverlay">
-  <div class="rotate-card">
-    <div class="rotate-icon" aria-hidden="true">📱↻</div>
-    <h3>Please rotate to portrait</h3>
-    <p>Touch mode with the song sheet or sheet music needs a taller screen. Turn your phone upright, or use one of these:</p>
-    <div class="rotate-actions">
-      <button class="rotate-action-btn" onclick="setMode('keyboard')">Switch to Keyboard mode</button>
-      <button class="rotate-action-btn" onclick="rotateOverlayClose()">Close song sheet &amp; staff</button>
-    </div>
   </div>
 </div>
 
@@ -6695,20 +6629,6 @@ function useSuggestedTempo() {
   const slider = document.getElementById('tempoSlider');
   if (slider) slider.value = bpm;
   updateTempo(bpm);
-}
-
-// Escape hatch from the rotate-to-portrait overlay: close whatever feature
-// was triggering it (song sheet and/or sheet music). The other escape is
-// the "switch to Keyboard mode" button, which calls setMode() directly.
-function rotateOverlayClose() {
-  if (document.body.classList.contains('song-sheet-open')) {
-    hideSongSheet();
-  }
-  if (document.body.classList.contains('sheet-music-on')) {
-    const cb = document.getElementById('sheetMusicMode');
-    if (cb) cb.checked = false;
-    toggleSheetMusic();
-  }
 }
 
 function toggleTempo() {
