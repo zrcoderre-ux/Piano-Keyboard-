@@ -1435,10 +1435,9 @@
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
 
-      /* Rotate overlay: fires when touch mode + song sheet OR sheet music
-         (but NOT both — the both case is handled by hiding the piano). */
-      body.mode-touch.sheet-music-on:not(.song-sheet-open) #rotateOverlay,
-      body.mode-touch.song-sheet-open:not(.sheet-music-on) #rotateOverlay { display: flex; }
+      /* Rotate overlay: only when touch mode has BOTH song sheet AND sheet
+         music on simultaneously — that's the cramped case with no room. */
+      body.mode-touch.song-sheet-open.sheet-music-on #rotateOverlay { display: flex; }
 
       /* Piano: take up most of the vertical space. With the info-bar
          absorbed into the song-header row in landscape+song-sheet, we
