@@ -1234,23 +1234,33 @@
       body.sheet-music-on.mode-touch .big-note-display { display: none; }
       body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
-      /* Sheet music itself is short on iPhone — give the staff a fixed,
-         compact height so it doesn't fight with the piano and QWERTY pad. */
-      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 90px; }
-      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 90px; }
+      /* Sheet music + touch, no song sheet: staff same size as keyboard
+         mode (no artificial cap — let it fill the available space like it
+         does in keyboard/piano mode). Piano shrinks to leave room. */
+      body.sheet-music-on.mode-touch:not(.song-sheet-open) .sheet-music-svg { max-height: 100%; }
+      body.sheet-music-on.mode-touch:not(.song-sheet-open) .piano { max-height: 130px; }
 
-      /* When sheet music is on in touch mode, shrink the piano so the
-         staff has room to breathe. The keys are still finger-tappable. */
-      body.sheet-music-on.mode-touch .piano { max-height: 130px; }
+      /* Song sheet open + sheet music on, touch mode in portrait:
+         hide the piano keys entirely (QWERTY is the input source) so the
+         staff gets the full freed space. The staff size matches the
+         combined-mode base rule (280px) — portrait has enough room for it.
+         We hide .piano-wrapper only (not .piano-area) so the staff which
+         lives in .piano-area stays visible. */
+      body.sheet-music-on.song-sheet-open.mode-touch .piano-wrapper { display: none; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 280px; }
 
-      /* When sheet music is on AND the song sheet is open, the song sheet
-         also shrinks (slimmer note strip, less padding) — every pixel
-         counts in this combination. */
-      body.sheet-music-on.song-sheet-open #songSheet { padding: 4px 8px; }
-      body.sheet-music-on.song-sheet-open .strip-note { width: 36px; height: 46px; }
-      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 12px; }
-      body.sheet-music-on.song-sheet-open .strip-note .sn-key { font-size: 8px; margin-top: 1px; }
-      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 7px; }
+      /* Song sheet + sheet music, any mode (non-touch): staff compact. */
+      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { max-height: 90px; }
+
+      /* When sheet music is on AND the song sheet is open, shrink the
+         song sheet aggressively so the staff gets more room. */
+      body.sheet-music-on.song-sheet-open #songSheet { padding: 2px 8px; }
+      body.sheet-music-on.song-sheet-open .song-header { margin-bottom: 2px; }
+      body.sheet-music-on.song-sheet-open .strip-note { width: 28px; height: 36px; border-radius: 6px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 10px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-key { font-size: 7px; margin-top: 0; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
+      body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 2px 0; }
 
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
@@ -1480,6 +1490,14 @@
       .strip-note { width: 36px; height: 44px; border-radius: 6px; }
       .strip-note .sn-note { font-size: 12px; }
       .strip-note .sn-oct { font-size: 8px; }
+
+      /* Both song sheet + sheet music: shrink the strip further so the
+         staff gets maximum room. */
+      body.sheet-music-on.song-sheet-open #songSheet { padding: 2px 6px; }
+      body.sheet-music-on.song-sheet-open .strip-note { width: 26px; height: 32px; border-radius: 5px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 9px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
+      body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
       /* Viz bar: thinner */
       .viz-bar { height: 2px; }
@@ -6302,27 +6320,27 @@ function renderNoteStrip() {
   });
 
   updateSongProgress();
-  // Compute scroll offset and hide overflowing notes synchronously —
-  // we set every note's width as an inline style above, so we can do
-  // the same math scrollStripToCurrentNote() would do without needing
-  // a layout read. This means the correct transform and per-note
-  // visibility are applied before the first paint, eliminating the
-  // partial-note flash entirely.
-  //
-  // Note widths: baseW * max(dur, 0.5) + chordPad (same formula above).
-  // Gap between notes matches the CSS flex gap on .note-strip (6px).
+  // Compute scroll offset and hide overflowing notes. We know every
+  // note's width from the inline style, so we can do the math without a
+  // layout read — EXCEPT for wrapperWidth, which requires the wrapper to
+  // have been laid out. If it hasn't yet (e.g. the song sheet panel just
+  // opened), offsetWidth returns 0 and we defer to a rAF. We only hide
+  // individual overflowing notes (not the whole strip) so there's no
+  // full-strip flash even in the deferred path.
   const GAP = 6;
   const noteEls = strip.querySelectorAll('.strip-note');
-  // Build cumulative left positions from the known inline widths.
   const positions = [];
   let cursor = 0;
-  noteEls.forEach((el, i) => {
+  noteEls.forEach(el => {
     positions.push(cursor);
     cursor += parseFloat(el.style.width) + GAP;
   });
-  const wrapperWidth = strip.parentElement.offsetWidth;
-  const curEl = noteEls[currentNoteIdx];
-  if (curEl) {
+
+  function applyStripLayout() {
+    const wrapperWidth = strip.parentElement.offsetWidth;
+    if (!wrapperWidth) return; // still not laid out, skip
+    const curEl = noteEls[currentNoteIdx];
+    if (!curEl) return;
     const noteW = parseFloat(curEl.style.width);
     const noteCenter = positions[currentNoteIdx] + noteW / 2;
     let offset = Math.max(0, noteCenter - wrapperWidth / 2);
@@ -6340,6 +6358,18 @@ function renderNoteStrip() {
       const right = left + parseFloat(el.style.width);
       el.style.visibility = (left < -0.5 || right > wrapperWidth + 0.5) ? 'hidden' : '';
     });
+  }
+
+  const wrapperWidth = strip.parentElement.offsetWidth;
+  if (wrapperWidth) {
+    applyStripLayout();
+  } else {
+    // Wrapper not laid out yet (song sheet just opening) — we can't
+    // measure which notes overflow, so remove the last note from the DOM.
+    // It will appear correctly the next time renderNoteStrip() is called
+    // (on the first note advance), when wrapperWidth is valid.
+    if (noteEls.length) strip.removeChild(strip.lastChild);
+    applyStripLayout();
   }
   // Sheet music staff (when enabled in song mode) re-renders here so it
   // tracks the same currentNoteIdx the strip just rendered.
