@@ -1172,7 +1172,23 @@
       letter-spacing: 0.05em;
     }
 
-    /* ── VISUALIZATION ── */
+    /* ── QWERTY KEY COLOR MODES ──
+       Logo mode: note label text takes the note color.
+       Full-color (inverted) mode: the whole key background takes the note
+       color (key label stays its default color for legibility). */
+    body.keys-logo .qkey[data-note] .qkey-note {
+      color: var(--note-color, var(--accent));
+      font-weight: 700;
+    }
+    body.keys-inverted .qkey[data-note] {
+      background: var(--note-color, var(--accent));
+      border-color: var(--note-color, var(--accent));
+    }
+    /* Pressed state: full-color keys go white text on press (same as piano). */
+    body.keys-inverted .qkey[data-note].pressed .qkey-char,
+    body.keys-inverted .qkey[data-note].pressed .qkey-note {
+      color: #ffffff;
+    }
     .viz-bar {
       height: 4px;
       background: var(--border);
@@ -3412,6 +3428,10 @@ function refreshKeyRestColors() {
     const note = el.dataset.note;
     if (note) el.style.setProperty('--key-rest-color', noteColors[note] || '#e63946');
   });
+  document.querySelectorAll('.qkey[data-note]').forEach(el => {
+    const note = el.dataset.note;
+    if (note) el.style.setProperty('--note-color', noteColors[note] || '#e63946');
+  });
 }
 
 function buildColorGrid() {
@@ -3916,6 +3936,10 @@ function buildQwerty() {
 
       el.className = 'qkey' + (isModifier ? ' modifier-key' : '') + (!isLetter && !isModifier ? ' no-note' : '');
       el.dataset.key = key;
+      if (note) {
+        el.dataset.note = note;
+        el.style.setProperty('--note-color', noteColors[note] || '#e63946');
+      }
 
       if (key === 'Space') {
         el.style.width = '120px';
@@ -4305,7 +4329,7 @@ const activeSheetNotes = new Map();
 // just before the last note in a simultaneous group was released. We keep
 // the last 3 groups so the staff shows a short trail of past notes.
 const freePlayHistory = [];
-const FREE_PLAY_HISTORY_MAX = 3;
+const FREE_PLAY_HISTORY_MAX = 1;
 let sheetMusicEnabled = false;
 
 function trackActiveSheetNote(id, note, oct, color) {
