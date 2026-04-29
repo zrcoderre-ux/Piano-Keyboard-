@@ -1435,6 +1435,11 @@
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
 
+      /* Rotate overlay: fires when touch mode + song sheet OR sheet music
+         (but NOT both — the both case is handled by hiding the piano). */
+      body.mode-touch.sheet-music-on:not(.song-sheet-open) #rotateOverlay,
+      body.mode-touch.song-sheet-open:not(.sheet-music-on) #rotateOverlay { display: flex; }
+
       /* Piano: take up most of the vertical space. With the info-bar
          absorbed into the song-header row in landscape+song-sheet, we
          reclaim ~28px and bump the piano cap from 175 → 220. Without
@@ -1484,56 +1489,74 @@
       .settings-card { width: 90vw; max-height: 90vh; padding: 16px 14px; }
     }
 
-    /* ── ROTATE-TO-PORTRAIT BANNER ──
-       Shown in mobile landscape when touch mode has BOTH song-sheet and
-       sheet-music on simultaneously — there isn't enough vertical room for
-       the note strip, the staff, the QWERTY pad, and a readable piano all
-       at once. Asking the user to rotate is the cleanest solution.
-       Driven entirely by CSS body-class + media-query — no JS needed. */
-    #rotateBanner {
+    /* ── ROTATE-TO-PORTRAIT OVERLAY ── */
+    #rotateOverlay {
       display: none;
       position: fixed;
       inset: 0;
-      z-index: 90;
-      background: var(--bg);
-      flex-direction: column;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg2) 100%);
+      z-index: 200;
       align-items: center;
       justify-content: center;
-      gap: 16px;
+      padding: 20px;
+    }
+    .rotate-card {
+      max-width: 420px;
       text-align: center;
-      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 24px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.12);
     }
-
     .rotate-icon {
-      font-size: 52px;
-      line-height: 1;
-      animation: rotate-hint 2s ease-in-out infinite;
+      font-size: 56px;
+      margin-bottom: 12px;
+      animation: rotateIconSpin 2s ease-in-out infinite;
     }
-
-    @keyframes rotate-hint {
+    @keyframes rotateIconSpin {
       0%, 100% { transform: rotate(0deg); }
-      40%       { transform: rotate(-90deg); }
-      60%       { transform: rotate(-90deg); }
+      50%      { transform: rotate(-90deg); }
     }
-
-    .rotate-title {
+    .rotate-card h3 {
+      font-family: 'Inter', sans-serif;
       font-size: 18px;
       font-weight: 800;
-      color: var(--text);
+      color: var(--accent);
+      margin: 0 0 8px;
     }
-
-    .rotate-sub {
-      font-size: 13px;
+    .rotate-card p {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
       color: var(--text-dim);
-      max-width: 260px;
-      line-height: 1.5;
+      margin: 0;
+      line-height: 1.45;
     }
+    .rotate-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .rotate-action-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: 1.5px solid var(--accent);
+      border-radius: 999px;
+      padding: 9px 18px;
+      cursor: pointer;
+      transition: background 0.12s, color 0.12s, transform 0.08s;
+    }
+    .rotate-action-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+    }
+    .rotate-action-btn:active { transform: scale(0.97); }
 
-    @media (max-height: 500px) and (orientation: landscape) {
-      body.mode-touch.song-sheet-open.sheet-music-on #rotateBanner {
-        display: flex;
-      }
-    }
 
 
     #helpPanel {
@@ -2736,10 +2759,18 @@
 <!-- SPLASH SCREEN -->
 <!-- ROTATE-TO-PORTRAIT BANNER — shown in mobile landscape when both song
      sheet and sheet music are on in touch mode (not enough vertical room). -->
-<div id="rotateBanner">
-  <div class="rotate-icon">📱</div>
-  <div class="rotate-title">Rotate to portrait</div>
-  <div class="rotate-sub">Song sheet + sheet music together need a taller screen. Flip your device upright to play.</div>
+<!-- ROTATE-TO-PORTRAIT OVERLAY — shown in mobile landscape touch mode when
+     song sheet or sheet music is on (not enough vertical room for QWERTY). -->
+<div id="rotateOverlay">
+  <div class="rotate-card">
+    <div class="rotate-icon" aria-hidden="true">📱↻</div>
+    <h3>Please rotate to portrait</h3>
+    <p>Touch mode with the song sheet or sheet music needs a taller screen. Turn your phone upright, or use one of these:</p>
+    <div class="rotate-actions">
+      <button class="rotate-action-btn" onclick="setMode('keyboard')">Switch to Keyboard mode</button>
+      <button class="rotate-action-btn" onclick="rotateOverlayClose()">Close song sheet &amp; staff</button>
+    </div>
+  </div>
 </div>
 
 <div id="splash">
@@ -4672,23 +4703,9 @@ function renderSheetMusicSong(svg) {
   // i.e. slot for note i = (i - curIdx + PAST)
   const slotX = (i) => X_START + (i - curIdx + PAST + 0.5) * slotWidth;
 
-  // Current-note position highlight: a translucent vertical band behind
-  // the current note + a downward-pointing arrow above the staff.
-  const cx = slotX(curIdx);
-  const highlight = svgEl('rect', {
-    x: cx - slotWidth * 0.45,
-    y: -10,
-    width: slotWidth * 0.9,
-    height: 160,
-    rx: 6, ry: 6,
-    fill: 'rgba(230, 57, 70, 0.10)',
-  });
-  svg.appendChild(highlight);
-  const arrow = svgEl('path', {
-    d: `M ${cx - 6} -22 L ${cx + 6} -22 L ${cx} -12 Z`,
-    fill: 'var(--accent)',
-  });
-  svg.appendChild(arrow);
+  // Current-note position: no highlight band or arrow — the glow ring on
+  // the notehead itself (applied in renderSingleNote when emphasize:true)
+  // is sufficient to identify which note to play next.
 
   // Render each entry in the window. Chords stack multiple noteheads at
   // the same X; single notes render as before. Each note's duration drives
@@ -6729,6 +6746,20 @@ function useSuggestedTempo() {
   const slider = document.getElementById('tempoSlider');
   if (slider) slider.value = bpm;
   updateTempo(bpm);
+}
+
+// Escape hatch from the rotate-to-portrait overlay: close whatever feature
+// was triggering it (song sheet and/or sheet music). The other escape is
+// the "switch to Keyboard mode" button, which calls setMode() directly.
+function rotateOverlayClose() {
+  if (document.body.classList.contains('song-sheet-open')) {
+    hideSongSheet();
+  }
+  if (document.body.classList.contains('sheet-music-on')) {
+    const cb = document.getElementById('sheetMusicMode');
+    if (cb) cb.checked = false;
+    toggleSheetMusic();
+  }
 }
 
 function toggleTempo() {
