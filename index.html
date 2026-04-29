@@ -639,12 +639,12 @@
       }
 
       /* All-device rule (iPad + desktop touch users): when in Touch mode
-         AND both song-sheet and sheet-music are on, hide the piano. The
-         QWERTY pad below is the input source — the user doesn't also
-         need to see the piano keys. This frees the freed space for the
-         staff-as-song-sheet view. The narrower mobile-landscape rule
-         further down hides the piano in more situations on phones. */
-      body.mode-touch.song-sheet-open.sheet-music-on .piano-area {
+         AND both song-sheet and sheet-music are on, hide the piano keys.
+         The QWERTY pad below is the input source — the user doesn't also
+         need to see the piano keys. The staff (.sheet-music-display) lives
+         in the same .piano-area, so we hide only .piano-wrapper (the keys)
+         rather than the whole area, preserving the staff display. */
+      body.mode-touch.song-sheet-open.sheet-music-on .piano-wrapper {
         display: none !important;
       }
     }
@@ -936,6 +936,7 @@
     body.keys-inverted .piano.single-octave .white-key,
     body.keys-inverted .piano.expanded:not(.piano-mode) .white-key.active-octave {
       background: var(--key-rest-color, #ffffff);
+      border-color: var(--key-rest-color, var(--border));
       opacity: 1;
     }
     body.keys-inverted .piano.piano-mode .white-key .key-note,
@@ -980,6 +981,7 @@
     body.keys-logo .piano.single-octave .white-key,
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave {
       position: relative;
+      border-color: #ffffff;
       /* Make sure the ::before stripe is clipped to the key's boundary —
          the white key has rounded BOTTOM corners (the key shape), but a
          square TOP edge against the piano frame. The stripe needs to
@@ -1420,18 +1422,21 @@
 
       /* In mobile landscape Touch mode, the piano competes for vertical
          room with the song sheet, sheet music, and the QWERTY pad. When
-         either feature is on we hide the piano entirely so the song-mode
+         either feature is on we hide the piano keys so the song-mode
          UI can take all the freed space. The QWERTY pad below remains —
          that's the actual input source in Touch mode, so the user
-         doesn't need the visual piano keys.
+         doesn't need the visual piano keys. We hide .piano-wrapper (the
+         keys) rather than the whole .piano-area so the staff
+         (.sheet-music-display) and big-note-display inside the same
+         container remain visible.
 
          Scoped to mode-touch only: Keyboard mode users play on a real
          keyboard but still need the on-screen piano as a visual reference
          for which keys map to which notes (especially for sharps/flats).
          Piano mode users tap the piano keys directly — hiding them would
          leave no input source. So those modes keep the piano visible. */
-      body.mode-touch.song-sheet-open .piano-area,
-      body.mode-touch.sheet-music-on .piano-area { display: none; }
+      body.mode-touch.song-sheet-open .piano-wrapper,
+      body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
 
       /* Piano: take up most of the vertical space. With the info-bar
          absorbed into the song-header row in landscape+song-sheet, we
@@ -6189,21 +6194,45 @@ function renderNoteStrip() {
   });
 
   updateSongProgress();
-  // Hide the strip until after the corrected scroll position has been
-  // painted. Two rAFs are needed:
-  //   Frame 1: layout has settled — measure offsetLeft/offsetWidth,
-  //            apply the translateX transform and hide overflowing chips.
-  //   Frame 2: the browser has now painted the corrected state — reveal.
-  // A single rAF isn't enough because setting visibility='' in the same
-  // callback as the transform means the browser can paint the strip at
-  // the old position for one frame before the transform takes effect.
-  strip.style.visibility = 'hidden';
-  requestAnimationFrame(() => {
-    scrollStripToCurrentNote();
-    requestAnimationFrame(() => {
-      strip.style.visibility = '';
-    });
+  // Compute scroll offset and hide overflowing notes synchronously —
+  // we set every note's width as an inline style above, so we can do
+  // the same math scrollStripToCurrentNote() would do without needing
+  // a layout read. This means the correct transform and per-note
+  // visibility are applied before the first paint, eliminating the
+  // partial-note flash entirely.
+  //
+  // Note widths: baseW * max(dur, 0.5) + chordPad (same formula above).
+  // Gap between notes matches the CSS flex gap on .note-strip (6px).
+  const GAP = 6;
+  const noteEls = strip.querySelectorAll('.strip-note');
+  // Build cumulative left positions from the known inline widths.
+  const positions = [];
+  let cursor = 0;
+  noteEls.forEach((el, i) => {
+    positions.push(cursor);
+    cursor += parseFloat(el.style.width) + GAP;
   });
+  const wrapperWidth = strip.parentElement.offsetWidth;
+  const curEl = noteEls[currentNoteIdx];
+  if (curEl) {
+    const noteW = parseFloat(curEl.style.width);
+    const noteCenter = positions[currentNoteIdx] + noteW / 2;
+    let offset = Math.max(0, noteCenter - wrapperWidth / 2);
+    // Snap so leftmost visible note is fully shown.
+    for (let i = 0; i < noteEls.length; i++) {
+      const nl = positions[i], nr = nl + parseFloat(noteEls[i].style.width);
+      if (nr <= offset) continue;
+      if (nl >= offset) break;
+      offset = nl;
+      break;
+    }
+    strip.style.transform = `translateX(-${offset}px)`;
+    noteEls.forEach((el, i) => {
+      const left = positions[i] - offset;
+      const right = left + parseFloat(el.style.width);
+      el.style.visibility = (left < -0.5 || right > wrapperWidth + 0.5) ? 'hidden' : '';
+    });
+  }
   // Sheet music staff (when enabled in song mode) re-renders here so it
   // tracks the same currentNoteIdx the strip just rendered.
   if (sheetMusicEnabled) renderSheetMusic();
