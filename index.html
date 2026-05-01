@@ -2372,16 +2372,21 @@
 
     #songSheet.visible { display: block; }
 
-    /* ── DESKTOP: song sheet always reserves its space ──────────────────
+    /* ── DESKTOP: song sheet always reserves its space; note display overlaps it ──
        On desktop, toggling Song Book used to shift the entire layout —
        the panel appeared/disappeared, the piano jumped, keys re-rendered.
-       Fix: keep the panel in-flow at all times (display:block) and use
-       visibility:hidden when closed so content is invisible but space is
-       held. Opening Song Book flips to visibility:visible — nothing moves.
 
-       Scoped to true desktops (hover+fine pointer, >430px wide) so that
-       phones / tablets keep their original display:none collapsing
-       behaviour (they need the vertical room). */
+       Fix in two parts:
+       1. #songSheet stays in flow (display:block) always, holding its space.
+          When closed: visibility:hidden — invisible but takes up room.
+       2. .big-note-display is given a negative top margin equal to the
+          invisible song sheet's height so it visually extends up into that
+          space and appears centred in the full area (info-bar → piano keys).
+          The piano keys are unaffected — they stay in their normal position.
+          When Song Book opens, big-note-display hides anyway (body.song-
+          sheet-open rules), so the overlap is moot and the margin is inert.
+
+       Scoped to true desktops (hover+fine pointer, >430px wide). */
     @media (hover: hover) and (pointer: fine) and (min-width: 431px) {
       #songSheet {
         display: block;
@@ -2391,6 +2396,30 @@
       #songSheet.visible {
         visibility: visible;
         pointer-events: auto;
+      }
+      /* Allow piano-area to clip its content normally but let big-note-
+         display bleed upward by pulling it up with a negative margin.
+         The piano-area itself needs overflow:visible so the note text
+         can paint over the invisible song sheet above it. */
+      .piano-area {
+        overflow: visible;
+      }
+      /* Pull the big note display upward so it centres over the full
+         available space (song-sheet height + piano-area). The song
+         sheet on desktop is roughly 120px tall (padding + song-header
+         + note strip + tempo bar). We use a CSS custom property so it
+         can be overridden by JS if needed, with a sensible fallback. */
+      .big-note-display {
+        margin-top: calc(-1 * var(--song-sheet-h, 120px));
+        /* Keep the display taller so the note is centred in the bigger
+           combined space rather than just the piano-area portion. */
+        min-height: calc(100% + var(--song-sheet-h, 120px));
+      }
+      /* When song sheet is open, remove the margin — it's not needed and
+         big-note-display is hidden by body.song-sheet-open anyway. */
+      body.song-sheet-open .big-note-display {
+        margin-top: 0;
+        min-height: 0;
       }
     }
 
@@ -9162,6 +9191,31 @@ document.addEventListener('keydown', function(e) {
     toggleFullscreen();
   }
 });
+
+// ── DESKTOP SONG-SHEET HEIGHT SYNC ─────────────
+// Keeps --song-sheet-h in sync with the actual rendered height of
+// #songSheet so the big-note-display negative-margin overlay is exact.
+function syncSongSheetHeight() {
+  const sheet = document.getElementById('songSheet');
+  if (!sheet) return;
+  // Only relevant on desktop (hover+fine pointer, >430px)
+  if (window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 431px)').matches) {
+    // Temporarily make visible to measure true height, then restore
+    const wasHidden = !sheet.classList.contains('visible');
+    if (wasHidden) {
+      sheet.style.visibility = 'visible';
+    }
+    const h = sheet.offsetHeight;
+    if (wasHidden) {
+      sheet.style.visibility = '';
+    }
+    document.documentElement.style.setProperty('--song-sheet-h', h + 'px');
+  }
+}
+
+// Measure on load and on resize
+window.addEventListener('resize', syncSongSheetHeight);
+syncSongSheetHeight();
 
 // Click outside to close modals
 document.getElementById('settingsPanel').addEventListener('click', function(e) {
