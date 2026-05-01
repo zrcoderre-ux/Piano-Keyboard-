@@ -265,7 +265,7 @@
 
     /* ── FULLSCREEN BUTTON (desktop only) ── */
     .fullscreen-btn {
-      display: none; /* hidden on mobile */
+      display: none;
       align-items: center;
       justify-content: center;
       padding: 10px 14px;
@@ -283,16 +283,8 @@
     }
     .fullscreen-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     .fullscreen-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
-
-    /* Only show fullscreen button on non-touch desktops */
     @media (hover: hover) and (pointer: fine) {
       .fullscreen-btn { display: flex; }
-    }
-
-    /* When in fullscreen, hide the header entirely for a pure immersive view */
-    :fullscreen header,
-    :-webkit-full-screen header {
-      /* Header still visible in fullscreen — user can hide it manually if desired */
     }
 
     /* ── SETTINGS PANEL ── */
@@ -2372,22 +2364,24 @@
 
     #songSheet.visible { display: block; }
 
-    /* ── DESKTOP: song sheet always reserves its space; note display overlaps it ──
-       On desktop, toggling Song Book used to shift the entire layout —
-       the panel appeared/disappeared, the piano jumped, keys re-rendered.
+    /* ── DESKTOP: stable layout — nothing shifts when song book opens ────
+       Three problems solved here for hover+fine-pointer desktops (>430px):
 
-       Fix in two parts:
-       1. #songSheet stays in flow (display:block) always, holding its space.
-          When closed: visibility:hidden — invisible but takes up room.
-       2. .big-note-display is given a negative top margin equal to the
-          invisible song sheet's height so it visually extends up into that
-          space and appears centred in the full area (info-bar → piano keys).
-          The piano keys are unaffected — they stay in their normal position.
-          When Song Book opens, big-note-display hides anyway (body.song-
-          sheet-open rules), so the overlap is moot and the margin is inert.
+       1. SONG SHEET SPACE: kept in flow always (display:block) so the piano
+          is always sized as if song book is open. When closed, content is
+          visibility:hidden so it's invisible but holds its space.
 
-       Scoped to true desktops (hover+fine pointer, >430px wide). */
+       2. BIG NOTE DISPLAY overlap: since the song sheet now reserves space,
+          the big-note-display would be squashed. We pull it up via a negative
+          margin so it visually covers the invisible song sheet area and
+          centres in the full available space. When song book opens, the note
+          display is hidden anyway, so the margin is inert.
+
+       3. SHEET MUSIC SIZE: base size matches the song-sheet-open size (280px
+          tall) so the staff doesn't jump when song book opens. The song-sheet-
+          open override is now a no-op (same value). */
     @media (hover: hover) and (pointer: fine) and (min-width: 431px) {
+      /* 1 — Song sheet always in flow, invisible when closed */
       #songSheet {
         display: block;
         visibility: hidden;
@@ -2397,29 +2391,40 @@
         visibility: visible;
         pointer-events: auto;
       }
-      /* Allow piano-area to clip its content normally but let big-note-
-         display bleed upward by pulling it up with a negative margin.
-         The piano-area itself needs overflow:visible so the note text
-         can paint over the invisible song sheet above it. */
-      .piano-area {
-        overflow: visible;
-      }
-      /* Pull the big note display upward so it centres over the full
-         available space (song-sheet height + piano-area). The song
-         sheet on desktop is roughly 120px tall (padding + song-header
-         + note strip + tempo bar). We use a CSS custom property so it
-         can be overridden by JS if needed, with a sensible fallback. */
+
+      /* 2 — Big note display overlaps the reserved-but-invisible song sheet */
+      .piano-area { overflow: visible; }
       .big-note-display {
         margin-top: calc(-1 * var(--song-sheet-h, 120px));
-        /* Keep the display taller so the note is centred in the bigger
-           combined space rather than just the piano-area portion. */
         min-height: calc(100% + var(--song-sheet-h, 120px));
       }
-      /* When song sheet is open, remove the margin — it's not needed and
-         big-note-display is hidden by body.song-sheet-open anyway. */
       body.song-sheet-open .big-note-display {
         margin-top: 0;
         min-height: 0;
+      }
+
+      /* 3 — Sheet music always 280px tall, matching the song-sheet-open size */
+      body.sheet-music-on .sheet-music-display {
+        flex: 0 0 auto;
+        height: 280px;
+        padding: 6px 0 4px;
+      }
+      body.sheet-music-on .sheet-music-svg {
+        height: 100%;
+        width: auto;
+        max-height: none;
+        max-width: none;
+      }
+      /* song-sheet-open is now identical — nothing changes when it opens */
+      body.sheet-music-on.song-sheet-open .sheet-music-display {
+        height: 280px;
+        padding: 6px 0 4px;
+      }
+      body.sheet-music-on.song-sheet-open .sheet-music-svg {
+        height: 100%;
+        width: auto;
+        max-height: none;
+        max-width: none;
       }
     }
 
@@ -9183,7 +9188,6 @@ function updateFullscreenUI() {
 document.addEventListener('fullscreenchange', updateFullscreenUI);
 document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
 
-// F key toggles fullscreen on desktop (only when no text input is focused)
 document.addEventListener('keydown', function(e) {
   if (e.key === 'F' && !e.ctrlKey && !e.metaKey && !e.altKey &&
       document.activeElement.tagName !== 'INPUT' &&
@@ -9193,27 +9197,18 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── DESKTOP SONG-SHEET HEIGHT SYNC ─────────────
-// Keeps --song-sheet-h in sync with the actual rendered height of
-// #songSheet so the big-note-display negative-margin overlay is exact.
+// Measures the actual song sheet height and sets --song-sheet-h so the
+// big-note-display negative-margin overlay is exact on desktop.
 function syncSongSheetHeight() {
   const sheet = document.getElementById('songSheet');
   if (!sheet) return;
-  // Only relevant on desktop (hover+fine pointer, >430px)
-  if (window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 431px)').matches) {
-    // Temporarily make visible to measure true height, then restore
-    const wasHidden = !sheet.classList.contains('visible');
-    if (wasHidden) {
-      sheet.style.visibility = 'visible';
-    }
-    const h = sheet.offsetHeight;
-    if (wasHidden) {
-      sheet.style.visibility = '';
-    }
-    document.documentElement.style.setProperty('--song-sheet-h', h + 'px');
-  }
+  if (!window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 431px)').matches) return;
+  const wasHidden = !sheet.classList.contains('visible');
+  if (wasHidden) sheet.style.visibility = 'visible';
+  const h = sheet.offsetHeight;
+  if (wasHidden) sheet.style.visibility = '';
+  document.documentElement.style.setProperty('--song-sheet-h', h + 'px');
 }
-
-// Measure on load and on resize
 window.addEventListener('resize', syncSongSheetHeight);
 syncSongSheetHeight();
 
