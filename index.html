@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -380,6 +380,7 @@
     /* Individual icon colors */
     .icon-songbook   { background: #fff0e0; color: #ff9800; }
     .icon-lyrics     { background: #e8eaf6; color: #5c6bc0; }
+    .icon-lyriccolors { background: #e8f5e9; color: #4caf50; }
     .icon-tempo      { background: #e8f5e9; color: #4caf50; }
     .icon-sheetmusic { background: #e3f2fd; color: #2196f3; }
     .icon-notelabels { background: #fce4ec; color: #e91e63; }
@@ -787,6 +788,16 @@
        there's no vertical room for the big display. */
     .info-bar .note-display { display: none; }
 
+    /* Touch mode: hide the visual piano keys everywhere except portrait.
+       In portrait there is enough vertical room to show both the QWERTY
+       pad and the piano keys, so we leave them visible there.
+       In landscape and on desktop the QWERTY pad fills the input role
+       and the piano keys waste precious vertical space. */
+    body.mode-touch .piano-wrapper { display: none; }
+    @media (orientation: portrait) {
+      body.mode-touch .piano-wrapper { display: flex; }
+    }
+
     /* Note display gets hidden entirely in landscape orientation when the
        song sheet is open — for ALL device types, not just phones. The
        reasoning: the kid is reading from the song sheet's letter strip
@@ -802,10 +813,7 @@
 
       /* All-device rule (iPad + desktop touch users): when in Touch mode
          and either song-sheet or sheet-music is on, hide the piano keys.
-         The QWERTY pad is the input source — the user doesn't need the
-         visual piano keys. We hide only .piano-wrapper (the keys) rather
-         than the whole .piano-area so the staff (.sheet-music-display)
-         inside the same container stays visible. */
+         Already handled by the global rule above, kept for clarity. */
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper {
         display: none !important;
@@ -853,7 +861,14 @@
       display: none;
     }
     body.mode-keyboard .modifier-hint { display: block; }
+    body.mode-touch .modifier-hint { display: block; }
     body.song-sheet-open.song-no-accidentals .modifier-hint { display: none; }
+
+    /* Show only the relevant hint line for the current mode */
+    .mod-hint-touch    { display: none; }
+    .mod-hint-keyboard { display: block; }
+    body.mode-touch .mod-hint-touch    { display: block; }
+    body.mode-touch .mod-hint-keyboard { display: none; }
 
     .modifier-hint strong {
       color: var(--accent);
@@ -1284,6 +1299,19 @@
       position: relative;
     }
 
+    /* Desktop: scale QWERTY keys to approximately match the piano keyboard
+       height (clamp(220px,38vh,320px)). Three rows of keys + 2 row-gaps +
+       top/bottom padding: 3×64 + 2×6 + 28 ≈ 232px — sits comfortably in
+       the clamp range. Key width grows proportionally. */
+    @media (hover: hover) and (pointer: fine) and (min-width: 431px) {
+      .qwerty-area { padding: 14px 0 18px; }
+      .qwerty-row  { gap: 6px; margin-bottom: 6px; }
+      .qkey        { width: 58px; height: 64px; border-radius: 14px; }
+      .qkey .qkey-char { font-size: 18px; }
+      .qkey.modifier-key { min-width: 70px; padding: 0 16px; }
+      .qkey.modifier-key .qkey-char { font-size: 12px; }
+    }
+
     .qkey:active, .qkey.pressed {
       background: var(--note-color, var(--accent));
       border-color: var(--note-color, var(--accent2));
@@ -1553,7 +1581,7 @@
       .note-display { font-size: 14px; min-width: 80px; }
       /* Sharp/flat reminder eats vertical room we don't have in landscape.
          Hide it even when keyboard mode would normally show it. */
-      .modifier-hint, body.mode-keyboard .modifier-hint { display: none; }
+      .modifier-hint, body.mode-keyboard .modifier-hint, body.mode-touch .modifier-hint { display: none; }
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
@@ -2551,9 +2579,9 @@
       top: -20px;
       left: 50%;
       transform: translateX(-50%);
-      font-family: 'Inter', sans-serif;
+      font-family: 'Nunito', 'Varela Round', 'Comic Neue', 'Inter', sans-serif;
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-dim);
       white-space: nowrap;
       pointer-events: none;
@@ -2563,10 +2591,23 @@
     .strip-note.current .sn-lyric {
       color: var(--text);
       opacity: 1;
-      font-weight: 700;
+      font-weight: 800;
     }
     .strip-note.played .sn-lyric {
       opacity: 0.4;
+    }
+    /* Colored lyrics mode — !important beats equal-specificity base rules */
+    body.lyrics-colored .strip-note .sn-lyric {
+      color: var(--strip-color, var(--accent)) !important;
+      opacity: 0.9;
+    }
+    body.lyrics-colored .strip-note.current .sn-lyric {
+      color: var(--strip-color, var(--accent)) !important;
+      opacity: 1;
+    }
+    body.lyrics-colored .strip-note.played .sn-lyric {
+      color: var(--strip-color, var(--accent)) !important;
+      opacity: 0.35;
     }
 
     /* ── CHORD STRIP NOTES ──
@@ -3256,7 +3297,8 @@
 <div class="info-bar">
   <div class="note-display dim" id="noteDisplay">—</div>
   <div class="modifier-hint" id="modHint">
-    <div>Hold <strong>SHIFT</strong> → sharp (♯) · Hold <strong>ALT</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
+    <div class="mod-hint-keyboard">Hold <strong>SHIFT</strong> → sharp (♯) · Hold <strong>ALT</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
+    <div class="mod-hint-touch"><strong>⇧ Shift</strong> → sharp (♯) · <strong>Caps Lock</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
   </div>
   <div class="octave-display">
     <button class="octave-btn" onclick="changeOctave(-1)">−</button>
@@ -3407,6 +3449,18 @@
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="lyricsMode" onchange="toggleLyrics()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row is-substep" id="lyricsColorRow" style="display:none">
+        <div class="setting-label">
+          <span class="setting-label-icon icon-lyriccolors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/><line x1="12" y1="22" x2="12" y2="16"/></svg></span>
+          Colored Lyrics
+          <small>Lyric words take each note's color</small>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" />
           <span class="slider"></span>
         </label>
       </div>
@@ -4533,12 +4587,6 @@ function buildQwerty() {
     });
     area.appendChild(rowEl);
   });
-
-  // Hint for touch mode
-  const hint = document.createElement('div');
-  hint.style.cssText = 'text-align:center; font-family: Inter, sans-serif; font-size:11px; color:var(--text-dim); margin-top:4px';
-  hint.textContent = '⇧ Shift = sharp ♯  |  Caps Lock = flat ♭  |  Tab = Oct−  |  Space = Oct+';
-  area.appendChild(hint);
 }
 
 function addRipple(el, e) {
@@ -5307,20 +5355,16 @@ function renderSheetMusicSong(svg) {
 
 function updateModHint() {
   const hint = document.getElementById('modHint');
+  const kbDiv = hint ? hint.querySelector('.mod-hint-keyboard') : null;
+  if (!kbDiv) return;
   const sharpActive = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
   const flatActive = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
   if (sharpActive) {
-    hint.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♯ SHARP</span>';
+    kbDiv.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♯ SHARP</span>';
   } else if (flatActive) {
-    hint.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♭ FLAT</span>';
+    kbDiv.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♭ FLAT</span>';
   } else {
-    // Resting state: documents BOTH the sharp/flat modifiers (which
-    // depend on the user's chosen sharpKey setting) AND the Tab/Space
-    // octave shortcuts. The press-feedback states above replace the
-    // whole block with a single "♯ SHARP" / "♭ FLAT" pill — they
-    // intentionally drop the octave line so the press feedback isn't
-    // diluted with documentation.
-    hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯) · Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>`;
+    kbDiv.innerHTML = `Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯) · Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span>`;
   }
 }
 
@@ -5546,6 +5590,15 @@ function loadLyricsSetting() {
       if (cb) cb.checked = true;
       const wrapper = document.querySelector('.note-strip-wrapper');
       if (wrapper) wrapper.classList.add('lyrics-on');
+    }
+  } catch(e) {}
+  try {
+    const v = localStorage.getItem('pianoLyricsColored');
+    if (v === '1') {
+      lyricsColored = true;
+      const cb = document.getElementById('lyricsColorMode');
+      if (cb) cb.checked = true;
+      document.body.classList.add('lyrics-colored');
     }
   } catch(e) {}
 }
@@ -7653,12 +7706,27 @@ const SONG_LYRICS = {
 };
 
 let showLyrics = false;
+let lyricsColored = false;
+
+function toggleLyricsColor() {
+  lyricsColored = document.getElementById('lyricsColorMode').checked;
+  try { localStorage.setItem('pianoLyricsColored', lyricsColored ? '1' : '0'); } catch(e) {}
+  document.body.classList.toggle('lyrics-colored', lyricsColored);
+}
+
+function syncLyricsColorVisibility() {
+  const row = document.getElementById('lyricsColorRow');
+  if (!row) return;
+  // Show only when song book is open AND lyrics are on
+  row.style.display = (songSheetVisible && showLyrics) ? '' : 'none';
+}
 
 function toggleLyrics() {
   showLyrics = document.getElementById('lyricsMode').checked;
   try { localStorage.setItem('pianoShowLyrics', showLyrics ? '1' : '0'); } catch(e) {}
   const wrapper = document.querySelector('.note-strip-wrapper');
   if (wrapper) wrapper.classList.toggle('lyrics-on', showLyrics);
+  syncLyricsColorVisibility();
   // Re-load the current song if it has verse-trimming logic so the note
   // count updates immediately (single verse ↔ all verses).
   if (currentSong && SONGS.find(s => s.id === currentSong.id)?.singleVerseCount) {
@@ -7697,6 +7765,7 @@ function syncLyricsVisibility() {
       if (currentSong) renderNoteStrip();
     }
   }
+  syncLyricsColorVisibility();
 }
 
 let currentSong = null;
@@ -8008,10 +8077,13 @@ function renderNoteStrip() {
           const c = noteColors[entries[0].n] || '#e63946';
           el.style.boxShadow = `0 0 16px ${c}88`;
         }
+        // Use first note's color for lyrics coloring
+        el.style.setProperty('--strip-color', noteColors[entries[0].n] || '#e63946');
       } else {
         const color = noteColors[entries[0].n] || '#e63946';
         el.style.background = color;
         el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
+        el.style.setProperty('--strip-color', color);
       }
     }
 
@@ -9089,6 +9161,61 @@ function toggleFullscreen() {
   }
 }
 
+// Target zoom when entering fullscreen (matches the user's preferred 125%).
+const FS_ZOOM_TARGET = 1.25;
+
+function applyFullscreenZoom() {
+  const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  if (!isFS) {
+    document.documentElement.style.zoom = '';
+    return;
+  }
+
+  // Start at the target zoom, then check if the staff and piano/QWERTY
+  // would overlap at that level. If they would, back off until they don't.
+  // We measure in un-zoomed pixels (offsetTop/offsetHeight) then scale.
+  let zoom = FS_ZOOM_TARGET;
+  const MIN_ZOOM = 1.0;
+  const STEP     = 0.01;
+  const GAP      = 8; // minimum px gap (in screen pixels) between staff bottom and keys top
+
+  // Apply the trial zoom so layout recalculates, then measure.
+  // We binary-search downward in small steps rather than doing a full
+  // binary search — the range is small (1.0–1.25) and steps are tiny.
+  document.documentElement.style.zoom = zoom;
+
+  // After zoom is applied, positions are already in CSS px (pre-zoom).
+  // We need screen px, so multiply by zoom.
+  function getScreenBottom(el) {
+    const r = el.getBoundingClientRect();
+    return r.bottom; // getBoundingClientRect already returns screen px
+  }
+  function getScreenTop(el) {
+    const r = el.getBoundingClientRect();
+    return r.top;
+  }
+
+  const staffEl   = document.getElementById('sheetMusicDisplay');
+  const pianoEl   = document.getElementById('piano');
+  const qwertyEl  = document.getElementById('qwertyArea');
+
+  // The "keyboard" is whichever of piano/QWERTY is currently visible.
+  const keysEl = (qwertyEl && qwertyEl.offsetParent !== null) ? qwertyEl : pianoEl;
+
+  if (staffEl && keysEl) {
+    // Reduce zoom until there's at least GAP px between staff bottom and keys top.
+    while (zoom > MIN_ZOOM) {
+      document.documentElement.style.zoom = zoom;
+      const staffBottom = getScreenBottom(staffEl);
+      const keysTop     = getScreenTop(keysEl);
+      if (keysTop - staffBottom >= GAP) break;
+      zoom = Math.round((zoom - STEP) * 1000) / 1000;
+    }
+  }
+
+  document.documentElement.style.zoom = zoom;
+}
+
 function updateFullscreenUI() {
   const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
   const enterIcon = document.getElementById('fsIconEnter');
@@ -9097,6 +9224,8 @@ function updateFullscreenUI() {
   if (enterIcon) enterIcon.style.display = isFS ? 'none' : '';
   if (exitIcon)  exitIcon.style.display  = isFS ? '' : 'none';
   if (label)     label.textContent       = isFS ? 'Exit' : 'Fullscreen';
+  // Apply or remove the zoom after the UI settles
+  requestAnimationFrame(applyFullscreenZoom);
 }
 
 document.addEventListener('fullscreenchange', updateFullscreenUI);
