@@ -263,6 +263,38 @@
 
     .settings-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 
+    /* ── FULLSCREEN BUTTON (desktop only) ── */
+    .fullscreen-btn {
+      display: none; /* hidden on mobile */
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text);
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: all 0.15s;
+      gap: 6px;
+    }
+    .fullscreen-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .fullscreen-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+    /* Only show fullscreen button on non-touch desktops */
+    @media (hover: hover) and (pointer: fine) {
+      .fullscreen-btn { display: flex; }
+    }
+
+    /* When in fullscreen, hide the header entirely for a pure immersive view */
+    :fullscreen header,
+    :-webkit-full-screen header {
+      /* Header still visible in fullscreen — user can hide it manually if desired */
+    }
+
     /* ── SETTINGS PANEL ── */
     #settingsPanel {
       display: none;
@@ -680,25 +712,19 @@
 
     /* ── SHEET MUSIC DISPLAY ──
        Live notation: shows currently-played notes on a grand staff. Hidden
-       by default; appears when the "Sheet Music" setting is on.
+       by default; appears when the "Sheet Music" setting is on, in which
+       case it replaces the big note letter display.
 
-       Absolutely positioned inside .piano-area (which is position:relative)
-       so its vertical placement is fixed regardless of mode (keyboard /
-       touch / piano), modifier-hint visibility, or song-book open state.
-       16px matches piano-area's own padding-top so the staff appears at
-       exactly the same distance from the info-bar / song-sheet panel in
-       every combination. */
+       Sits in the same flex slot as .big-note-display so the piano area
+       layout is identical regardless of which one is visible. */
     .sheet-music-display {
       display: none;
-      position: absolute;
-      top: 16px;
-      left: 0;
-      right: 0;
+      flex: 1;
+      min-height: 0;
       align-items: center;
       justify-content: center;
       padding: 4px 0;
       pointer-events: none;
-      z-index: 1;
     }
     body.sheet-music-on .sheet-music-display { display: flex; }
     body.sheet-music-on .big-note-display { display: none; }
@@ -715,29 +741,29 @@
        staff and bigger notes (set on .sheet-music-display elsewhere). */
     body.sheet-music-on.song-sheet-open .sheet-music-display {
       padding: 6px 0 4px;
-      top: 0;
+      flex: 0 0 auto;
+      height: 280px;
     }
     body.sheet-music-on.song-sheet-open .sheet-music-svg {
-      max-height: 280px;
-      max-width: 900px;
-      /* On narrow phones the viewBox aspect ratio (≈3:1 wide) would
-         cap the rendered height well below max-height when width is the
-         constraint. Set an explicit height so the SVG fills vertically
-         and clips width instead, keeping the staff as tall as possible. */
-      height: 280px;
+      /* Use height:100% + width:auto so the SVG fills the container
+         vertically and scales width from the aspect ratio. On narrow
+         phones this means the staff may be narrower than the screen,
+         but it will always be 280px tall rather than being squashed
+         by the wide viewBox aspect ratio. */
+      height: 100%;
       width: auto;
+      max-height: none;
+      max-width: none;
     }
 
     .sheet-music-svg {
-      /* max-width must be wide enough that the viewBox aspect ratio
-         (520 wide x 170 tall ~3:1) does not choke the rendered height.
-         At height:320px the natural width is ~976px — cap at 900px so the
-         staff stays as tall as possible (same cap used by song-book-open).
-         Mobile portrait/landscape override these below. */
-      max-width: 900px;
+      width: 100%;
+      /* Wider default so live-mode (no song sheet) staffs fill desktop
+         more comfortably. Mobile portrait/landscape have their own
+         smaller caps below. */
+      max-width: 720px;
       max-height: 100%;
-      height: 320px;
-      width: auto;
+      height: auto;
       display: block;
     }
 
@@ -911,13 +937,6 @@
       flex-direction: column;
       overflow: hidden;
       padding: 16px 20px 0;
-      position: relative;
-    }
-
-    /* When the song book is open, remove the top padding so the staff
-       sits in the same vertical position as when the song book is off. */
-    body.song-sheet-open .piano-area {
-      padding-top: 0;
     }
 
     /* ── PIANO KEYS ── */
@@ -972,7 +991,7 @@
       border-color: var(--border);
     }
     .piano.piano-mode .black-key {
-      background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
+      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
     }
 
     .piano.single-octave {
@@ -1049,7 +1068,7 @@
          white keys. JS sets explicit pixel width/height on every black key. */
       width: 0;
       height: 0;
-      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+      background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
       border-radius: 0 0 8px 8px;
       border: 1px solid #1a1a1a;
       top: 0;
@@ -1439,10 +1458,10 @@
       body.sheet-music-on.mode-touch .big-note-display { display: none; }
       body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
-      /* Sheet music + touch, no song sheet: give the staff an explicit
-         height (same as song-book-open mode) so it's never smaller than
-         when the song book is on. Piano shrinks to make room. */
-      body.sheet-music-on.mode-touch:not(.song-sheet-open) .sheet-music-svg { max-height: 100%; height: 280px; width: auto; }
+      /* Sheet music + touch, no song sheet: staff same size as keyboard
+         mode (no artificial cap — let it fill the available space like it
+         does in keyboard/piano mode). Piano shrinks to leave room. */
+      body.sheet-music-on.mode-touch:not(.song-sheet-open) .sheet-music-svg { max-height: 100%; }
       body.sheet-music-on.mode-touch:not(.song-sheet-open) .piano { max-height: 130px; }
 
       /* Song sheet open + sheet music on, touch mode in portrait:
@@ -1452,10 +1471,12 @@
          We hide .piano-wrapper only (not .piano-area) so the staff which
          lives in .piano-area stays visible. */
       body.sheet-music-on.song-sheet-open.mode-touch .piano-wrapper { display: none; }
-      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 280px; height: 280px; width: auto; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { height: 100%; width: auto; max-height: none; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-display { height: 280px; flex: 0 0 280px; }
 
       /* Song sheet + sheet music, any mode (non-touch): staff compact. */
-      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { max-height: 280px; height: 280px; width: auto; }
+      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { height: 100%; width: auto; max-height: none; }
+      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-display { height: 280px; flex: 0 0 280px; }
 
       /* When sheet music is on AND the song sheet is open, shrink the
          song sheet aggressively so the staff gets more room. */
@@ -1469,9 +1490,6 @@
 
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
-      /* Restore normal flow for staff on mobile portrait — absolute
-         positioning is desktop-only */
-      .sheet-music-display { position: static; }
       .piano-wrapper { padding-bottom: 6px; }
       .piano { max-height: 160px; }
 
@@ -1589,7 +1607,9 @@
       .song-title { font-size: 13px; }
       .song-tempo-hint { font-size: 10px; padding: 2px 7px 2px 6px; }
       .song-tempo-hint .sth-icon { font-size: 10px; }
-      /* Octave slot — populated by JS in landscape with song-sheet open. */
+      /* Octave slot — populated by JS in landscape with song-sheet open.
+         The note slot is no longer used (note display is hidden in
+         landscape song-sheet mode for all devices, see global rule). */
       .song-header-octave-slot:not(:empty) {
         display: flex;
         align-items: center;
@@ -1601,32 +1621,6 @@
         font-size: 11px;
         gap: 5px;
       }
-
-      /* Hide Italian tempo range buttons in landscape — slider suffices */
-      body.song-sheet-open .tempo-range-labels { display: none; }
-
-      /* Reduce padding between song book panel and staff/piano area */
-      body.song-sheet-open .piano-area { padding-top: 2px; }
-      body.sheet-music-on.song-sheet-open .piano-area { padding-top: 0; }
-
-      /* ── TOUCH MODE + SONG BOOK: compact song sheet so QWERTY fits ──
-         Piano keys are hidden in touch+landscape (QWERTY is input source).
-         The QWERTY pad competes for vertical space with the song book, so
-         apply the same compactions used in keyboard/piano mode. */
-      body.mode-touch.song-sheet-open #songSheet { padding: 2px 6px; }
-      body.mode-touch.song-sheet-open .song-header { margin-bottom: 1px; gap: 4px; }
-      body.mode-touch.song-sheet-open .strip-note { width: 30px; height: 34px; border-radius: 5px; }
-      body.mode-touch.song-sheet-open .strip-note .sn-note { font-size: 10px; }
-      body.mode-touch.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
-      body.mode-touch.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
-      body.mode-touch.song-sheet-open .note-strip-wrapper.lyrics-on { padding-top: 14px; }
-      body.mode-touch.song-sheet-open .tempo-bar { padding: 2px 0; gap: 4px; }
-      body.mode-touch.song-sheet-open .tempo-btn { width: 26px; height: 26px; font-size: 12px; }
-      body.mode-touch.song-sheet-open .tempo-btn.play-btn { width: 28px; height: 28px; }
-      body.mode-touch.song-sheet-open .tempo-repeat-btn { font-size: 10px; }
-      body.mode-touch.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
-      body.mode-touch.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
-      body.mode-touch.song-sheet-open .tempo-val { font-size: 10px; min-width: 40px; }
 
       /* In landscape we can show the big note display in keyboard and piano
          modes — but it has to be compact (smaller font, no vertical-fill
@@ -1648,7 +1642,6 @@
          Space priority: header first, then song sheet, then piano.
          Without song sheet: staff fills all available space above piano. */
       .sheet-music-display {
-        position: static;
         flex: 0 0 auto;
         padding: 0;
       }
@@ -1719,8 +1712,33 @@
       .piano-area { padding: 4px 8px 0; flex: 1; min-height: 0; }
       .piano-wrapper { padding-bottom: 4px; }
       .piano { max-height: 175px; }
-      /* Song book open: extra height from tighter note strip / tempo buttons */
       body.song-sheet-open .piano { max-height: 250px; }
+
+      /* Hide Italian tempo range buttons in landscape — slider suffices */
+      body.song-sheet-open .tempo-range-labels { display: none; }
+
+      /* Reduce padding between song book panel and staff/piano area */
+      body.song-sheet-open .piano-area { padding-top: 2px; }
+      body.sheet-music-on.song-sheet-open .piano-area { padding-top: 0; }
+
+      /* ── TOUCH MODE + SONG BOOK: compact song sheet so QWERTY fits ──
+         Piano keys are hidden in touch+landscape (QWERTY is input source).
+         The QWERTY pad competes for vertical space with the song book, so
+         apply the same compactions used in keyboard/piano mode. */
+      body.mode-touch.song-sheet-open #songSheet { padding: 2px 6px; }
+      body.mode-touch.song-sheet-open .song-header { margin-bottom: 1px; gap: 4px; }
+      body.mode-touch.song-sheet-open .strip-note { width: 30px; height: 34px; border-radius: 5px; }
+      body.mode-touch.song-sheet-open .strip-note .sn-note { font-size: 10px; }
+      body.mode-touch.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
+      body.mode-touch.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
+      body.mode-touch.song-sheet-open .note-strip-wrapper.lyrics-on { padding-top: 14px; }
+      body.mode-touch.song-sheet-open .tempo-bar { padding: 2px 0; gap: 4px; }
+      body.mode-touch.song-sheet-open .tempo-btn { width: 26px; height: 26px; font-size: 12px; }
+      body.mode-touch.song-sheet-open .tempo-btn.play-btn { width: 28px; height: 28px; }
+      body.mode-touch.song-sheet-open .tempo-repeat-btn { font-size: 10px; }
+      body.mode-touch.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
+      body.mode-touch.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
+      body.mode-touch.song-sheet-open .tempo-val { font-size: 10px; min-width: 40px; }
       .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
       .key-note { font-size: 12px; }
 
@@ -1740,10 +1758,6 @@
 
       /* QWERTY: very tight, 3 rows must fit below piano */
       .qwerty-area { padding: 2px 0 4px; flex-shrink: 0; }
-      /* The keyboard shortcut hint (Shift=sharp, Tab=Oct- etc.) at the
-         bottom of the QWERTY pad is cut off on short landscape screens.
-         Touch users don't need it — hide it entirely. */
-      body.mode-touch .qwerty-area > div:last-child { display: none; }
       .qwerty-row { gap: 2px; margin-bottom: 2px; }
       .qkey { width: 28px; height: 32px; border-radius: 5px; }
       .qkey .qkey-char { font-size: 11px; }
@@ -1804,14 +1818,23 @@
       }
       /* With self-tempo on: also hide the note strip and progress bar
          so the sheet music staff can claim the full freed space. */
+      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .tempo-bar,
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .note-strip-wrapper,
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .song-progress {
         display: none;
       }
+      /* With three rows of song-sheet chrome gone, the staff can grow
+         to full portrait height (280px). The piano and other landscape
+         rules still apply normally. */
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg {
         max-height: 280px;
         height: 280px;
       }
+
+      /* The keyboard shortcut hint (Shift=sharp, Tab=Oct- etc.) at the
+         bottom of the QWERTY pad is cut off on short landscape screens.
+         Touch users don't need it — hide it entirely. */
+      body.mode-touch .qwerty-area > div:last-child { display: none; }
 
       /* Viz bar: thinner */
       .viz-bar { height: 2px; }
@@ -2348,6 +2371,28 @@
     }
 
     #songSheet.visible { display: block; }
+
+    /* ── DESKTOP: song sheet always reserves its space ──────────────────
+       On desktop, toggling Song Book used to shift the entire layout —
+       the panel appeared/disappeared, the piano jumped, keys re-rendered.
+       Fix: keep the panel in-flow at all times (display:block) and use
+       visibility:hidden when closed so content is invisible but space is
+       held. Opening Song Book flips to visibility:visible — nothing moves.
+
+       Scoped to true desktops (hover+fine pointer, >430px wide) so that
+       phones / tablets keep their original display:none collapsing
+       behaviour (they need the vertical room). */
+    @media (hover: hover) and (pointer: fine) and (min-width: 431px) {
+      #songSheet {
+        display: block;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #songSheet.visible {
+        visibility: visible;
+        pointer-events: auto;
+      }
+    }
 
     .song-header {
       display: flex;
@@ -3240,6 +3285,17 @@
     </div>
     <button class="settings-btn" onclick="openSettings()">⚙ Settings</button>
     <button class="settings-btn" onclick="openHelp()">? Help</button>
+    <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen (F)">
+      <svg id="fsIconEnter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+        <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+      </svg>
+      <svg id="fsIconExit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
+        <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
+      </svg>
+      <span id="fsLabel">Fullscreen</span>
+    </button>
   </div>
 </header>
 
@@ -3272,14 +3328,14 @@
     <div class="song-header-note-slot" id="songHeaderNoteSlot"></div>
     <div class="song-title-wrap">
       <span class="song-title" id="songTitle">Twinkle Twinkle</span>
-      <button class="song-tempo-hint" id="songTempoHint"
-              onclick="useSuggestedTempo()"
-              title="Tap to play at the song's traditional speed">
-        <span class="sth-icon" aria-hidden="true">▸</span><!--
-        --><span class="sth-label" id="songTempoHintLabel"></span>
-      </button>
     </div>
     <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
+    <button class="song-tempo-hint" id="songTempoHint"
+            onclick="useSuggestedTempo()"
+            title="Tap to play at the song's traditional speed">
+      <span class="sth-icon" aria-hidden="true">▸</span><!--
+      --><span class="sth-label" id="songTempoHintLabel"></span>
+    </button>
     <!-- Landscape-only slot for the Octave display (mirrors the note slot
          above; reparenting handled by syncLandscapeTopBar()). -->
     <div class="song-header-octave-slot" id="songHeaderOctaveSlot"></div>
@@ -5632,25 +5688,18 @@ function syncLandscapeTopBar() {
     }
   }
 
-  // Condensed tempo controls: in mobile landscape with self-tempo + sheet
-  // music + song sheet ALL on (and not in touch mode), the tempo bar's
-  // surviving Restart + Repeat-N buttons relocate into the song-header
-  // row. CSS in the same condition collapses the tempo bar and the note
-  // strip away, shrinking the song sheet to a single row so the staff
-  // can claim the freed vertical space. Touch mode is excluded — touch
-  // landscape with both panels already triggers the rotate overlay.
+  // Condensed tempo controls: in mobile landscape with song sheet open,
+  // move play + restart + repeat-N + tempo hint into the song-header row.
+  // Touch mode excluded (rotate overlay handles that case).
   const tempoBar = document.querySelector('.tempo-bar');
   const tempoSlot = document.getElementById('songHeaderTempoSlot');
   const playBtn = document.getElementById('tempoPlayBtn');
   const restartBtn = document.getElementById('tempoRestartBtn');
   const repeatBtn = document.getElementById('tempoRepeatBtn');
+  const tempoHintBtn = document.getElementById('songTempoHint');
   if (tempoBar && tempoSlot && playBtn && restartBtn && repeatBtn) {
-    // In mobile landscape with song-sheet open, always move play + restart
-    // + repeat-N into the song-header row so the tempo bar shrinks and the
-    // keyboard gains vertical space. Touch mode excluded (rotate overlay).
     const wantsCondensed = isLandscape && sheetOpen &&
       !document.body.classList.contains('mode-touch');
-    const tempoHintBtn = document.getElementById('songTempoHint');
     if (wantsCondensed) {
       // Order: Play, Restart, Repeat-N, Default-tempo-hint.
       if (playBtn.parentElement !== tempoSlot) tempoSlot.appendChild(playBtn);
@@ -9079,6 +9128,40 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+
+// ── FULLSCREEN ──────────────────────────────
+function toggleFullscreen() {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  } else {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+  }
+}
+
+function updateFullscreenUI() {
+  const isFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
+  const enterIcon = document.getElementById('fsIconEnter');
+  const exitIcon  = document.getElementById('fsIconExit');
+  const label     = document.getElementById('fsLabel');
+  if (enterIcon) enterIcon.style.display = isFS ? 'none' : '';
+  if (exitIcon)  exitIcon.style.display  = isFS ? '' : 'none';
+  if (label)     label.textContent       = isFS ? 'Exit' : 'Fullscreen';
+}
+
+document.addEventListener('fullscreenchange', updateFullscreenUI);
+document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
+
+// F key toggles fullscreen on desktop (only when no text input is focused)
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F' && !e.ctrlKey && !e.metaKey && !e.altKey &&
+      document.activeElement.tagName !== 'INPUT' &&
+      document.activeElement.tagName !== 'TEXTAREA') {
+    toggleFullscreen();
+  }
+});
 
 // Click outside to close modals
 document.getElementById('settingsPanel').addEventListener('click', function(e) {
