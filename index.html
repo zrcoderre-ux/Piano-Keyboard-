@@ -821,6 +821,7 @@
       background: var(--surface2);
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
+      min-height: 48px; /* fixed height so it never shifts between modes */
     }
 
     .note-display {
@@ -851,18 +852,7 @@
       text-align: center;
       display: none;
     }
-    /* The Shift→sharp / Alt→flat reminder is only relevant in keyboard
-       mode (Touch and Piano modes don't use those modifiers). The body
-       class is set by setMode() — switching to keyboard surfaces the
-       hint, switching away hides it. Media queries can hide it further
-       (e.g. landscape iPhone) without inline-style fights. */
     body.mode-keyboard .modifier-hint { display: block; }
-    /* When the loaded song uses only natural notes (no sharps or flats),
-       the Shift→sharp / Alt→flat reminder is irrelevant clutter — the
-       kid never has to reach for those modifiers to play this song. The
-       body.song-no-accidentals class is toggled by loadSong() based on
-       the song's note list. Out of song-sheet mode the song is "none"
-       so the class is removed and the hint shows again. */
     body.song-sheet-open.song-no-accidentals .modifier-hint { display: none; }
 
     .modifier-hint strong {
@@ -870,18 +860,16 @@
       font-weight: 800;
     }
 
-    /* The Tab/Space octave-shortcut line sits below the primary
-       Shift/Alt lines as supplementary documentation. Slightly smaller
-       and dimmer so it reads as "by the way, also" rather than
-       competing with the primary Hold-Shift / Hold-Alt instructions. */
+    /* Octave hint is now inline at the same size as the shift/alt hints */
     .modifier-hint .mod-hint-octaves {
-      font-size: 11px;
-      color: var(--text-dim);
-      margin-top: 2px;
+      display: inline;
+      font-size: inherit;
+      color: inherit;
+      margin-top: 0;
     }
     .modifier-hint .mod-hint-octaves strong {
       color: var(--accent);
-      font-weight: 700;
+      font-weight: 800;
     }
 
     .octave-display {
@@ -3268,9 +3256,7 @@
 <div class="info-bar">
   <div class="note-display dim" id="noteDisplay">—</div>
   <div class="modifier-hint" id="modHint">
-    <div>Hold <strong>SHIFT</strong> → sharp (♯)</div>
-    <div>Hold <strong>ALT</strong> → flat (♭)</div>
-    <div class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</div>
+    <div>Hold <strong>SHIFT</strong> → sharp (♯) · Hold <strong>ALT</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
   </div>
   <div class="octave-display">
     <button class="octave-btn" onclick="changeOctave(-1)">−</button>
@@ -5334,7 +5320,7 @@ function updateModHint() {
     // whole block with a single "♯ SHARP" / "♭ FLAT" pill — they
     // intentionally drop the octave line so the press feedback isn't
     // diluted with documentation.
-    hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯)</div><div>Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭)</div><div class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</div>`;
+    hint.innerHTML = `<div>Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯) · Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>`;
   }
 }
 
