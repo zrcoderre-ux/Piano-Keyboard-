@@ -687,7 +687,7 @@
        layout is identical regardless of which one is visible. */
     .sheet-music-display {
       display: none;
-      flex: 1;
+      flex: 0 0 auto;
       min-height: 0;
       align-items: center;
       justify-content: center;
@@ -1566,20 +1566,20 @@
         display: none;
       }
 
-      /* Song-header in landscape becomes a single packed row containing:
-         song name + tempo chip | song picker | octave | × */
+      /* Song-header in landscape: single packed row.
+         Song title hidden (shown in picker) so play/restart/repeat fit. */
       .song-header {
-        margin-bottom: 3px;
-        gap: 6px;
+        margin-bottom: 0;
+        gap: 5px;
         flex-wrap: nowrap;
+        align-items: center;
       }
-      .song-title-wrap { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+      /* Hide song title — already shown inside the song select dropdown */
+      body.song-sheet-open .song-title-wrap { display: none; }
       .song-title { font-size: 13px; }
       .song-tempo-hint { font-size: 10px; padding: 2px 7px 2px 6px; }
       .song-tempo-hint .sth-icon { font-size: 10px; }
-      /* Octave slot — populated by JS in landscape with song-sheet open.
-         The note slot is no longer used (note display is hidden in
-         landscape song-sheet mode for all devices, see global rule). */
+      /* Octave slot — populated by JS in landscape with song-sheet open. */
       .song-header-octave-slot:not(:empty) {
         display: flex;
         align-items: center;
@@ -1591,6 +1591,32 @@
         font-size: 11px;
         gap: 5px;
       }
+
+      /* Hide Italian tempo range buttons in landscape — slider suffices */
+      body.song-sheet-open .tempo-range-labels { display: none; }
+
+      /* Reduce padding between song book panel and staff/piano area */
+      body.song-sheet-open .piano-area { padding-top: 2px; }
+      body.sheet-music-on.song-sheet-open .piano-area { padding-top: 0; }
+
+      /* ── TOUCH MODE + SONG BOOK: compact song sheet so QWERTY fits ──
+         Piano keys are hidden in touch+landscape (QWERTY is input source).
+         The QWERTY pad competes for vertical space with the song book, so
+         apply the same compactions used in keyboard/piano mode. */
+      body.mode-touch.song-sheet-open #songSheet { padding: 2px 6px; }
+      body.mode-touch.song-sheet-open .song-header { margin-bottom: 1px; gap: 4px; }
+      body.mode-touch.song-sheet-open .strip-note { width: 30px; height: 34px; border-radius: 5px; }
+      body.mode-touch.song-sheet-open .strip-note .sn-note { font-size: 10px; }
+      body.mode-touch.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
+      body.mode-touch.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
+      body.mode-touch.song-sheet-open .note-strip-wrapper.lyrics-on { padding-top: 14px; }
+      body.mode-touch.song-sheet-open .tempo-bar { padding: 2px 0; gap: 4px; }
+      body.mode-touch.song-sheet-open .tempo-btn { width: 26px; height: 26px; font-size: 12px; }
+      body.mode-touch.song-sheet-open .tempo-btn.play-btn { width: 28px; height: 28px; }
+      body.mode-touch.song-sheet-open .tempo-repeat-btn { font-size: 10px; }
+      body.mode-touch.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
+      body.mode-touch.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
+      body.mode-touch.song-sheet-open .tempo-val { font-size: 10px; min-width: 40px; }
 
       /* In landscape we can show the big note display in keyboard and piano
          modes — but it has to be compact (smaller font, no vertical-fill
@@ -1682,7 +1708,8 @@
       .piano-area { padding: 4px 8px 0; flex: 1; min-height: 0; }
       .piano-wrapper { padding-bottom: 4px; }
       .piano { max-height: 175px; }
-      body.song-sheet-open .piano { max-height: 220px; }
+      /* Song book open: extra height from tighter note strip / tempo buttons */
+      body.song-sheet-open .piano { max-height: 250px; }
       .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
       .key-note { font-size: 12px; }
 
@@ -1709,58 +1736,63 @@
       .qkey.modifier-key { min-width: 32px; padding: 0 4px; }
       .qkey.modifier-key .qkey-char { font-size: 9px; }
 
-      /* Song sheet: single-line strip. Title is no longer hidden — it
-         coexists with the relocated note/octave displays in the same row. */
+      /* Song sheet: single-line strip, landscape-optimised. */
       #songSheet { padding: 3px 8px; }
-      .strip-note { width: 36px; height: 44px; border-radius: 6px; }
-      .strip-note .sn-note { font-size: 12px; }
-      .strip-note .sn-oct { font-size: 8px; }
+      /* Reduce gap between song name row and lyrics strip */
+      body.song-sheet-open .song-header { margin-bottom: 1px; }
+      /* Smaller note keys — height freed goes to piano */
+      .strip-note { width: 34px; height: 36px; border-radius: 5px; }
+      .strip-note .sn-note { font-size: 11px; }
+      .strip-note .sn-oct { font-size: 7px; }
+      /* Lyric labels: tighten the padding-top so lyrics sit closer to the
+         song-header row above */
+      .note-strip-wrapper.lyrics-on { padding-top: 14px; }
+      /* Hide English translation on tempo range buttons; Italian name
+         already conveys the speed level */
+      body.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
+      body.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
 
       /* Both song sheet + sheet music: shrink the strip further so the
          staff gets maximum room. */
       body.sheet-music-on.song-sheet-open #songSheet { padding: 2px 6px; }
-      body.sheet-music-on.song-sheet-open .strip-note { width: 26px; height: 32px; border-radius: 5px; }
-      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 9px; }
-      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
+      body.sheet-music-on.song-sheet-open .strip-note { width: 24px; height: 28px; border-radius: 4px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 8px; }
+      body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 5px; }
       body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
       /* ── CONDENSED SONG SHEET (mobile landscape) ──
-         When self-tempo + sheet music + song sheet are ALL on in
-         keyboard or piano mode, the song sheet collapses to a single
-         row: just the song-header (title + dropdown + relocated
-         restart/repeat-N + close), with the note strip, tempo bar, and
-         progress all hidden. The freed vertical space (~90px) goes to
-         the staff via a much taller max-height cap.
-         Excluded for touch mode — touch landscape with both panels
-         already triggers the rotate-to-portrait overlay (different UX).
-         The Restart and Repeat-N buttons themselves are reparented from
-         .tempo-bar into .song-header-tempo-slot by syncLandscapeTopBar
-         when this condition is met (and reparented back when not). */
+         Whenever song-sheet is open in landscape (non-touch), the play,
+         restart, and repeat-N buttons move into the song-header row via
+         syncLandscapeTopBar. The tempo bar shrinks to just the slider +
+         BPM, and the song title is hidden (it's in the picker anyway),
+         freeing vertical space for the keyboard. */
       .song-header-tempo-slot {
         display: flex;
         align-items: center;
         gap: 4px;
         flex-shrink: 0;
       }
-      /* Buttons in the slot are scaled down so they sit comfortably on
-         a single 13px-title row instead of dominating it at the default
-         36px size. */
+      /* Scale buttons down to fit comfortably on the compact header row */
       .song-header-tempo-slot .tempo-btn {
         width: 26px;
         height: 26px;
-        font-size: 13px;
+        font-size: 12px;
+        box-shadow: none;
+      }
+      .song-header-tempo-slot .tempo-btn.play-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
       }
       .song-header-tempo-slot .tempo-repeat-btn {
-        font-size: 11px;
+        font-size: 10px;
       }
-      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .tempo-bar,
+      /* With self-tempo on: also hide the note strip and progress bar
+         so the sheet music staff can claim the full freed space. */
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .note-strip-wrapper,
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .song-progress {
         display: none;
       }
-      /* With three rows of song-sheet chrome gone, the staff can grow
-         to full portrait height (280px). The piano and other landscape
-         rules still apply normally. */
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg {
         max-height: 280px;
         height: 280px;
@@ -5586,33 +5618,31 @@ function syncLandscapeTopBar() {
   // landscape with both panels already triggers the rotate overlay.
   const tempoBar = document.querySelector('.tempo-bar');
   const tempoSlot = document.getElementById('songHeaderTempoSlot');
+  const playBtn = document.getElementById('tempoPlayBtn');
   const restartBtn = document.getElementById('tempoRestartBtn');
   const repeatBtn = document.getElementById('tempoRepeatBtn');
-  if (tempoBar && tempoSlot && restartBtn && repeatBtn) {
+  if (tempoBar && tempoSlot && playBtn && restartBtn && repeatBtn) {
+    // In mobile landscape with song-sheet open, always move play + restart
+    // + repeat-N into the song-header row so the tempo bar shrinks and the
+    // keyboard gains vertical space. Touch mode excluded (rotate overlay).
     const wantsCondensed = isLandscape && sheetOpen &&
-      document.body.classList.contains('sheet-music-on') &&
-      document.body.classList.contains('self-tempo-on') &&
       !document.body.classList.contains('mode-touch');
     if (wantsCondensed) {
-      // Order: Restart, then Repeat-N. Append idempotently — appendChild
-      // moves the element if already present elsewhere in the DOM.
+      // Order: Play, Restart, Repeat-N.
+      if (playBtn.parentElement !== tempoSlot) tempoSlot.appendChild(playBtn);
       if (restartBtn.parentElement !== tempoSlot) tempoSlot.appendChild(restartBtn);
       if (repeatBtn.parentElement !== tempoSlot) tempoSlot.appendChild(repeatBtn);
     } else {
-      // Restore to .tempo-bar. Original order is play → restart → repeat
-      // → slider → BPM. Insert restart and repeat after the play button.
-      const playBtn = document.getElementById('tempoPlayBtn');
-      if (playBtn && playBtn.parentElement === tempoBar) {
-        if (restartBtn.parentElement !== tempoBar) {
-          playBtn.insertAdjacentElement('afterend', restartBtn);
-        }
-        if (repeatBtn.parentElement !== tempoBar) {
-          restartBtn.insertAdjacentElement('afterend', repeatBtn);
-        }
-      } else {
-        // Defensive fallback: just append back to .tempo-bar.
-        if (restartBtn.parentElement !== tempoBar) tempoBar.appendChild(restartBtn);
-        if (repeatBtn.parentElement !== tempoBar) tempoBar.appendChild(repeatBtn);
+      // Restore to .tempo-bar. Original order: play → restart → repeat → slider → BPM.
+      if (playBtn.parentElement !== tempoBar) {
+        const sliderWrap = tempoBar.querySelector('.tempo-slider-wrap');
+        tempoBar.insertBefore(playBtn, sliderWrap || tempoBar.firstChild);
+      }
+      if (restartBtn.parentElement !== tempoBar) {
+        playBtn.insertAdjacentElement('afterend', restartBtn);
+      }
+      if (repeatBtn.parentElement !== tempoBar) {
+        restartBtn.insertAdjacentElement('afterend', repeatBtn);
       }
     }
   }
