@@ -680,19 +680,25 @@
 
     /* ── SHEET MUSIC DISPLAY ──
        Live notation: shows currently-played notes on a grand staff. Hidden
-       by default; appears when the "Sheet Music" setting is on, in which
-       case it replaces the big note letter display.
+       by default; appears when the "Sheet Music" setting is on.
 
-       Sits in the same flex slot as .big-note-display so the piano area
-       layout is identical regardless of which one is visible. */
+       Absolutely positioned inside .piano-area (which is position:relative)
+       so its vertical placement is fixed regardless of mode (keyboard /
+       touch / piano), modifier-hint visibility, or song-book open state.
+       16px matches piano-area's own padding-top so the staff appears at
+       exactly the same distance from the info-bar / song-sheet panel in
+       every combination. */
     .sheet-music-display {
       display: none;
-      flex: 0 0 auto;
-      min-height: 0;
+      position: absolute;
+      top: 16px;
+      left: 0;
+      right: 0;
       align-items: center;
       justify-content: center;
       padding: 4px 0;
       pointer-events: none;
+      z-index: 1;
     }
     body.sheet-music-on .sheet-music-display { display: flex; }
     body.sheet-music-on .big-note-display { display: none; }
@@ -709,7 +715,7 @@
        staff and bigger notes (set on .sheet-music-display elsewhere). */
     body.sheet-music-on.song-sheet-open .sheet-music-display {
       padding: 6px 0 4px;
-      flex: 0 0 auto;
+      top: 0;
     }
     body.sheet-music-on.song-sheet-open .sheet-music-svg {
       max-height: 280px;
@@ -905,6 +911,7 @@
       flex-direction: column;
       overflow: hidden;
       padding: 16px 20px 0;
+      position: relative;
     }
 
     /* When the song book is open, remove the top padding so the staff
@@ -965,7 +972,7 @@
       border-color: var(--border);
     }
     .piano.piano-mode .black-key {
-      background: linear-gradient(to bottom, #4a4a4a, #2a2a2a);
+      background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
     }
 
     .piano.single-octave {
@@ -1462,6 +1469,9 @@
 
       /* Piano area — less vertical padding */
       .piano-area { padding: 8px 8px 0; }
+      /* Restore normal flow for staff on mobile portrait — absolute
+         positioning is desktop-only */
+      .sheet-music-display { position: static; }
       .piano-wrapper { padding-bottom: 6px; }
       .piano { max-height: 160px; }
 
@@ -1638,6 +1648,7 @@
          Space priority: header first, then song sheet, then piano.
          Without song sheet: staff fills all available space above piano. */
       .sheet-music-display {
+        position: static;
         flex: 0 0 auto;
         padding: 0;
       }
@@ -1729,6 +1740,10 @@
 
       /* QWERTY: very tight, 3 rows must fit below piano */
       .qwerty-area { padding: 2px 0 4px; flex-shrink: 0; }
+      /* The keyboard shortcut hint (Shift=sharp, Tab=Oct- etc.) at the
+         bottom of the QWERTY pad is cut off on short landscape screens.
+         Touch users don't need it — hide it entirely. */
+      body.mode-touch .qwerty-area > div:last-child { display: none; }
       .qwerty-row { gap: 2px; margin-bottom: 2px; }
       .qkey { width: 28px; height: 32px; border-radius: 5px; }
       .qkey .qkey-char { font-size: 11px; }
@@ -5350,7 +5365,15 @@ function toggleExpandedKeyboard() {
 function updateOctavesShown() {
   const slider = document.getElementById('octavesShownSlider');
   if (!slider) return;
-  expandedNumOcts = Math.max(1, parseInt(slider.value, 10) || 2);
+  const val = Math.max(1, parseInt(slider.value, 10) || 2);
+  // Dragging to 1 octave is equivalent to turning off Expanded Keyboard —
+  // just disable it rather than showing a single-octave expanded view.
+  if (val === 1) {
+    const cb = document.getElementById('expandedKeyboard');
+    if (cb) { cb.checked = false; toggleExpandedKeyboard(); }
+    return;
+  }
+  expandedNumOcts = val;
   const valEl = document.getElementById('octavesShownVal');
   if (valEl) valEl.textContent = expandedNumOcts;
   try { localStorage.setItem('pianoOctavesShown', String(expandedNumOcts)); } catch(e) {}
@@ -5627,13 +5650,15 @@ function syncLandscapeTopBar() {
     // keyboard gains vertical space. Touch mode excluded (rotate overlay).
     const wantsCondensed = isLandscape && sheetOpen &&
       !document.body.classList.contains('mode-touch');
+    const tempoHintBtn = document.getElementById('songTempoHint');
     if (wantsCondensed) {
-      // Order: Play, Restart, Repeat-N.
+      // Order: Play, Restart, Repeat-N, Default-tempo-hint.
       if (playBtn.parentElement !== tempoSlot) tempoSlot.appendChild(playBtn);
       if (restartBtn.parentElement !== tempoSlot) tempoSlot.appendChild(restartBtn);
       if (repeatBtn.parentElement !== tempoSlot) tempoSlot.appendChild(repeatBtn);
+      if (tempoHintBtn && tempoHintBtn.parentElement !== tempoSlot) tempoSlot.appendChild(tempoHintBtn);
     } else {
-      // Restore to .tempo-bar. Original order: play → restart → repeat → slider → BPM.
+      // Restore to .tempo-bar. Original order: play → restart → repeat → hint → slider → BPM.
       if (playBtn.parentElement !== tempoBar) {
         const sliderWrap = tempoBar.querySelector('.tempo-slider-wrap');
         tempoBar.insertBefore(playBtn, sliderWrap || tempoBar.firstChild);
@@ -5643,6 +5668,9 @@ function syncLandscapeTopBar() {
       }
       if (repeatBtn.parentElement !== tempoBar) {
         restartBtn.insertAdjacentElement('afterend', repeatBtn);
+      }
+      if (tempoHintBtn && tempoHintBtn.parentElement !== tempoBar) {
+        repeatBtn.insertAdjacentElement('afterend', tempoHintBtn);
       }
     }
   }
