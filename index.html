@@ -712,23 +712,26 @@
       flex: 0 0 auto;
     }
     body.sheet-music-on.song-sheet-open .sheet-music-svg {
-      /* Bumped up for v41 — earlier 200/720 were too small relative to
-         the song sheet's other elements (tempo bar, note labels). The
-         staff is the primary "what to play" affordance in this combined
-         mode; making it the visual anchor of the song sheet matches
-         that hierarchy. */
       max-height: 280px;
       max-width: 900px;
+      /* On narrow phones the viewBox aspect ratio (≈3:1 wide) would
+         cap the rendered height well below max-height when width is the
+         constraint. Set an explicit height so the SVG fills vertically
+         and clips width instead, keeping the staff as tall as possible. */
+      height: 280px;
+      width: auto;
     }
 
     .sheet-music-svg {
-      width: 100%;
-      /* Wider default so live-mode (no song sheet) staffs fill desktop
-         more comfortably. Mobile portrait/landscape have their own
-         smaller caps below. */
-      max-width: 720px;
+      /* max-width must be wide enough that the viewBox aspect ratio
+         (520 wide x 170 tall ~3:1) does not choke the rendered height.
+         At height:320px the natural width is ~976px — cap at 900px so the
+         staff stays as tall as possible (same cap used by song-book-open).
+         Mobile portrait/landscape override these below. */
+      max-width: 900px;
       max-height: 100%;
-      height: auto;
+      height: 320px;
+      width: auto;
       display: block;
     }
 
@@ -902,6 +905,12 @@
       flex-direction: column;
       overflow: hidden;
       padding: 16px 20px 0;
+    }
+
+    /* When the song book is open, remove the top padding so the staff
+       sits in the same vertical position as when the song book is off. */
+    body.song-sheet-open .piano-area {
+      padding-top: 0;
     }
 
     /* ── PIANO KEYS ── */
@@ -1423,10 +1432,10 @@
       body.sheet-music-on.mode-touch .big-note-display { display: none; }
       body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
-      /* Sheet music + touch, no song sheet: staff same size as keyboard
-         mode (no artificial cap — let it fill the available space like it
-         does in keyboard/piano mode). Piano shrinks to leave room. */
-      body.sheet-music-on.mode-touch:not(.song-sheet-open) .sheet-music-svg { max-height: 100%; }
+      /* Sheet music + touch, no song sheet: give the staff an explicit
+         height (same as song-book-open mode) so it's never smaller than
+         when the song book is on. Piano shrinks to make room. */
+      body.sheet-music-on.mode-touch:not(.song-sheet-open) .sheet-music-svg { max-height: 100%; height: 280px; width: auto; }
       body.sheet-music-on.mode-touch:not(.song-sheet-open) .piano { max-height: 130px; }
 
       /* Song sheet open + sheet music on, touch mode in portrait:
@@ -1436,10 +1445,10 @@
          We hide .piano-wrapper only (not .piano-area) so the staff which
          lives in .piano-area stays visible. */
       body.sheet-music-on.song-sheet-open.mode-touch .piano-wrapper { display: none; }
-      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 280px; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 280px; height: 280px; width: auto; }
 
       /* Song sheet + sheet music, any mode (non-touch): staff compact. */
-      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { max-height: 280px; }
+      body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { max-height: 280px; height: 280px; width: auto; }
 
       /* When sheet music is on AND the song sheet is open, shrink the
          song sheet aggressively so the staff gets more room. */
@@ -1604,18 +1613,22 @@
          Without song sheet: staff fills all available space above piano. */
       .sheet-music-display {
         flex: 0 0 auto;
-        padding: 2px 0;
+        padding: 0;
       }
       /* Wider staff in landscape — the screen is ~850px so the default
-         520px max-width left a lot of empty horizontal space. Letting the
-         SVG grow up to ~720px makes the staff feel proportional and gives
-         each notehead more breathing room. */
-      .sheet-music-svg { max-height: 280px; max-width: 720px; }
+         520px max-width left a lot of empty horizontal space. Use height
+         to drive sizing so the staff fills vertically on narrow screens. */
+      .sheet-music-svg { max-height: 280px; max-width: 720px; height: 280px; width: auto; }
 
-      /* With song sheet open: header shrinks further, song sheet strip
-         compresses, piano gives remaining room. Staff still gets 280px
-         if screen allows, but is capped by available space via flex. */
-      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 280px; }
+      /* With song sheet open: staff still targets 280px but piano must fit.
+         Piano is ~90px, header ~28px, song sheet chrome ~55px → leaves ~217px
+         for the staff on a 390px screen. Cap it to what actually fits. */
+      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 200px; height: 200px; }
+
+      /* Touch mode + QWERTY: keyboard is ~120px so staff must leave room.
+         Header ~28px, song sheet ~55px, QWERTY ~120px → ~187px for staff. */
+      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 160px; height: 160px; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 120px; height: 120px; }
 
       /* Header: shave more padding when sheet music is on to give staff room */
       body.sheet-music-on header {
@@ -1637,8 +1650,8 @@
       body.sheet-music-on.song-sheet-open .tempo-bar { padding: 2px 0; gap: 4px; }
 
       /* Piano: give up height last — minimum playable size */
-      body.sheet-music-on .piano { max-height: 110px; }
-      body.sheet-music-on.song-sheet-open .piano { max-height: 90px; }
+      body.sheet-music-on .piano { max-height: 130px; }
+      body.sheet-music-on.song-sheet-open .piano { max-height: 110px; }
 
       /* In mobile landscape Touch mode, the piano competes for vertical
          room with the song sheet, sheet music, and the QWERTY pad. When
@@ -1750,6 +1763,7 @@
          rules still apply normally. */
       body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg {
         max-height: 280px;
+        height: 280px;
       }
 
       /* Viz bar: thinner */
