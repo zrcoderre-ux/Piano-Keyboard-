@@ -711,37 +711,27 @@
        layout is identical regardless of which one is visible. */
     .sheet-music-display {
       display: none;
-      flex: 1;
+      flex: 0 0 auto;
+      height: 280px;
       min-height: 0;
       align-items: center;
       justify-content: center;
-      padding: 4px 0;
+      padding: 6px 0 4px;
       pointer-events: none;
     }
     body.sheet-music-on .sheet-music-display { display: flex; }
     body.sheet-music-on .big-note-display { display: none; }
 
-    /* When BOTH the song sheet and sheet music are on, the staff itself
-       IS the song sheet — replacing the letter strip entirely. The
-       tempo bar and song picker still live in #songSheet, but the
-       letter chips disappear; the staff becomes the source of truth
-       for "what to play next." Players read the music, not letters. */
+    /* When BOTH the song sheet and sheet music are on, the staff stays
+       exactly the same size — no changes needed. */
     body.sheet-music-on.song-sheet-open .note-strip-wrapper { display: none; }
-    /* The staff in this combined mode needs to be larger and live
-       *inside* the song sheet's flow rather than above the piano —
-       it replaces the strip. We promote it visually with a thicker
-       staff and bigger notes (set on .sheet-music-display elsewhere). */
+    /* Staff size is already 280px — these are no-ops kept for mobile overrides below */
     body.sheet-music-on.song-sheet-open .sheet-music-display {
       padding: 6px 0 4px;
       flex: 0 0 auto;
       height: 280px;
     }
     body.sheet-music-on.song-sheet-open .sheet-music-svg {
-      /* Use height:100% + width:auto so the SVG fills the container
-         vertically and scales width from the aspect ratio. On narrow
-         phones this means the staff may be narrower than the screen,
-         but it will always be 280px tall rather than being squashed
-         by the wide viewBox aspect ratio. */
       height: 100%;
       width: auto;
       max-height: none;
@@ -749,13 +739,13 @@
     }
 
     .sheet-music-svg {
-      width: 100%;
-      /* Wider default so live-mode (no song sheet) staffs fill desktop
-         more comfortably. Mobile portrait/landscape have their own
-         smaller caps below. */
-      max-width: 720px;
-      max-height: 100%;
-      height: auto;
+      /* Always use the larger song-book-open sizing so the staff is the
+         same size whether or not song book is open. Mobile queries below
+         set their own smaller caps. */
+      height: 280px;
+      width: auto;
+      max-width: none;
+      max-height: none;
       display: block;
     }
 
@@ -2364,69 +2354,7 @@
 
     #songSheet.visible { display: block; }
 
-    /* ── DESKTOP: stable layout — nothing shifts when song book opens ────
-       Three problems solved here for hover+fine-pointer desktops (>430px):
 
-       1. SONG SHEET SPACE: kept in flow always (display:block) so the piano
-          is always sized as if song book is open. When closed, content is
-          visibility:hidden so it's invisible but holds its space.
-
-       2. BIG NOTE DISPLAY overlap: since the song sheet now reserves space,
-          the big-note-display would be squashed. We pull it up via a negative
-          margin so it visually covers the invisible song sheet area and
-          centres in the full available space. When song book opens, the note
-          display is hidden anyway, so the margin is inert.
-
-       3. SHEET MUSIC SIZE: base size matches the song-sheet-open size (280px
-          tall) so the staff doesn't jump when song book opens. The song-sheet-
-          open override is now a no-op (same value). */
-    @media (hover: hover) and (pointer: fine) and (min-width: 431px) {
-      /* 1 — Song sheet always in flow, invisible when closed */
-      #songSheet {
-        display: block;
-        visibility: hidden;
-        pointer-events: none;
-      }
-      #songSheet.visible {
-        visibility: visible;
-        pointer-events: auto;
-      }
-
-      /* 2 — Big note display overlaps the reserved-but-invisible song sheet */
-      .piano-area { overflow: visible; }
-      .big-note-display {
-        margin-top: calc(-1 * var(--song-sheet-h, 120px));
-        min-height: calc(100% + var(--song-sheet-h, 120px));
-      }
-      body.song-sheet-open .big-note-display {
-        margin-top: 0;
-        min-height: 0;
-      }
-
-      /* 3 — Sheet music always 280px tall, matching the song-sheet-open size */
-      body.sheet-music-on .sheet-music-display {
-        flex: 0 0 auto;
-        height: 280px;
-        padding: 6px 0 4px;
-      }
-      body.sheet-music-on .sheet-music-svg {
-        height: 100%;
-        width: auto;
-        max-height: none;
-        max-width: none;
-      }
-      /* song-sheet-open is now identical — nothing changes when it opens */
-      body.sheet-music-on.song-sheet-open .sheet-music-display {
-        height: 280px;
-        padding: 6px 0 4px;
-      }
-      body.sheet-music-on.song-sheet-open .sheet-music-svg {
-        height: 100%;
-        width: auto;
-        max-height: none;
-        max-width: none;
-      }
-    }
 
     .song-header {
       display: flex;
@@ -9195,22 +9123,6 @@ document.addEventListener('keydown', function(e) {
     toggleFullscreen();
   }
 });
-
-// ── DESKTOP SONG-SHEET HEIGHT SYNC ─────────────
-// Measures the actual song sheet height and sets --song-sheet-h so the
-// big-note-display negative-margin overlay is exact on desktop.
-function syncSongSheetHeight() {
-  const sheet = document.getElementById('songSheet');
-  if (!sheet) return;
-  if (!window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 431px)').matches) return;
-  const wasHidden = !sheet.classList.contains('visible');
-  if (wasHidden) sheet.style.visibility = 'visible';
-  const h = sheet.offsetHeight;
-  if (wasHidden) sheet.style.visibility = '';
-  document.documentElement.style.setProperty('--song-sheet-h', h + 'px');
-}
-window.addEventListener('resize', syncSongSheetHeight);
-syncSongSheetHeight();
 
 // Click outside to close modals
 document.getElementById('settingsPanel').addEventListener('click', function(e) {
