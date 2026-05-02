@@ -102,6 +102,10 @@
       animation: float 8s ease-in-out infinite;
     }
 
+    body.lyrics-crayon .bg-note {
+      filter: url(#crayon-filter);
+    }
+
     @keyframes float {
       0%, 100% { transform: translateY(0)    rotate(-8deg); }
       50%      { transform: translateY(-14px) rotate(6deg); }
@@ -174,42 +178,42 @@
 
     .logo {
       display: flex;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-end;
+      gap: 6px;
       font-size: 20px;
       font-weight: 800;
       letter-spacing: 0.02em;
       color: var(--accent);
-      align-items: center;
     }
 
     .logo-icon {
-      width: 40px;
-      height: 30px;
+      width: 32px;
+      height: 24px;
       flex-shrink: 0;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
+      display: block;
     }
 
     .logo-text {
       display: inline;
       color: var(--accent);
-      font-size: 1.15em;
+      font-size: 1.35em;
+      align-self: flex-end;
+      padding-bottom: 10px;
     }
 
-    .logo-piano-wrap {
+    .logo-piano-block {
       display: inline-flex;
       flex-direction: column;
       align-items: center;
-      gap: 0;
+      gap: 1px;
     }
 
     .logo-piano {
       color: var(--text-dim);
-      font-weight: 700;
-      font-size: 0.85em;
-      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 600;
+      font-size: 1em;
       line-height: 1;
-      text-align: center;
     }
 
     .controls {
@@ -247,14 +251,42 @@
       box-shadow: 0 2px 6px var(--glow);
     }
 
-    /* Rainbow colors per button — matched to gradient section behind each, more intense */
-    #btnKeyboard        { color: #c9252d; background: rgba(230,57,70,0.18);   border: 1.5px solid rgba(230,57,70,0.45); }
-    #btnKeyboard.active { color: #a01820; background: rgba(230,57,70,0.32);   border: 1.5px solid rgba(230,57,70,0.7); box-shadow: 0 2px 8px rgba(230,57,70,0.3); }
-    #btnTouch           { color: #c97000; background: rgba(255,152,0,0.18);   border: 1.5px solid rgba(255,152,0,0.45); }
-    #btnTouch.active    { color: #a05500; background: rgba(255,152,0,0.32);   border: 1.5px solid rgba(255,152,0,0.7); box-shadow: 0 2px 8px rgba(255,152,0,0.3); }
-    #btnPiano           { color: #78610a; background: rgba(255,214,0,0.35);   border: 1.5px solid rgba(255,214,0,0.8); }
-    #btnPiano.active    { color: #5a4608; background: rgba(255,214,0,0.55);   border: 1.5px solid rgba(255,214,0,1.0); box-shadow: 0 2px 8px rgba(255,214,0,0.4); }
+    /* Rainbow colors per button — Piano=red, Keyboard=orange, Touch=yellow */
+    #btnPiano           { color: #c9252d; background: rgba(230,57,70,0.18);   border: 1.5px solid rgba(230,57,70,0.45); }
+    #btnPiano.active    { color: #7a0e14; background: rgba(230,57,70,0.52);   border: 1.5px solid rgba(230,57,70,0.9); box-shadow: 0 2px 10px rgba(230,57,70,0.45); }
+    #btnKeyboard        { color: #c97000; background: rgba(255,152,0,0.18);   border: 1.5px solid rgba(255,152,0,0.45); }
+    #btnKeyboard.active { color: #7a4000; background: rgba(255,152,0,0.52);   border: 1.5px solid rgba(255,152,0,0.9); box-shadow: 0 2px 10px rgba(255,152,0,0.45); }
+    #btnTouch           { color: #78610a; background: rgba(255,214,0,0.35);   border: 1.5px solid rgba(255,214,0,0.8); }
+    #btnTouch.active    { color: #3d3005; background: rgba(255,214,0,0.75);   border: 1.5px solid rgba(255,214,0,1.0); box-shadow: 0 2px 10px rgba(255,214,0,0.55); }
     .mode-btn.active    { color: inherit; }
+
+    /* Piano and Touch: label above icon — desktop default is inline */
+    #btnPiano .btn-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+    }
+
+    /* Mobile portrait: Piano button — column layout, pushed to the bottom
+       of the button so the icon sits at the same height as the text in
+       the Keyboard/Touch buttons. "Piano" text stays black and never
+       gets crayon font. */
+    @media (max-width: 430px) and (orientation: portrait) {
+      #btnPiano {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      #btnPiano .btn-label {
+        color: #1a1a1a !important;
+        font-family: 'Inter', sans-serif !important;
+      }
+      body.lyrics-crayon #btnPiano .btn-label {
+        font-family: 'Inter', sans-serif !important;
+        color: #1a1a1a !important;
+      }
+    }
 
     /* per-button colors set after base .settings-btn rule below */
 
@@ -764,9 +796,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: opacity 0.2s, transform 0.1s, color 0.05s;
+      transition: transform 0.1s;
       pointer-events: none;
-      text-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.2);
     }
 
     .big-note-display.dim {
@@ -864,6 +896,10 @@
       letter-spacing: 0.05em;
     }
 
+    /* Touch mode: hide the tiny info-bar note display entirely — the QWERTY
+       pad is the focus and there's no piano visual to anchor the note to. */
+    body.mode-touch .info-bar .note-display { display: none; }
+
     /* Hide the tiny info-bar note display by default (the big one above the
        piano takes its place). It reappears in landscape touch mode where
        there's no vertical room for the big display. */
@@ -903,10 +939,9 @@
 
     /* ── INFO BAR ── */
     .info-bar {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
+      display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: space-between;
       padding: 8px 20px;
       background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
       border-bottom: 1.5px solid #000000;
@@ -925,8 +960,9 @@
       color: var(--accent);
       min-width: 140px;
       letter-spacing: 0.03em;
-      transition: opacity 0.3s, font-size 0.1s;
+      transition: font-size 0.1s;
       white-space: nowrap;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.2);
     }
 
     .note-display.dim { opacity: 0.2; }
@@ -944,13 +980,20 @@
       font-weight: 500;
       color: var(--text);
       text-align: center;
-      display: none;
-      overflow: hidden;
-      min-width: 0;
+      flex: 1;
+      visibility: hidden;
     }
-    body.mode-keyboard .modifier-hint { display: block; }
-    body.mode-touch .modifier-hint { display: block; }
-    body.mode-piano .modifier-hint { display: none; }
+    .mod-hint-keyboard,
+    .mod-hint-touch {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2px 6px;
+      align-items: center;
+    }
+    body.mode-keyboard .modifier-hint { visibility: visible; }
+    body.mode-touch .modifier-hint { visibility: visible; }
+    body.song-sheet-open.song-no-accidentals .modifier-hint { visibility: hidden; }
 
     /* Show only the relevant hint line for the current mode */
     .mod-hint-touch    { display: none; }
@@ -1025,6 +1068,14 @@
     .infobar-icon-btn:active { transform: scale(0.95); }
     .infobar-icon-btn.active { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.35); box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
 
+    #songBookInfoBtn   { background: #d1fae5; border-color: #43a047; }
+    #songBookInfoBtn:hover   { background: #bbf7d0; border-color: #2e7d32; }
+    #songBookInfoBtn.active  { background: #bbf7d0; border-color: #2e7d32; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
+
+    #sheetMusicInfoBtn  { background: #e3f2fd; border-color: #1e88e5; }
+    #sheetMusicInfoBtn:hover  { background: #bbdefb; border-color: #1565c0; }
+    #sheetMusicInfoBtn.active { background: #bbdefb; border-color: #1565c0; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
+
     /* ── PIANO AREA ── */
     .piano-area {
       flex: 1;
@@ -1032,6 +1083,17 @@
       flex-direction: column;
       overflow: hidden;
       padding: 16px 20px 0;
+    }
+
+    body.sheet-music-on .piano-area {
+      padding-top: 0;
+    }
+
+    @media (min-width: 431px) {
+      body.sheet-music-on .sheet-music-display {
+        padding: 0;
+        margin-top: -12px;
+      }
     }
 
     /* ── PIANO KEYS ── */
@@ -1534,17 +1596,29 @@
         padding: 8px 12px 7px;
       }
       .logo { font-size: 14px; gap: 7px; }
-      .logo-icon { width: 28px; height: 21px; }
-      .logo-piano { font-size: 0.8em; }
+      .logo-icon { width: 22px; height: 16px; }
       .mode-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
 
-      /* Slim info bar — stable 3-column grid keeps buttons anchored right.
-         Hint stays visible and shrinks to fit between note display and buttons. */
-      .info-bar { padding: 5px 12px; gap: 6px; }
-      .note-display { font-size: 16px; min-width: 70px; }
-      .modifier-hint { font-size: 10px; text-align: center; }
+      /* Slim info bar — hint and octave controls share one centered row.
+         The note-display is hidden (display:none) so justify-center puts
+         the remaining two items side-by-side in the middle. */
+      .info-bar { padding: 5px 12px 5px 12px; justify-content: center; gap: 14px; }
+      .note-display { font-size: 16px; min-width: 100px; }
+      .modifier-hint { font-size: 12px; text-align: left; margin-right: auto; }
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
+      .octave-display { gap: 4px; }
+      .octave-label-group {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        line-height: 1.1;
+        gap: 0;
+      }
+      /* Piano mode has no modifier hint, so use space-between to keep
+         note display left and icon/octave buttons right — same as keyboard. */
+      body.mode-piano .info-bar,
+      body.song-sheet-open .info-bar { justify-content: space-between; gap: 0; }
 
       /* Big note display — smaller on iPhone but still prominent.
          Flex:1 + centering inherited from base rule, so it floats
@@ -1557,8 +1631,11 @@
          room), fall back to the compact info-bar version. */
       body.mode-touch .big-note-display,
       body.song-sheet-open .big-note-display { display: none; }
-      body.mode-touch .info-bar .note-display,
       body.song-sheet-open .info-bar .note-display { display: block; }
+
+      /* Mobile portrait touch mode: hide the piano keys entirely (QWERTY
+         is the only input). */
+      body.mode-touch .piano-wrapper { display: none; }
 
       /* Sheet music behaviour on iPhone portrait:
          - In touch mode the QWERTY pad takes a chunk of room, so by
@@ -1570,7 +1647,6 @@
            the tightest case and gets the most aggressive shrink. */
       body.sheet-music-on.mode-touch .sheet-music-display { display: flex; }
       body.sheet-music-on.mode-touch .big-note-display { display: none; }
-      body.sheet-music-on.mode-touch .info-bar .note-display { display: block; }
 
       /* Sheet music + touch, no song sheet: staff same size as keyboard
          mode (no artificial cap — let it fill the available space like it
@@ -1609,9 +1685,9 @@
       .sheet-music-display { height: 280px; flex: 0 0 280px; padding: 4px 0 2px; }
       .sheet-music-svg { height: 280px; width: 100%; max-width: 100%; }
 
-      /* Piano area — less vertical padding */
-      .piano-area { padding: 8px 8px 0; }
-      .piano-wrapper { padding-bottom: 6px; }
+      /* Piano area — less vertical padding, shifted up slightly */
+      .piano-area { padding: 4px 8px 0; }
+      .piano-wrapper { padding-bottom: 10px; overflow: visible; }
       .piano { max-height: 160px; }
 
       /* Smaller white keys so more octaves fit, but keep labels readable */
@@ -1692,7 +1768,7 @@
         flex-shrink: 0;
       }
       .logo { font-size: 13px; gap: 6px; }
-      .logo-icon { width: 26px; height: 19px; }
+      .logo-icon { width: 20px; height: 15px; }
       .mode-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
 
@@ -1757,7 +1833,6 @@
       }
       body.mode-touch .big-note-display,
       body.song-sheet-open .big-note-display { display: none; }
-      body.mode-touch:not(.song-sheet-open) .info-bar .note-display { display: block; }
 
       /* Sheet music in landscape — staff gets portrait-equivalent height.
          Space priority: header first, then song sheet, then piano.
@@ -1786,7 +1861,7 @@
         padding: 2px 12px;
       }
       body.sheet-music-on .logo { font-size: 12px; }
-      body.sheet-music-on .logo-icon { width: 22px; height: 16px; }
+      body.sheet-music-on .logo-icon { width: 17px; height: 13px; }
       body.sheet-music-on .mode-btn,
       body.sheet-music-on .settings-btn { padding: 4px 9px; font-size: 11px; }
 
@@ -2154,14 +2229,29 @@
       cursor: pointer;
     }
 
+    /* Inner column: sized to the title, so tap-keys can never overflow it */
+    .splash-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    #splash .splash-tap-keys {
+      width: 100%;
+      justify-content: center;
+      overflow: hidden;
+    }
+
     #splash .splash-title {
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       gap: 0;
       font-size: 36px;
       font-weight: 800;
       letter-spacing: 0.05em;
       color: var(--accent);
+      font-family: 'Short Stack', cursive;
     }
 
     #splash .splash-logo-icon {
@@ -2215,15 +2305,16 @@
       height: 52px;
       background: linear-gradient(to bottom, #ffffff, #f5f5f5);
       border-radius: 0 0 12px 12px;
-      border: 1px solid var(--border);
+      border: 1.5px solid rgba(0,0,0,0.15);
       display: flex;
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 6px;
-      font-family: 'Inter', sans-serif;
+      font-family: 'Short Stack', cursive;
       font-size: 12px;
-      color: var(--text-dim);
-      font-weight: 700;
+      color: var(--text);
+      font-weight: 400;
+      -webkit-text-stroke: 0.75px var(--text);
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       position: relative;
       overflow: hidden;
@@ -2258,14 +2349,11 @@
     }
 
     #splash .splash-tap-keys .splash-key {
-      width: 42px;
-      height: 62px;
-      font-size: 17px;
+      width: 30px;
+      height: 44px;
+      font-size: 13px;
       transition: transform 0.1s;
     }
-
-    #splash .splash-tap-keys:hover .splash-key { transform: translateY(-3px); }
-    #splash .splash-tap-keys:active .splash-key { transform: translateY(2px); }
 
     #splash .splash-key-space {
       background: transparent !important;
@@ -2274,6 +2362,72 @@
       width: 10px !important;
     }
     #splash .splash-key-space::before { display: none; }
+
+    /* ── MOBILE PORTRAIT: shrink splash to fit ── */
+    @media (max-width: 500px) and (orientation: portrait) {
+      #splash {
+        gap: 12px;
+      }
+      .splash-inner {
+        gap: 20px;
+      }
+      #splash .splash-title {
+        font-size: 26px;
+      }
+      /* Scale the inline piano SVG and its container */
+      #splash .splash-title > span:last-child {
+        width: 70px !important;
+        padding-top: 44px !important;
+      }
+      #splash .splash-title > span:last-child svg {
+        width: 70px !important;
+        height: 53px !important;
+      }
+      #splash .splash-tap-keys {
+        margin-top: 24px !important;
+        gap: 3px;
+      }
+      #splash .splash-tap-keys .splash-key {
+        width: 23px;
+        height: 40px;
+        font-size: 11px;
+      }
+      #splash .splash-key-space {
+        width: 6px !important;
+      }
+    }
+
+    /* Extra-small phones (iPhone SE etc.) */
+    @media (max-width: 380px) and (orientation: portrait) {
+      #splash {
+        gap: 8px;
+      }
+      .splash-inner {
+        gap: 16px;
+      }
+      #splash .splash-title {
+        font-size: 22px;
+      }
+      #splash .splash-title > span:last-child {
+        width: 58px !important;
+        padding-top: 36px !important;
+      }
+      #splash .splash-title > span:last-child svg {
+        width: 58px !important;
+        height: 44px !important;
+      }
+      #splash .splash-tap-keys .splash-key {
+        width: 19px;
+        height: 34px;
+        font-size: 10px;
+      }
+      #splash .splash-key-space {
+        width: 5px !important;
+      }
+    }
+
+    #splash .splash-tap-keys:hover .splash-key { transform: translateY(-3px); }
+    #splash .splash-tap-keys:active .splash-key { transform: translateY(2px); }
 
     /* Rainbow colors cycling across all 9 letter keys (nth-child skips spaces) */
     #splash .splash-tap-keys .splash-key:nth-child(1)::before  { background: #e63946; }
@@ -2286,6 +2440,21 @@
     #splash .splash-tap-keys .splash-key:nth-child(10)::before { background: #e63946; }
     #splash .splash-tap-keys .splash-key:nth-child(11)::before { background: #ff9800; }
 
+
+    /* ── MOBILE PORTRAIT: hide logo icon + "Piano" text in header ── */
+    @media (max-width: 500px) and (orientation: portrait) {
+      .logo-piano-block { display: none; }
+      .settings-btn span { display: none; }
+      #btnPiano {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 6px 12px;
+        line-height: 1;
+      }
+      #btnPiano .btn-label { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; }
+    }
 
     /* ── COLOR SETTINGS ── */
     .color-grid {
@@ -2570,14 +2739,21 @@
       min-width: 0;
     }
 
+    /* Mobile portrait: hide the song title — it still shows in the select dropdown */
+    @media (max-width: 430px) and (orientation: portrait) {
+      .song-title-wrap { display: none; }
+      .song-select { order: -1; }
+    }
+
     .song-title {
       font-size: 16px;
       font-weight: 800;
       letter-spacing: -0.01em;
-      color: var(--accent);
+      color: #ff3a4a;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.18);
     }
 
     /* Suggested-tempo button — small action chip showing the song's
@@ -2773,17 +2949,17 @@
     body.lyrics-colored .strip-note .sn-lyric {
       color: var(--strip-color, var(--accent)) !important;
       opacity: 0.9;
-      text-shadow: -0.5px -0.5px 0 rgba(0,0,0,0.5), 0.5px -0.5px 0 rgba(0,0,0,0.5), -0.5px 0.5px 0 rgba(0,0,0,0.5), 0.5px 0.5px 0 rgba(0,0,0,0.5);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
     }
     body.lyrics-colored .strip-note.current .sn-lyric {
       color: var(--strip-color, var(--accent)) !important;
       opacity: 1;
-      text-shadow: -0.5px -0.5px 0 rgba(0,0,0,0.5), 0.5px -0.5px 0 rgba(0,0,0,0.5), -0.5px 0.5px 0 rgba(0,0,0,0.5), 0.5px 0.5px 0 rgba(0,0,0,0.5);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
     }
     body.lyrics-colored .strip-note.played .sn-lyric {
       color: var(--strip-color, var(--accent)) !important;
       opacity: 0.35;
-      text-shadow: -0.5px -0.5px 0 rgba(0,0,0,0.5), 0.5px -0.5px 0 rgba(0,0,0,0.5), -0.5px 0.5px 0 rgba(0,0,0,0.5), 0.5px 0.5px 0 rgba(0,0,0,0.5);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
     }
 
     /* ── CRAYON MODE ──
@@ -2801,7 +2977,8 @@
     body.lyrics-crayon .settings-card h2,
     body.lyrics-crayon .modifier-hint strong,
     body.lyrics-crayon .help-section-title,
-    body.lyrics-crayon .hk {
+    body.lyrics-crayon .hk,
+    body.lyrics-crayon .practice-result-score {
       font-family: 'Short Stack', cursive !important;
       filter: url(#crayon-filter);
     }
@@ -2973,6 +3150,98 @@
       0%   { background-position: 0% 50%; }
       100% { background-position: 200% 50%; }
     }
+
+    /* ── PRACTICE RESULT PANEL ── */
+    .practice-result {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+    }
+    .practice-result.open { display: flex; }
+    .practice-result-card {
+      background: var(--surface);
+      border-radius: 28px;
+      padding: 32px 28px 28px;
+      width: min(340px, 88vw);
+      text-align: center;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+    .practice-result-x {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--text-dim2);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 8px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .practice-result-x:hover { color: var(--text); background: var(--surface2); }
+    .practice-result-emoji {
+      font-size: 52px;
+      line-height: 1;
+    }
+    .practice-result-score {
+      font-size: 48px;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0);
+      background-size: 300% 300%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: rainbow-shift 3s linear infinite;
+      line-height: 1.1;
+    }
+    .practice-result-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .practice-result-fraction {
+      font-size: 13px;
+      color: var(--text-dim2);
+      font-weight: 500;
+    }
+    .practice-result-msg {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.4;
+      margin-top: 4px;
+      max-width: 260px;
+    }
+    .practice-result-close {
+      margin-top: 10px;
+      padding: 12px 36px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .practice-result-close:hover { background: var(--accent-deep); transform: scale(1.03); }
 
     /* ── TEMPO CONTROLS ── */
     .tempo-bar {
@@ -3393,7 +3662,7 @@
     /* ── SUSTAIN INDICATOR ── */
   </style>
 </head>
-<body class="mode-keyboard">
+<body class="mode-keyboard lyrics-crayon lyrics-colored">
 
 <!-- SVG filter for crayon effect -->
 <svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
@@ -3405,7 +3674,13 @@
       <!-- Waxy texture overlay — makes it look like pigment not fully deposited -->
       <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="2" seed="8" result="texture"/>
       <feColorMatrix type="saturate" values="0" in="texture" result="grayTexture"/>
-      <feBlend in="displaced" in2="grayTexture" mode="multiply" result="blended"/>
+      <!-- Lighten the texture before multiplying so the clouding is less dark -->
+      <feComponentTransfer in="grayTexture" result="lighterTexture">
+        <feFuncR type="linear" slope="0.55" intercept="0.45"/>
+        <feFuncG type="linear" slope="0.55" intercept="0.45"/>
+        <feFuncB type="linear" slope="0.55" intercept="0.45"/>
+      </feComponentTransfer>
+      <feBlend in="displaced" in2="lighterTexture" mode="multiply" result="blended"/>
       <!-- Clip to original shape so texture doesn't spill outside letters -->
       <feComposite in="blended" in2="SourceGraphic" operator="in"/>
     </filter>
@@ -3456,8 +3731,9 @@
 </div>
 
 <div id="splash">
+  <div class="splash-inner">
   <div class="splash-title">
-    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.85em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px;margin-top:46px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:108px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.92em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:108px;height:81px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
+    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.6em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px;align-self:flex-end;margin-bottom:18px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:88px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.82em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:88px;height:66px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
         <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
         <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
@@ -3494,18 +3770,17 @@
     <div class="splash-key">A</div>
     <div class="splash-key">Y</div>
   </div>
+  </div>
 </div>
 
 <!-- HEADER -->
 <header>
   <div class="logo">
     <span class="logo-text">Arthur's</span>
-    <span class="logo-piano-wrap">
+    <span class="logo-piano-block">
       <span class="logo-piano">Piano</span>
-      <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-top:2px;">
-        <!-- piano body -->
+      <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a" stroke="#3a2a2a" stroke-width="0.5"/>
-        <!-- 7 white keys (C–B), 4 wide each, packed left-to-right inside body -->
         <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
@@ -3513,7 +3788,6 @@
         <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-        <!-- rainbow color band across the white keys (7 colours, same widths) -->
         <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
         <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
         <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
@@ -3521,22 +3795,20 @@
         <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
         <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
         <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
-        <!-- 5 black keys -->
         <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
         <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
         <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
         <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
         <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-        <!-- top stripe -->
         <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
       </svg>
     </span>
   </div>
   <div class="controls">
     <div class="mode-toggle">
+      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')"><span class="btn-label">Piano</span> <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:20px;height:15px;vertical-align:middle;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></svg></button>
       <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">💻 Keyboard</button>
       <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">⌨️ Touch</button>
-      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')">🎹 Piano</button>
     </div>
     <button class="settings-btn settings-btn-settings" onclick="openSettings()">⚙️ <span>Settings</span></button>
     <button class="settings-btn settings-btn-help" onclick="openHelp()">? <span>Help</span></button>
@@ -3559,17 +3831,19 @@
 
 <!-- INFO BAR -->
 <div class="info-bar">
-  <div class="note-display dim" id="noteDisplay">—</div>
-  <div class="modifier-hint" id="modHint">
-    <div class="mod-hint-keyboard">Hold <strong style="color:#e63946">SHIFT</strong> → <span style="color:#e63946">sharp (♯)</span> · Hold <strong style="color:#2196f3">ALT</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
-    <div class="mod-hint-touch"><strong style="color:#e63946">⇧ Shift</strong> → <span style="color:#e63946">sharp (♯)</span> · <strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;">
+  <div class="infobar-left" style="display:flex;align-items:center;gap:8px;">
     <button class="infobar-icon-btn" id="songBookInfoBtn" onclick="toggleSongSheetFromInfoBar()" title="Song Book">📖</button>
     <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
+  </div>
+  <div class="modifier-hint" id="modHint">
+    <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
+    <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> · <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
+  </div>
+  <div class="infobar-right" style="display:flex;align-items:center;gap:8px;">
+    <div class="note-display dim" id="noteDisplay">—</div>
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
-      <span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span> <span id="octaveNum" style="font-weight:700">4</span>
+      <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
       <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
     </div>
   </div>
@@ -3654,6 +3928,7 @@
   </div>
   <div class="song-progress"><div class="song-progress-fill" id="songProgressFill"></div></div>
   <div class="song-complete" id="songComplete">🎉 Well done! Play again?</div>
+  <div class="practice-result" id="practiceResult" style="display:none"></div>
 </div>
 
 <!-- PIANO AREA -->
@@ -3720,7 +3995,6 @@
         </label>
       </div>
 
-
       <div class="setting-row is-substep" id="selfTempoRow" style="display:none">
         <div class="setting-label">
           <span class="setting-label-icon icon-tempo">⏱️</span>
@@ -3729,6 +4003,30 @@
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="selfTempoMode" onchange="toggleSelfTempo()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row is-substep" id="autoPlayRow" style="display:none">
+        <div class="setting-label">
+          <span class="setting-label-icon icon-tempo" style="border-color:#2196f3;background:#e3f2fd;">🎹</span>
+          Auto Play
+          <small>Piano plays the song automatically</small>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="autoPlayMode" onchange="toggleAutoPlay()" />
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="setting-row is-substep" id="practiceModeRow" style="display:none">
+        <div class="setting-label">
+          <span class="setting-label-icon icon-tempo" style="border-color:#9c27b0;background:#f3e5f5;">🏆</span>
+          Practice Mode
+          <small>Score your accuracy when the song ends</small>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="practiceModeToggle" onchange="togglePracticeMode()" />
           <span class="slider"></span>
         </label>
       </div>
@@ -3963,27 +4261,11 @@
           <div class="octave-range-display" id="octaveRangeDisplay">Showing octaves 2 – 6</div>
         </div>
       </div>
-      <div class="setting-row">
-        <div class="setting-label">
-          <span class="setting-label-icon icon-lyriccolors">🎨</span>
-          Colored Lyrics
-
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" />
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="setting-row">
-        <div class="setting-label">
-          <span class="setting-label-icon icon-sustain" style="border-color:#e07800;background:#fff8ee;">🖍️</span>
-          Crayon Mode
-
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="lyricsCrayonMode" onchange="toggleLyricsCrayon()" />
-          <span class="slider"></span>
-        </label>
+      <!-- Crayon Mode toggle hidden (crayon is now default); JS architecture kept via toggleLyricsCrayon() -->
+      <input type="checkbox" id="lyricsCrayonMode" onchange="toggleLyricsCrayon()" checked style="display:none" />
+      <!-- Colored Lyrics toggle hidden (colored is now default); JS architecture kept via toggleLyricsColor() -->
+      <div id="lyricsColorRow" style="display:none">
+        <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" checked />
       </div>
     </details>
 
@@ -4745,6 +5027,8 @@ function releaseNoteByPianoKey(note, oct) {
   //
   // either way; the kid's release gesture is what we care about).
   advanceSongNoteOnRelease(note);
+  // Practice mode: record key release for duration scoring (tempo mode).
+  practiceRecordRelease();
   // Remove from display and sheet tracking
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
@@ -4952,6 +5236,8 @@ function handleNoteOff(letter, isSharp, isFlat) {
   highlightQKey(letter, false, null);
   // Self-tempo: keyup is the advance trigger.
   advanceSongNoteOnRelease(note);
+  // Practice mode: record key release for duration scoring (tempo mode).
+  practiceRecordRelease();
   pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
 }
 
@@ -5074,30 +5360,18 @@ function renderNoteDisplay() {
     return;
   }
 
-  // Use insertion order (Map preserves it).
   const entries = Array.from(activeDisplayNotes.values());
 
-  // Single-note path: same as before — one color, plain text.
-  // Multi-note path: each letter is wrapped in a <span> with its own
-  // note color so a chord visibly reads as multiple distinct pitches.
-  // The previous behaviour (whole display tinted by the most-recent
-  // press) lost that information — every letter looked the same color.
   let html, fallbackColor;
   if (entries.length === 1) {
     const e = entries[0];
     html = escapeHtml(e.full);
     fallbackColor = e.color || 'var(--accent)';
   } else {
-    // Multi-note: each note's short label gets its own span tinted by
-    // that note's color. Two-space gap separates them — same visual
-    // rhythm as the previous textContent join.
     html = entries.map(e => {
       const c = e.color || 'var(--accent)';
       return `<span style="color:${c}">${escapeHtml(e.short)}</span>`;
     }).join('<span class="nd-sep">  </span>');
-    // Most-recent color is still used as the fallback when something
-    // outside the spans needs a color (shouldn't happen in practice,
-    // but keeps the code robust).
     fallbackColor = entries[entries.length - 1].color || 'var(--accent)';
   }
 
@@ -5110,9 +5384,8 @@ function renderNoteDisplay() {
     big.innerHTML = html;
     big.style.color = fallbackColor;
     big.classList.remove('dim');
-    // Re-trigger the pulse animation
     big.classList.remove('pulse');
-    void big.offsetWidth; // force reflow so animation restarts
+    void big.offsetWidth;
     big.classList.add('pulse');
   }
 }
@@ -5334,7 +5607,11 @@ function renderSingleNote(svg, note, oct, color, x, opts) {
   const flagCount = isEighth ? 1 : (isSixteenth ? 2 : 0);
 
   // Group everything for this note so opacity applies uniformly.
-  const g = svgEl('g', { opacity: opacity });
+  const gAttrs = { opacity: opacity };
+  if (document.body.classList.contains('lyrics-crayon')) {
+    gAttrs.filter = 'url(#crayon-filter)';
+  }
+  const g = svgEl('g', gAttrs);
 
   // Glow ring behind the notehead for current-song-position emphasis.
   if (emphasize) {
@@ -5513,7 +5790,6 @@ function renderSheetMusicLive(svg) {
   }
 
   if (activeSheetNotes.size === 0) {
-    renderEmptyHint(svg, 'Play a note');
     return;
   }
 
@@ -5743,7 +6019,7 @@ function updateModHint() {
   } else if (flatActive) {
     kbDiv.innerHTML = '<span style="background:#2196f3;color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(33,150,243,0.4)">♭ FLAT</span>';
   } else {
-    kbDiv.innerHTML = `Hold <strong style="color:#e63946">SHIFT</strong> → <span style="color:#e63946">sharp (♯)</span> · Hold <strong style="color:#2196f3">ALT</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span>`;
+    kbDiv.innerHTML = `<span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span>`;
   }
 }
 
@@ -5913,6 +6189,13 @@ function toggleSelfTempo() {
   selfTempoMode = document.getElementById('selfTempoMode').checked;
   document.body.classList.toggle('self-tempo-on', selfTempoMode);
   try { localStorage.setItem('pianoSelfTempo', selfTempoMode ? '1' : '0'); } catch(e) {}
+  // Self-tempo and auto play are mutually exclusive
+  if (selfTempoMode && autoPlayMode) {
+    const cb = document.getElementById('autoPlayMode');
+    if (cb) cb.checked = false;
+    autoPlayMode = false;
+    try { localStorage.setItem('pianoAutoPlay', '0'); } catch(e) {}
+  }
   // If turning self-tempo on while a song is playing, stop the timer —
   // the player owns advancement now.
   if (selfTempoMode && tempoPlaying) stopTempo();
@@ -5935,17 +6218,21 @@ function toggleSelfTempo() {
 // Called from toggleSongSheet/hideSongSheet, and on init.
 function syncSelfTempoVisibility() {
   const row = document.getElementById('selfTempoRow');
+  const autoPlayRow = document.getElementById('autoPlayRow');
+  const practiceRow = document.getElementById('practiceModeRow');
   const pair = document.getElementById('songSheetPair');
   if (!row) return;
   if (songSheetVisible) {
     row.style.display = '';
+    if (autoPlayRow) autoPlayRow.style.display = '';
+    if (practiceRow) practiceRow.style.display = '';
     if (pair) pair.classList.add('has-substep');
   } else {
     row.style.display = 'none';
+    if (autoPlayRow) autoPlayRow.style.display = 'none';
+    if (practiceRow) practiceRow.style.display = 'none';
     if (pair) pair.classList.remove('has-substep');
-    // Force-disable Self-Tempo if it was on. Mirror what toggleSelfTempo
-    // does so all derived state (body class, persisted flag, strip
-    // re-render, landscape layout) stays consistent.
+    // Force-disable Self-Tempo if it was on.
     if (selfTempoMode) {
       const cb = document.getElementById('selfTempoMode');
       if (cb) cb.checked = false;
@@ -5954,6 +6241,22 @@ function syncSelfTempoVisibility() {
       try { localStorage.setItem('pianoSelfTempo', '0'); } catch(e) {}
       if (currentSong) renderNoteStrip();
       if (typeof syncLandscapeTopBar === 'function') syncLandscapeTopBar();
+    }
+    // Force-disable Auto Play if it was on.
+    if (autoPlayMode) {
+      const cb = document.getElementById('autoPlayMode');
+      if (cb) cb.checked = false;
+      autoPlayMode = false;
+      try { localStorage.setItem('pianoAutoPlay', '0'); } catch(e) {}
+      if (tempoPlaying) stopTempo();
+    }
+    // Force-disable Practice Mode if it was on.
+    if (practiceMode) {
+      const cb = document.getElementById('practiceModeToggle');
+      if (cb) cb.checked = false;
+      practiceMode = false;
+      try { localStorage.setItem('pianoPracticeMode', '0'); } catch(e) {}
+      practiceResetCounters();
     }
   }
   syncLyricsVisibility();
@@ -5971,6 +6274,219 @@ function loadSelfTempoSetting() {
   } catch(e) {}
 }
 
+// ──────────────────────────────────────────
+//  AUTO PLAY
+// ──────────────────────────────────────────
+
+function toggleAutoPlay() {
+  autoPlayMode = document.getElementById('autoPlayMode').checked;
+  try { localStorage.setItem('pianoAutoPlay', autoPlayMode ? '1' : '0'); } catch(e) {}
+  // Auto play and self-tempo are mutually exclusive
+  if (autoPlayMode && selfTempoMode) {
+    const cb = document.getElementById('selfTempoMode');
+    if (cb) cb.checked = false;
+    selfTempoMode = false;
+    document.body.classList.remove('self-tempo-on');
+    try { localStorage.setItem('pianoSelfTempo', '0'); } catch(e) {}
+  }
+  if (!autoPlayMode && tempoPlaying) stopTempo();
+  if (currentSong) renderNoteStrip();
+}
+
+function loadAutoPlaySetting() {
+  try {
+    const v = localStorage.getItem('pianoAutoPlay');
+    if (v === '1') {
+      autoPlayMode = true;
+      const cb = document.getElementById('autoPlayMode');
+      if (cb) cb.checked = true;
+    }
+  } catch(e) {}
+}
+
+// ──────────────────────────────────────────
+//  PRACTICE MODE
+// ──────────────────────────────────────────
+
+function togglePracticeMode() {
+  practiceMode = document.getElementById('practiceModeToggle').checked;
+  try { localStorage.setItem('pianoPracticeMode', practiceMode ? '1' : '0'); } catch(e) {}
+  practiceResetCounters();
+}
+
+function loadPracticeModeSetting() {
+  try {
+    const v = localStorage.getItem('pianoPracticeMode');
+    if (v === '1') {
+      practiceMode = true;
+      const cb = document.getElementById('practiceModeToggle');
+      if (cb) cb.checked = true;
+    }
+  } catch(e) {}
+}
+
+function practiceResetCounters() {
+  practiceNotesTotal = 0;
+  practiceScoreSum = 0;
+  practiceWindowStart = null;
+  practiceWindowDuration = null;
+  practiceWindowPressed = false;
+  practiceWindowPressTime = null;
+  practiceWindowReleaseTime = null;
+}
+
+// Count the playable (non-rest) notes in the current song.
+function practiceCountTotal() {
+  if (!currentSong) return 0;
+  let count = 0;
+  for (const n of currentSong.notes) {
+    if (!isRestEntry(n)) count++;
+  }
+  return count;
+}
+
+// Called by scheduleNextNote at the start of each note window (tempo mode).
+// Sets up the timing window so press/release events can be measured.
+function practiceOpenWindow(windowDurationMs) {
+  if (!practiceMode || selfTempoMode) return;
+  practiceWindowStart = performance.now();
+  practiceWindowDuration = windowDurationMs;
+  practiceWindowPressed = false;
+  practiceWindowPressTime = null;
+  practiceWindowReleaseTime = null;
+}
+
+// Called when the player presses the correct note (any mode).
+// In tempo mode, records the press time for timing scoring.
+// In self-tempo mode, records a simple correct hit.
+function practiceRecordPress() {
+  if (!practiceMode || !currentSong || !songSheetVisible) return;
+  if (selfTempoMode) {
+    // Self-tempo: no timing dimension — just count it correct when advance fires.
+    return;
+  }
+  if (!practiceWindowStart) return;
+  if (practiceWindowPressed) return; // only first press counts
+  practiceWindowPressed = true;
+  practiceWindowPressTime = performance.now();
+  practiceWindowReleaseTime = null; // reset in case of re-press
+}
+
+// Called when the player releases the note key (any mode, tempo mode primarily).
+function practiceRecordRelease() {
+  if (!practiceMode || selfTempoMode) return;
+  if (!practiceWindowPressed) return;
+  if (practiceWindowReleaseTime) return; // only first release counts
+  practiceWindowReleaseTime = performance.now();
+}
+
+// Called at the end of a note window (tempo mode) to evaluate and accumulate score.
+function practiceCloseWindow() {
+  if (!practiceMode || selfTempoMode) return;
+  if (!practiceWindowStart || !practiceWindowDuration) return;
+
+  let score = 0;
+  if (practiceWindowPressed && practiceWindowPressTime) {
+    const elapsed = practiceWindowPressTime - practiceWindowStart;
+    const windowMs = practiceWindowDuration;
+
+    // Timing score: how quickly after the beat did they press?
+    // Full credit in first 30%, partial in first 60%, minimal for late presses.
+    const timingRatio = Math.max(0, Math.min(1, elapsed / windowMs));
+    let timingScore;
+    if (timingRatio <= 0.30) timingScore = 1.0;
+    else if (timingRatio <= 0.60) timingScore = 0.65;
+    else timingScore = 0.3;
+
+    // Duration score: how long did they hold relative to the window?
+    const releaseT = practiceWindowReleaseTime || (practiceWindowStart + windowMs);
+    const heldMs = Math.max(0, releaseT - practiceWindowPressTime);
+    const durationRatio = Math.min(1, heldMs / (windowMs * 0.8)); // 80% hold = full credit
+    let durationScore;
+    if (durationRatio >= 0.85) durationScore = 1.0;
+    else if (durationRatio >= 0.5) durationScore = 0.7;
+    else if (durationRatio >= 0.2) durationScore = 0.4;
+    else durationScore = 0.15;
+
+    score = timingScore * durationScore;
+  }
+
+  practiceScoreSum += score;
+  // Reset window state
+  practiceWindowStart = null;
+  practiceWindowDuration = null;
+  practiceWindowPressed = false;
+  practiceWindowPressTime = null;
+  practiceWindowReleaseTime = null;
+}
+
+// Called from finalizeAdvance (self-tempo / non-tempo press-driven path)
+// when a note is correctly completed. In self-tempo there's no timing
+// dimension, so a correct press is full credit.
+function practiceRecordCorrect() {
+  if (!practiceMode || !currentSong || !songSheetVisible) return;
+  if (selfTempoMode) {
+    practiceScoreSum += 1.0;
+  }
+  // In tempo mode, scoring is handled by practiceCloseWindow() — don't double-count.
+}
+
+// Called when the song finishes — show the score card.
+function practiceShowResult() {
+  if (!practiceMode) return;
+  const total = practiceNotesTotal || practiceCountTotal();
+  const rawPct = total > 0 ? (practiceScoreSum / total) * 100 : 0;
+  const pct = Math.round(Math.min(100, rawPct));
+
+  const emoji = pct === 100 ? '🌟' :
+                pct >= 80  ? '🎉' :
+                pct >= 60  ? '😊' :
+                pct >= 40  ? '💪' : '🎹';
+
+  const messages = {
+    100: ["Perfect score! You're a piano superstar! 🌟", "Flawless! Every note, perfectly timed!", "100%! That was absolutely incredible!"],
+    80:  ["Amazing playing! You are SO good at this!", "Wow, that was fantastic! You're a natural!", "You're a piano star — that was brilliant!"],
+    60:  ["Great job! You're doing so well!", "You played beautifully! Keep it up!", "Wonderful playing! You make it look easy!"],
+    40:  ["You're doing amazing — keep playing!", "Every time you play you get better and better!", "You're so great at this — keep going!"],
+    0:   ["Keep playing — you're doing great!", "You're amazing! Let's play again!", "Keep going — this is so fun!"],
+  };
+
+  const bucket = pct === 100 ? 100 : pct >= 80 ? 80 : pct >= 60 ? 60 : pct >= 40 ? 40 : 0;
+  const msgs = messages[bucket];
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
+
+  // Sub-label explains what the score measures
+  const subLabel = selfTempoMode ? 'Notes correct' : 'Timing &amp; accuracy';
+
+  const card = `
+    <div class="practice-result-card">
+      <button class="practice-result-x" onclick="practiceCloseResult()" aria-label="Close">✕</button>
+      <div class="practice-result-emoji">${emoji}</div>
+      <div class="practice-result-score">${pct}%</div>
+      <div class="practice-result-label">${subLabel}</div>
+      <div class="practice-result-msg">${msg}</div>
+      <button class="practice-result-close" onclick="practiceCloseResult()">Play Again 🎵</button>
+    </div>`;
+
+  const el = document.getElementById('practiceResult');
+  el.innerHTML = card;
+  el.classList.add('open');
+  el.style.display = 'flex';
+}
+
+function practiceCloseResult() {
+  const el = document.getElementById('practiceResult');
+  el.classList.remove('open');
+  el.style.display = 'none';
+  practiceResetCounters();
+  practiceNotesTotal = practiceCountTotal();
+  currentNoteIdx = 0;
+  currentRepeat = 1;
+  refreshPendingChord();
+  updateRepeatBtn();
+  renderNoteStrip();
+}
+
 function loadLyricsSetting() {
   try {
     const v = localStorage.getItem('pianoShowLyrics');
@@ -5986,20 +6502,26 @@ function loadLyricsSetting() {
   } catch(e) {}
   try {
     const v = localStorage.getItem('pianoLyricsColored');
-    if (v !== '0') {
+    if (v === '0') {
+      lyricsColored = false;
+      document.body.classList.remove('lyrics-colored');
+    } else {
+      // Default ON — class already present on <body> from HTML, no re-add needed
       lyricsColored = true;
       const cb = document.getElementById('lyricsColorMode');
       if (cb) cb.checked = true;
-      document.body.classList.add('lyrics-colored');
     }
   } catch(e) {}
   try {
     const v = localStorage.getItem('pianoLyricsCrayon');
-    if (v !== '0') {
+    if (v === '0') {
+      lyricsCrayon = false;
+      document.body.classList.remove('lyrics-crayon');
+    } else {
+      // Default ON — class already present on <body> from HTML, no re-add needed
       lyricsCrayon = true;
       const cb = document.getElementById('lyricsCrayonMode');
       if (cb) cb.checked = true;
-      document.body.classList.add('lyrics-crayon');
     }
   } catch(e) {}
 }
@@ -6146,46 +6668,14 @@ function setMode(m) {
   // mode-* class. Setting inline display here would override media-query
   // rules (e.g. landscape hides it for room).
 
-  // Piano mode: all keys lit, default to expanded keyboard
+  // Piano mode: all keys lit
   const pianoEl = document.getElementById('piano');
   if (m === 'piano') {
     pianoEl.classList.add('piano-mode');
-    if (!expandedKeyboard) {
-      // Remember that *we* turned expanded on, so we can turn it off on exit
-      pianoModeAutoExpanded = true;
-      expandedKeyboard = true;
-      document.getElementById('expandedKeyboard').checked = true;
-      // Show the Octaves Shown substep and tighten the pair container,
-      // mirroring what toggleExpandedKeyboard would do if the user had
-      // clicked the toggle themselves. Use display='' (not 'block') so
-      // the inline flex-direction:column on that row keeps working.
-      const sec = document.getElementById('octavesShownSection');
-      if (sec) sec.style.display = '';
-      const pair = document.getElementById('expandedKeyboardPair');
-      if (pair) pair.classList.add('has-substep');
-      syncOctavesShownSlider();
-      buildPiano();
-    }
+    buildPiano();
   } else {
     pianoEl.classList.remove('piano-mode');
-    // When leaving piano mode, only revert expanded keyboard if piano mode
-    // is the thing that turned it on. If the user manually re-checked the
-    // box while in piano mode, leave it as they set it.
-    // Revert the auto-expand that Piano mode applied when we entered it.
-    // We also need to cover the case where pianoModeAutoSingleOctave then
-    // fired and set expandedKeyboard=false (variable) while leaving the
-    // checkbox at true — so check the checkbox, not just the variable.
-    if (prevMode === 'piano' && pianoModeAutoExpanded &&
-        (expandedKeyboard || document.getElementById('expandedKeyboard').checked)) {
-      expandedKeyboard = false;
-      document.getElementById('expandedKeyboard').checked = false;
-      const sec = document.getElementById('octavesShownSection');
-      if (sec) sec.style.display = 'none';
-      const pair = document.getElementById('expandedKeyboardPair');
-      if (pair) pair.classList.remove('has-substep');
-      buildPiano();
-    }
-    pianoModeAutoExpanded = false;
+    // pianoModeAutoExpanded is cleared by applyPianoAutoExpandIfApplicable below
   }
 
   if (m === 'touch') {
@@ -6205,6 +6695,7 @@ function setMode(m) {
   // condition no longer applies (e.g. switched to keyboard mode while
   // a single-octave song was loaded), this restores expandedKeyboard
   // to the user's preference.
+  applyPianoAutoExpandIfApplicable();
   applyPianoSingleOctaveIfApplicable();
   // The condensed-tempo-bar layout excludes touch mode, so flipping
   // between modes can change whether tempo controls relocate into the
@@ -6882,10 +7373,6 @@ const SONGS = [
       {n:'E',o:5,k:'E',d:2},{n:'E',o:5,k:'E',d:1},{n:'D',o:5,k:'D',d:1},
       {n:'C',o:5,k:'C',d:2},{n:'A',o:4,k:'A',d:1},{n:'A',o:4,k:'A',d:1},
       {n:'F',o:4,k:'F',d:2},{n:'C',o:4,k:'C',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'C',o:5,k:'C',d:1},{n:'C',o:5,k:'C',d:1},{n:'D',o:5,k:'D',d:1},
-      {n:'E',o:5,k:'E',d:2},{n:'E',o:5,k:'E',d:1},{n:'D',o:5,k:'D',d:1},
-      {n:'C',o:5,k:'C',d:2},{n:'A',o:4,k:'A',d:1},{n:'A',o:4,k:'A',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'G',o:4,k:'G',d:2},
     ]
   },
   {
@@ -7756,8 +8243,7 @@ const SONG_LYRICS = {
     'you','are','my','sun','shine','my','on','ly',
     'sun','shine','you','make','me','hap','py','when',
     'skies','are','grey','youll','nev','er','know','dear',
-    'how','much','I','love','you','please','dont','take',
-    'my','sun','shine','a','way','',
+    'how','you'
   ],
 
   // 28 notes
@@ -8111,8 +8597,8 @@ const SONG_LYRICS = {
 };
 
 let showLyrics = false;
-let lyricsColored = false;
-let lyricsCrayon = false;
+let lyricsColored = true;
+let lyricsCrayon = true;
 
 function toggleLyricsColor() {
   lyricsColored = document.getElementById('lyricsColorMode').checked;
@@ -8130,7 +8616,7 @@ function toggleLyricsCrayon() {
 }
 
 function syncLyricsColorVisibility() {
-  // Colored Lyrics setting is now in Advanced — always visible, no sync needed.
+  // Colored Lyrics is now in Advanced Settings — always visible, no-op.
 }
 
 function toggleLyrics() {
@@ -8251,13 +8737,9 @@ function hideSongSheet() {
   syncInfoBarBtns();
 }
 
-// A song is "multi-octave" only if it contains a CHORD whose members
-// span more than one octave — i.e. notes that need to be played at
-// the same time across octaves (like Chopsticks' final C4+C5). Such
-// songs are physically unplayable on a single-octave keyboard view.
-//
-// Sequential cross-octave songs (where the melody travels up or down
-// across octaves over time) are NOT flagged here — the player can
+// A song is "multi-octave" if its notes span more than one octave.
+// Such songs in Piano mode auto-expand the keyboard on load to show
+// all the needed octaves. See applyPianoAutoExpandIfApplicable.
 // shift octaves with the +/− buttons mid-song, the same way they
 // would on a real piano. Earlier versions of this function flagged
 // all sequential cross-octave songs and ended up over-filtering the
@@ -8268,26 +8750,38 @@ function hideSongSheet() {
 function isSongMultiOctave(s) {
   if (s._mo != null) return s._mo;
   s._mo = false;
+  let minOct = Infinity, maxOct = -Infinity;
   for (const n of s.notes) {
     if (isRestEntry(n)) continue;
-    if (!n.chord) continue; // single notes are sequential, not simultaneous
-    let minOct = Infinity, maxOct = -Infinity;
-    for (const e of n.chord) {
+    for (const e of noteEntries(n)) {
       if (e.o < minOct) minOct = e.o;
       if (e.o > maxOct) maxOct = e.o;
     }
-    if (maxOct - minOct >= 1) { s._mo = true; break; }
   }
+  if (maxOct - minOct >= 1) s._mo = true;
   return s._mo;
 }
 
+// Returns { minOct, maxOct, numOcts } for a song's full note range.
+// Used to set up expanded keyboard when auto-expanding for a multi-octave song.
+function getSongOctaveRange(s) {
+  let lo = Infinity, hi = -Infinity;
+  for (const n of s.notes) {
+    if (isRestEntry(n)) continue;
+    for (const e of noteEntries(n)) {
+      if (e.o < lo) lo = e.o;
+      if (e.o > hi) hi = e.o;
+    }
+  }
+  if (!isFinite(lo)) return { minOct: 4, maxOct: 4, numOcts: 1 };
+  return { minOct: lo, maxOct: hi, numOcts: hi - lo + 1 };
+}
+
 // Multi-octave songs are hidden from the picker unless the player has
-// an expanded view they can actually play across. Piano mode always
-// counts as expanded (it auto-turns expanded keyboard on, and direct
-// taps don't depend on the selected octave anyway).
+// an expanded view — or is in Piano mode where we auto-expand on load.
 function songIsPickable(s) {
   if (!isSongMultiOctave(s)) return true;
-  if (mode === 'piano') return true;
+  if (mode === 'piano') return true; // auto-expands to cover the song's range on load
   return expandedKeyboard;
 }
 
@@ -8396,6 +8890,7 @@ function loadSong(id) {
   currentNoteIdx = 0;
   currentRepeat = 1; // reset repeat progress for the new song
   refreshPendingChord();
+  practiceResetCounters();
   document.getElementById('songTitle').textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
   applySongSelectColor(currentSong.id);
@@ -8408,6 +8903,11 @@ function loadSong(id) {
   //     auto-single-octave Piano-mode display below.
   const hasAccidentals = songHasAccidentals(currentSong);
   document.body.classList.toggle('song-no-accidentals', !hasAccidentals);
+
+  // Piano mode + multi-octave song: auto-expand the keyboard to show all
+  // the octaves the song needs, and set the active octave to the lowest
+  // one so the layout centres on the song's range.
+  applyPianoAutoExpandIfApplicable();
 
   // Auto-collapse Piano mode to single-octave when the loaded song
   // doesn't need the wider view. Piano mode normally shows multiple
@@ -8453,10 +8953,9 @@ function loadSong(id) {
     updateActiveTempoRange();
   }
   updateRepeatBtn();
+  practiceNotesTotal = practiceCountTotal();
   renderNoteStrip();
 }
-
-// True if any non-rest note (or chord member) is a sharp or flat. Cached.
 function songHasAccidentals(s) {
   if (s._acc != null) return s._acc;
   for (const n of s.notes) {
@@ -8496,13 +8995,64 @@ function applyPianoSingleOctaveIfApplicable() {
     buildPiano();
   } else if (!wantsSingle && pianoModeAutoSingleOctave) {
     pianoModeAutoSingleOctave = false;
-    // Restore user's expanded preference (Piano mode normally forces
-    // expanded on; this matches the behaviour of toggleExpandedKeyboard
-    // / setMode at first load).
+    // Restore the user's expanded-keyboard preference.
     expandedKeyboard = document.getElementById('expandedKeyboard').checked;
     buildPiano();
   }
 }
+
+// In Piano mode, if the current song spans multiple octaves, auto-enable
+// expanded keyboard with enough octaves to cover the song's full range,
+// and set the active octave to the lowest note's octave so the layout
+// starts at the right place. Reverts when the song changes to a single-
+// octave one, or when leaving Piano mode.
+function applyPianoAutoExpandIfApplicable() {
+  const wantsExpand = mode === 'piano' && currentSong && isSongMultiOctave(currentSong);
+
+  if (wantsExpand) {
+    const { minOct, maxOct, numOcts } = getSongOctaveRange(currentSong);
+    // Clamp to the system-wide audible range
+    const lo = Math.max(minOctave, minOct);
+    const hi = Math.min(maxOctave, maxOct);
+    const needed = hi - lo + 1;
+
+    pianoModeAutoExpanded = true;
+    expandedKeyboard = true;
+    expandedNumOcts = needed;
+    // Set the active octave to the bottom of the song's range so
+    // calcOctaveRange centres the display correctly.
+    octave = lo;
+    document.getElementById('octaveNum').textContent = octave;
+    updateOctaveColor();
+
+    // Sync the Settings UI to reflect the forced state
+    const cb = document.getElementById('expandedKeyboard');
+    if (cb) cb.checked = true;
+    const sec = document.getElementById('octavesShownSection');
+    if (sec) sec.style.display = '';
+    const pair = document.getElementById('expandedKeyboardPair');
+    if (pair) pair.classList.add('has-substep');
+    const valEl = document.getElementById('octavesShownVal');
+    if (valEl) valEl.textContent = expandedNumOcts;
+    const slider = document.getElementById('octavesShownSlider');
+    if (slider) slider.value = expandedNumOcts;
+
+    buildPiano();
+  } else if (!wantsExpand && pianoModeAutoExpanded) {
+    // Song changed to single-octave or we left piano mode — restore
+    // the user's stored expanded preference.
+    pianoModeAutoExpanded = false;
+    const cb = document.getElementById('expandedKeyboard');
+    expandedKeyboard = cb ? cb.checked : false;
+    // Sync the Settings UI back to the real preference
+    const sec = document.getElementById('octavesShownSection');
+    const pair = document.getElementById('expandedKeyboardPair');
+    if (sec) sec.style.display = expandedKeyboard ? '' : 'none';
+    if (pair) pair.classList.toggle('has-substep', expandedKeyboard);
+    buildPiano();
+  }
+}
+
 
 function renderNoteStrip() {
   const strip = document.getElementById('noteStrip');
@@ -8741,9 +9291,6 @@ function advanceSongNote(playedNote) {
   const current = currentSong.notes[currentNoteIdx];
   if (!current) return;
 
-  // If tempo is running, keypresses don't advance — timer owns that.
-  if (tempoPlaying) return;
-
   // Lazy-init the pending set if it's empty but the entry has notes
   // (happens on first call for a new song or after a manual jump).
   if (pendingChordNotes.size === 0 && armedChordNotes.size === 0) {
@@ -8752,6 +9299,13 @@ function advanceSongNote(playedNote) {
 
   // Is the played note one of the pending chord notes? If not, ignore.
   if (!pendingChordNotes.has(playedNote)) return;
+
+  // Practice mode: record the correct press (works in both tempo and non-tempo).
+  // Must happen after the pendingChordNotes check so only correct notes are recorded.
+  practiceRecordPress();
+
+  // If tempo is running, keypresses don't advance — timer owns that.
+  if (tempoPlaying) return;
 
   if (selfTempoMode) {
     // Self-tempo: press just arms the note. We don't remove it from
@@ -8812,6 +9366,10 @@ function finalizeAdvance() {
   // iterations of a multi-loop — the user is mid-momentum and a sudden
   // tempo kick-in would feel intrusive.
   // Also skipped in self-tempo mode where there is no metronome.
+
+  // Practice mode: the player successfully played this note entry.
+  practiceRecordCorrect();
+
   if (currentNoteIdx === 0 && currentRepeat === 1 && !selfTempoMode) {
     currentNoteIdx++;
     refreshPendingChord();
@@ -8852,6 +9410,11 @@ function finalizeAdvance() {
     completeEl.style.display = 'block';
     setTimeout(() => {
       completeEl.style.display = 'none';
+      // Practice mode: show score card instead of immediately resetting
+      if (practiceMode) {
+        practiceShowResult();
+        return;
+      }
       currentNoteIdx = 0;
       currentRepeat = 1;
       refreshPendingChord();
@@ -8963,6 +9526,20 @@ let currentNoteDuration = null;
 // world to play it. Persisted in localStorage so the kid's preferred
 // learning mode survives a reload.
 let selfTempoMode = false;
+// Auto Play: when on, the piano sounds each note automatically as the tempo advances.
+let autoPlayMode = false;
+
+// Practice Mode: tracks correct note hits during a song and shows a
+// score card when the song completes.
+let practiceMode = false;
+let practiceNotesTotal = 0;    // playable (non-rest) notes in the song
+let practiceScoreSum = 0;      // accumulated score (0–practiceNotesTotal)
+// Per-note-window timing state (tempo mode only):
+let practiceWindowStart = null;   // performance.now() when current note window opened
+let practiceWindowDuration = null; // duration of current note window in ms
+let practiceWindowPressed = false; // was the correct note pressed this window?
+let practiceWindowPressTime = null; // performance.now() when correct note was first pressed
+let practiceWindowReleaseTime = null; // performance.now() when key was released
 
 // ── Repeat-N-times ──
 // targetRepeats = how many full play-throughs the user wants in a row.
@@ -9119,6 +9696,11 @@ function stopTempo() {
   document.getElementById('tempoPlayBtn').textContent = '▶';
   document.getElementById('tempoPlayBtn').classList.remove('playing');
   clearTempoTimer();
+  // Stop any auto-play notes still sounding
+  if (window._autoPlayIds) {
+    window._autoPlayIds.forEach(({ id, n, o }) => { stopNote(id); highlightPianoKey(n, o, false); });
+    window._autoPlayIds = [];
+  }
   // Reset ticker bar
   const tickerBar = document.getElementById('tickerBarFill');
   if (tickerBar) { tickerBar.style.animation = 'none'; tickerBar.classList.remove('sweeping'); tickerBar.style.width = '0%'; }
@@ -9135,6 +9717,7 @@ function restartSong() {
   stopTempo();
   currentNoteIdx = 0;
   currentRepeat = 1;
+  practiceResetCounters();
   // Skip leading rests
   while (currentNoteIdx < currentSong?.notes.length &&
          isRestEntry(currentSong.notes[currentNoteIdx])) {
@@ -9200,6 +9783,10 @@ function scheduleNextNote(immediate) {
       completeEl.style.display = 'block';
       setTimeout(() => {
         completeEl.style.display = 'none';
+        if (practiceMode) {
+          practiceShowResult();
+          return;
+        }
         currentNoteIdx = 0;
         currentRepeat = 1;
         refreshPendingChord();
@@ -9256,7 +9843,39 @@ function scheduleNextNote(immediate) {
   currentNoteDuration = noteDurationMs;
   startLyricProgressLoop();
 
+  // Practice mode: open a timing window for this note
+  practiceOpenWindow(noteDurationMs);
+
+  // Auto Play: sound each note as the tempo fires
+  if (autoPlayMode) {
+    const entries = noteEntries(note);
+    // Stop any previously auto-played notes
+    if (window._autoPlayIds) {
+      window._autoPlayIds.forEach(({ id, n, o }) => { stopNote(id); highlightPianoKey(n, o, false); });
+    }
+    window._autoPlayIds = [];
+    entries.forEach(e => {
+      const freq = noteToFreq(e.n, e.o);
+      if (!freq) return;
+      const id = e.n + e.o + '__ap';
+      playNote(id, freq);
+      highlightPianoKey(e.n, e.o, true);
+      pulseViz(noteColors[e.n] || '#e63946');
+      window._autoPlayIds.push({ id, n: e.n, o: e.o });
+    });
+    // Note-off slightly before the next beat
+    const noteOffDelay = Math.max(noteDurationMs * 0.85, noteDurationMs - 80);
+    setTimeout(() => {
+      if (window._autoPlayIds) {
+        window._autoPlayIds.forEach(({ id, n, o }) => { stopNote(id); highlightPianoKey(n, o, false); });
+        window._autoPlayIds = [];
+      }
+    }, noteOffDelay);
+  }
+
   tempoTimer = setTimeout(() => {
+    // Practice mode: close and score the window before advancing
+    practiceCloseWindow();
     currentNoteIdx++;
     scheduleNextNote(false);
   }, noteDurationMs);
@@ -9281,10 +9900,14 @@ if (sheetMusicEnabled) renderSheetMusic();
 
 // Restore the self-tempo setting (off by default).
 loadSelfTempoSetting();
+// Restore auto play setting (off by default).
+loadAutoPlaySetting();
 // Restore lyrics setting.
 loadLyricsSetting();
 // Restore bass clef setting.
 loadBassClefSetting();
+// Restore practice mode setting.
+loadPracticeModeSetting();
 // And gate its row visibility on Song Sheet — at boot Song Sheet is off,
 // so the row hides immediately. If Self-Tempo was persisted-on, this
 // also auto-disables it (since its precondition isn't met).
