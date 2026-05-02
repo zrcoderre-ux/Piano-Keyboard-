@@ -23,7 +23,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&family=Playfair+Display:wght@700&family=Caveat:wght@600;700&family=Fredoka+One&family=Boogaloo&family=Lilita+One&family=Titan+One&family=Chewy&family=Short+Stack&family=Gochi+Hand&family=Bubblegum+Sans&family=Indie+Flower&family=Gloria+Hallelujah&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -164,31 +164,13 @@
       align-items: center;
       justify-content: space-between;
       padding: 12px 20px 10px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
+      border-bottom: 1.5px solid #000000;
+      background: var(--header-bg, linear-gradient(to right, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
       flex-shrink: 0;
       position: relative;
     }
 
-    /* Rainbow stripe under header */
-    header::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -3px;
-      height: 3px;
-      background: linear-gradient(to right,
-        #e63946 0%, #e63946 14%,
-        #ff9800 14%, #ff9800 28%,
-        #ffeb3b 28%, #ffeb3b 42%,
-        #4caf50 42%, #4caf50 57%,
-        #2196f3 57%, #2196f3 71%,
-        #9c27b0 71%, #9c27b0 85%,
-        #f06292 85%, #f06292 100%
-      );
-      z-index: 2;
-    }
+    /* Rainbow stripe removed — header gradient handles the color */
 
     .logo {
       display: flex;
@@ -210,11 +192,13 @@
     .logo-text {
       display: inline;
       color: var(--accent);
+      font-size: 1.15em;
     }
 
     .logo-piano {
       color: var(--text-dim);
       font-weight: 600;
+      font-size: 1em;
     }
 
     .controls {
@@ -225,10 +209,9 @@
 
     .mode-toggle {
       display: flex;
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: transparent;
+      border: none;
       border-radius: 999px;
-      overflow: hidden;
       padding: 4px;
       gap: 2px;
     }
@@ -253,13 +236,39 @@
       box-shadow: 0 2px 6px var(--glow);
     }
 
+    /* Rainbow colors per button — matched to gradient section behind each, more intense */
+    #btnKeyboard        { color: #c9252d; background: rgba(230,57,70,0.18);   border: 1.5px solid rgba(230,57,70,0.45); }
+    #btnKeyboard.active { color: #a01820; background: rgba(230,57,70,0.32);   border: 1.5px solid rgba(230,57,70,0.7); box-shadow: 0 2px 8px rgba(230,57,70,0.3); }
+    #btnTouch           { color: #c97000; background: rgba(255,152,0,0.18);   border: 1.5px solid rgba(255,152,0,0.45); }
+    #btnTouch.active    { color: #a05500; background: rgba(255,152,0,0.32);   border: 1.5px solid rgba(255,152,0,0.7); box-shadow: 0 2px 8px rgba(255,152,0,0.3); }
+    #btnPiano           { color: #78610a; background: rgba(255,214,0,0.35);   border: 1.5px solid rgba(255,214,0,0.8); }
+    #btnPiano.active    { color: #5a4608; background: rgba(255,214,0,0.55);   border: 1.5px solid rgba(255,214,0,1.0); box-shadow: 0 2px 8px rgba(255,214,0,0.4); }
+    .mode-btn.active    { color: inherit; }
+
+    /* per-button colors set after base .settings-btn rule below */
+
+    /* Crayon font on mode buttons and settings/help when crayon mode is on */
+    body.lyrics-crayon #btnKeyboard,
+    body.lyrics-crayon #btnTouch,
+    body.lyrics-crayon #btnPiano,
+    body.lyrics-crayon .settings-btn,
+    body.lyrics-crayon .fullscreen-btn {
+      font-family: 'Short Stack', cursive !important;
+    }
+    body.lyrics-crayon #btnKeyboard           { transform: rotate(-1.5deg); }
+    body.lyrics-crayon #btnTouch              { transform: rotate(1deg); }
+    body.lyrics-crayon #btnPiano              { transform: rotate(-0.8deg); }
+    body.lyrics-crayon .settings-btn-settings { transform: rotate(1.2deg); }
+    body.lyrics-crayon .settings-btn-help     { transform: rotate(-1deg); }
+    body.lyrics-crayon .fullscreen-btn        { transform: rotate(0.8deg); }
+
     .settings-btn {
       padding: 10px 18px;
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.1);
       border-radius: 999px;
       color: var(--text);
       cursor: pointer;
@@ -278,8 +287,8 @@
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.6);
+      border: 1px solid rgba(0,0,0,0.1);
       border-radius: 999px;
       color: var(--text);
       cursor: pointer;
@@ -292,6 +301,19 @@
     @media (hover: hover) and (pointer: fine) {
       .fullscreen-btn { display: flex; }
     }
+
+    /* Per-button rainbow colors — declared after base rules so they win */
+    .settings-btn-settings, .settings-btn-settings > span { color: #2e7d32 !important; }
+    .settings-btn-settings { background: rgba(76,175,80,0.18) !important; border: 1px solid rgba(76,175,80,0.45) !important; }
+    .settings-btn-settings:hover { background: rgba(76,175,80,0.30) !important; border-color: rgba(76,175,80,0.7) !important; }
+
+    .settings-btn-help, .settings-btn-help > span { color: #1565c0 !important; }
+    .settings-btn-help { background: rgba(33,150,243,0.18) !important; border: 1px solid rgba(33,150,243,0.45) !important; }
+    .settings-btn-help:hover { background: rgba(33,150,243,0.30) !important; border-color: rgba(33,150,243,0.7) !important; }
+
+    .fullscreen-btn, .fullscreen-btn > span { color: #6a1b9a !important; }
+    .fullscreen-btn { background: rgba(156,39,176,0.18) !important; border: 1px solid rgba(156,39,176,0.45) !important; }
+    .fullscreen-btn:hover { background: rgba(156,39,176,0.30) !important; border-color: rgba(156,39,176,0.7) !important; }
 
     /* ── SETTINGS PANEL ── */
     #settingsPanel {
@@ -383,30 +405,30 @@
       width: 13px;
       height: 13px;
     }
-    /* Individual icon colors — Style C: transparent chip, colored border, emoji glyph */
+    /* Individual icon colors — Style C: soft tinted chip, colored border, emoji glyph */
     .setting-label-icon {
-      background: transparent !important;
+      background: transparent;
       font-size: 15px;
       line-height: 1;
     }
     .setting-label-icon svg { display: none; }
-    .icon-songbook   { border: 1.5px solid #e07800; }
-    .icon-lyrics     { border: 1.5px solid #5c6bc0; }
-    .icon-lyriccolors { border: 1.5px solid #4caf50; }
-    .icon-tempo      { border: 1.5px solid #43a047; }
-    .icon-sheetmusic { border: 1.5px solid #1e88e5; }
-    .icon-notelabels { border: 1.5px solid #e91e63; }
-    .icon-expanded   { border: 1.5px solid #9c27b0; }
-    .icon-octavesshown { border: 1.5px solid #00acc1; }
-    .icon-wallpaper  { border: 1.5px solid #f9a825; }
-    .icon-keycolors  { border: 1.5px solid #e63946; }
-    .icon-notecolors { border: 1.5px solid #43a047; }
-    .icon-volume     { border: 1.5px solid #1e88e5; }
-    .icon-waveform   { border: 1.5px solid #9c27b0; }
-    .icon-sustain    { border: 1.5px solid #fb8c00; }
-    .icon-bassclef   { border: 1.5px solid #3949ab; }
-    .icon-sharpkey   { border: 1.5px solid #e53935; }
-    .icon-octaverange { border: 1.5px solid #00acc1; }
+    .icon-songbook    { border: 1.5px solid #43a047; background: #d1fae5; }
+    .icon-lyrics      { border: 1.5px solid #e91e63; background: #fce4ec; }
+    .icon-lyriccolors { border: 1.5px solid #4caf50; background: #e8f5e9; }
+    .icon-tempo       { border: 1.5px solid #43a047; background: #e8f5e9; }
+    .icon-sheetmusic  { border: 1.5px solid #1e88e5; background: #e3f2fd; }
+    .icon-notelabels  { border: 1.5px solid #e91e63; background: #fce4ec; }
+    .icon-expanded    { border: 1.5px solid #9c27b0; background: #f3e5f5; }
+    .icon-octavesshown { border: 1.5px solid #00acc1; background: #e0f7fa; }
+    .icon-wallpaper   { border: 1.5px solid #f9a825; background: #fffde7; }
+    .icon-keycolors   { border: 1.5px solid #e63946; background: #fde9eb; }
+    .icon-notecolors  { border: 1.5px solid #43a047; background: #e8f5e9; }
+    .icon-volume      { border: 1.5px solid #1e88e5; background: #e3f2fd; }
+    .icon-waveform    { border: 1.5px solid #9c27b0; background: #f3e5f5; }
+    .icon-sustain     { border: 1.5px solid #fb8c00; background: #fff1dc; }
+    .icon-bassclef    { border: 1.5px solid #3949ab; background: #e8eaf6; }
+    .icon-sharpkey    { border: 1.5px solid #e53935; background: #fde9eb; }
+    .icon-octaverange { border: 1.5px solid #00acc1; background: #e0f7fa; }
     /* Section summary icons — same style */
     .summary-icon {
       display: inline-flex;
@@ -422,9 +444,9 @@
       line-height: 1;
     }
     .summary-icon svg { display: none; }
-    .summary-icon-piano    { border: 1.5px solid #9c27b0; }
-    .summary-icon-colors   { border: 1.5px solid #ff9800; }
-    .summary-icon-advanced { border: 1.5px solid #1e88e5; }
+    .summary-icon-piano    { border: 1.5px solid #9c27b0; background: #f3e5f5; }
+    .summary-icon-colors   { border: 1.5px solid #ff9800; background: #fff1dc; }
+    .summary-icon-advanced { border: 1.5px solid #1e88e5; background: #e3f2fd; }
     details.settings-section > summary {
       display: flex;
       align-items: center;
@@ -874,10 +896,14 @@
       align-items: center;
       justify-content: space-between;
       padding: 8px 20px;
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
+      background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
+      border-bottom: 1.5px solid #000000;
       flex-shrink: 0;
-      min-height: 48px; /* fixed height so it never shifts between modes */
+      min-height: 48px;
+    }
+
+    body.song-sheet-open .info-bar {
+      background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
     }
 
     .note-display {
@@ -962,6 +988,28 @@
 
     .octave-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     .octave-btn:active { transform: scale(0.94); }
+    .octave-btn-minus { color: #e63946 !important; border-color: rgba(230,57,70,0.35) !important; background: rgba(230,57,70,0.08) !important; }
+    .octave-btn-minus:hover { color: #c92a36 !important; border-color: #e63946 !important; background: rgba(230,57,70,0.18) !important; }
+    .octave-btn-plus  { color: #4caf50 !important; border-color: rgba(76,175,80,0.35) !important; background: rgba(76,175,80,0.08) !important; }
+    .octave-btn-plus:hover  { color: #2e7d32 !important; border-color: #4caf50 !important; background: rgba(76,175,80,0.18) !important; }
+
+    .infobar-icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      border: 1.5px solid rgba(0,0,0,0.12);
+      background: rgba(255,255,255,0.5);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .infobar-icon-btn:hover { background: rgba(255,255,255,0.8); border-color: rgba(0,0,0,0.25); transform: scale(1.05); }
+    .infobar-icon-btn:active { transform: scale(0.95); }
+    .infobar-icon-btn.active { background: rgba(255,255,255,0.85); border-color: rgba(0,0,0,0.35); box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
 
     /* ── PIANO AREA ── */
     .piano-area {
@@ -1445,10 +1493,14 @@
     }
     .viz-bar {
       height: 4px;
-      background: var(--border);
+      background: linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5);
       flex-shrink: 0;
       position: relative;
       overflow: hidden;
+    }
+
+    body.song-sheet-open .viz-bar {
+      background: var(--bg);
     }
 
     .viz-fill {
@@ -2054,23 +2106,36 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 24px;
-      height: 24px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
+      width: 26px;
+      height: 26px;
+      background: #2a2a2a;
+      border: 1px solid #111;
+      border-bottom: 3px solid #111;
+      border-radius: 5px;
       font-family: 'Inter', sans-serif;
       font-size: 11px;
       font-weight: 700;
-      color: var(--accent);
+      color: #ffffff;
       flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.35);
     }
+
+    /* Note-colored variant — uses --hk-color CSS var set inline */
+    .hk.hk-note {
+      background: var(--hk-color, #2a2a2a);
+      border-color: color-mix(in srgb, var(--hk-color, #2a2a2a) 60%, #000);
+      border-bottom-color: color-mix(in srgb, var(--hk-color, #2a2a2a) 40%, #000);
+      color: #ffffff;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    /* Yellow needs dark text */
+    .hk.hk-note[style*="ffeb3b"] { color: #2a1a00; text-shadow: none; }
 
     /* ── SPLASH SCREEN ── */
     #splash {
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+      background: var(--splash-bg, linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%));
       z-index: 999;
       display: flex;
       flex-direction: column;
@@ -2083,7 +2148,7 @@
     #splash .splash-title {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 0;
       font-size: 36px;
       font-weight: 800;
       letter-spacing: 0.05em;
@@ -2177,6 +2242,40 @@
       pointer-events: none;
       transition: opacity 0.4s ease;
     }
+
+    #splash .splash-tap-keys {
+      cursor: pointer;
+      margin-top: 16px;
+    }
+
+    #splash .splash-tap-keys .splash-key {
+      width: 30px;
+      height: 44px;
+      font-size: 13px;
+      transition: transform 0.1s;
+    }
+
+    #splash .splash-tap-keys:hover .splash-key { transform: translateY(-3px); }
+    #splash .splash-tap-keys:active .splash-key { transform: translateY(2px); }
+
+    #splash .splash-key-space {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      width: 10px !important;
+    }
+    #splash .splash-key-space::before { display: none; }
+
+    /* Rainbow colors cycling across all 9 letter keys (nth-child skips spaces) */
+    #splash .splash-tap-keys .splash-key:nth-child(1)::before  { background: #e63946; }
+    #splash .splash-tap-keys .splash-key:nth-child(2)::before  { background: #ff9800; }
+    #splash .splash-tap-keys .splash-key:nth-child(3)::before  { background: #ffeb3b; }
+    #splash .splash-tap-keys .splash-key:nth-child(5)::before  { background: #4caf50; }
+    #splash .splash-tap-keys .splash-key:nth-child(6)::before  { background: #2196f3; }
+    #splash .splash-tap-keys .splash-key:nth-child(8)::before  { background: #9c27b0; }
+    #splash .splash-tap-keys .splash-key:nth-child(9)::before  { background: #f06292; }
+    #splash .splash-tap-keys .splash-key:nth-child(10)::before { background: #e63946; }
+    #splash .splash-tap-keys .splash-key:nth-child(11)::before { background: #ff9800; }
 
 
     /* ── COLOR SETTINGS ── */
@@ -2543,6 +2642,7 @@
       font-weight: 500;
       cursor: pointer;
       max-width: 180px;
+      transition: background 0.2s, border-color 0.2s;
     }
 
     .song-close-btn {
@@ -2675,6 +2775,87 @@
       color: var(--strip-color, var(--accent)) !important;
       opacity: 0.35;
       text-shadow: -0.5px -0.5px 0 rgba(0,0,0,0.5), 0.5px -0.5px 0 rgba(0,0,0,0.5), -0.5px 0.5px 0 rgba(0,0,0,0.5), 0.5px 0.5px 0 rgba(0,0,0,0.5);
+    }
+
+    /* ── CRAYON MODE ──
+       When body.lyrics-crayon is active, all red/accent text uses the
+       hand-written crayon look. Only accent-colored elements get the
+       treatment — black/dark text stays clean for readability. */
+    @font-face {
+      font-family: 'Nunito';
+    }
+
+    /* Helper — shared crayon font stack */
+    body.lyrics-crayon .big-note-display,
+    body.lyrics-crayon .note-display,
+    body.lyrics-crayon .song-title,
+    body.lyrics-crayon .settings-card h2,
+    body.lyrics-crayon .modifier-hint strong,
+    body.lyrics-crayon .help-section-title,
+    body.lyrics-crayon .hk {
+      font-family: 'Short Stack', cursive !important;
+      filter: url(#crayon-filter);
+    }
+
+    /* Logo text gets font only — no filter, to avoid bleeding onto the piano icon */
+    body.lyrics-crayon .logo-text {
+      font-family: 'Short Stack', cursive !important;
+      transform: rotate(-2deg);
+      display: inline-block;
+    }
+
+    body.lyrics-crayon .tempo-range-btn .tr-name {
+      font-family: 'Short Stack', cursive !important;
+    }
+      filter: none !important;
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    body.lyrics-crayon .logo-icon {
+      filter: none !important;
+    }
+      transform: rotate(-1deg);
+      letter-spacing: 0.04em;
+    }
+
+    /* Note display in info bar */
+    body.lyrics-crayon .note-display {
+      transform: rotate(-0.8deg);
+      letter-spacing: 0.04em;
+    }
+
+    /* Song title in song book */
+    body.lyrics-crayon .song-title {
+      transform: rotate(-1deg);
+      letter-spacing: 0.03em;
+    }
+
+    /* Settings headings */
+    body.lyrics-crayon .settings-card h2 {
+      transform: rotate(-0.5deg);
+    }
+
+    /* Lyrics strip — same as before */
+    body.lyrics-crayon .strip-note .sn-lyric {
+      font-family: 'Short Stack', cursive;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      filter: url(#crayon-filter);
+      color: var(--rb-red);
+      opacity: 0.9;
+      text-shadow: none;
+      transform: translateX(-50%) rotate(-1.5deg);
+    }
+    body.lyrics-crayon .strip-note:nth-child(3n+1) .sn-lyric { color: var(--rb-blue);   transform: translateX(-50%) rotate(1deg); }
+    body.lyrics-crayon .strip-note:nth-child(3n+2) .sn-lyric { color: var(--rb-green);  transform: translateX(-50%) rotate(-2deg); }
+    body.lyrics-crayon .strip-note:nth-child(3n)   .sn-lyric { color: var(--rb-purple); transform: translateX(-50%) rotate(0.5deg); }
+    body.lyrics-crayon .strip-note.current .sn-lyric {
+      color: var(--rb-red) !important;
+      opacity: 1;
+      font-size: 15px;
+      transform: translateX(-50%) rotate(-1deg) scale(1.08);
+    }
+    body.lyrics-crayon .strip-note.played .sn-lyric {
+      opacity: 0.3;
     }
 
     /* ── CHORD STRIP NOTES ──
@@ -3087,8 +3268,10 @@
       font-weight: 800;
       letter-spacing: 0.02em;
       line-height: 1.15;
-      color: var(--text);
+      color: var(--tr-color);
     }
+
+    .tempo-range-btn[data-range="presto"] .tr-name { color: #78610a; }
 
     .tempo-range-btn .tr-hint {
       font-size: 9px;
@@ -3199,18 +3382,26 @@
     }
 
     /* ── SUSTAIN INDICATOR ── */
-    .sustain-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--border);
-      transition: background 0.1s;
-    }
-
-    .sustain-dot.on { background: var(--accent); box-shadow: 0 0 6px var(--glow); }
   </style>
 </head>
 <body class="mode-keyboard">
+
+<!-- SVG filter for crayon effect -->
+<svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
+  <defs>
+    <filter id="crayon-filter" x="-8%" y="-25%" width="116%" height="150%">
+      <!-- Rough edge displacement -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.055" numOctaves="4" seed="5" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3.5" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+      <!-- Waxy texture overlay — makes it look like pigment not fully deposited -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="2" seed="8" result="texture"/>
+      <feColorMatrix type="saturate" values="0" in="texture" result="grayTexture"/>
+      <feBlend in="displaced" in2="grayTexture" mode="multiply" result="blended"/>
+      <!-- Clip to original shape so texture doesn't spill outside letters -->
+      <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+</svg>
 
 <!-- Decorative floating musical notes — purely visual, behind all content -->
 <div class="bg-decorations" aria-hidden="true">
@@ -3256,43 +3447,44 @@
 </div>
 
 <div id="splash">
-  <div class="splash-keys">
-    <div class="splash-key">A</div>
-    <div class="splash-key">B</div>
-    <div class="splash-key">C</div>
-    <div class="splash-key">D</div>
-    <div class="splash-key">E</div>
-    <div class="splash-key">F</div>
-    <div class="splash-key">G</div>
-  </div>
   <div class="splash-title">
-    <svg class="splash-logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
-      <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
-      <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
-      <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
-      <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
-      <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
-      <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
-      <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
-      <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
-    </svg>
-    <span>Arthur's Piano</span>
+    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.35em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:88px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.82em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:88px;height:66px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
+        <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
+        <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
+        <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
+        <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
+        <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
+        <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
+        <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
+        <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
+        <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
+      </svg></span>
   </div>
-  <div class="splash-sub">Arthur's personal piano — any screen, any device</div>
-  <button class="splash-btn" id="splashBtn">Tap to Play</button>
+  <div class="splash-keys splash-tap-keys" id="splashBtn">
+    <div class="splash-key">T</div>
+    <div class="splash-key">A</div>
+    <div class="splash-key">P</div>
+    <div class="splash-key splash-key-space"></div>
+    <div class="splash-key">T</div>
+    <div class="splash-key">O</div>
+    <div class="splash-key splash-key-space"></div>
+    <div class="splash-key">P</div>
+    <div class="splash-key">L</div>
+    <div class="splash-key">A</div>
+    <div class="splash-key">Y</div>
+  </div>
 </div>
 
 <!-- HEADER -->
@@ -3328,22 +3520,22 @@
       <!-- top stripe -->
       <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
     </svg>
-    <span class="logo-text">Arthur's <span class="logo-piano">Piano</span></span>
+    <span class="logo-text">Arthur's </span><span class="logo-piano">Piano</span>
   </div>
   <div class="controls">
     <div class="mode-toggle">
-      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">⌨ Keyboard</button>
-      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">☞ Touch</button>
+      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">💻 Keyboard</button>
+      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">⌨️ Touch</button>
       <button class="mode-btn" id="btnPiano" onclick="setMode('piano')">🎹 Piano</button>
     </div>
-    <button class="settings-btn" onclick="openSettings()">⚙ Settings</button>
-    <button class="settings-btn" onclick="openHelp()">? Help</button>
+    <button class="settings-btn settings-btn-settings" onclick="openSettings()">⚙️ <span>Settings</span></button>
+    <button class="settings-btn settings-btn-help" onclick="openHelp()">? <span>Help</span></button>
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen (F)">
-      <svg id="fsIconEnter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <svg id="fsIconEnter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6a1b9a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
         <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
       </svg>
-      <svg id="fsIconExit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+      <svg id="fsIconExit" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6a1b9a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
         <polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/>
         <line x1="10" y1="14" x2="3" y2="21"/><line x1="21" y1="3" x2="14" y2="10"/>
       </svg>
@@ -3359,14 +3551,17 @@
 <div class="info-bar">
   <div class="note-display dim" id="noteDisplay">—</div>
   <div class="modifier-hint" id="modHint">
-    <div class="mod-hint-keyboard">Hold <strong>SHIFT</strong> → sharp (♯) · Hold <strong>ALT</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
-    <div class="mod-hint-touch"><strong>⇧ Shift</strong> → sharp (♯) · <strong>Caps Lock</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span></div>
+    <div class="mod-hint-keyboard">Hold <strong style="color:#e63946">SHIFT</strong> → <span style="color:#e63946">sharp (♯)</span> · Hold <strong style="color:#2196f3">ALT</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
+    <div class="mod-hint-touch"><strong style="color:#e63946">⇧ Shift</strong> → <span style="color:#e63946">sharp (♯)</span> · <strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
   </div>
-  <div class="octave-display">
-    <button class="octave-btn" onclick="changeOctave(-1)">−</button>
-    <span>OCT <span id="octaveNum">4</span></span>
-    <button class="octave-btn" onclick="changeOctave(1)">+</button>
-    <div class="sustain-dot" id="sustainDot" title="Sustain"></div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="infobar-icon-btn" id="songBookInfoBtn" onclick="toggleSongSheetFromInfoBar()" title="Song Book">📖</button>
+    <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
+    <div class="octave-display">
+      <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
+      <span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span> <span id="octaveNum" style="font-weight:700">4</span>
+      <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
+    </div>
   </div>
 </div>
 
@@ -3432,16 +3627,16 @@
         oninput="updateTempo(this.value)" />
       <div class="tempo-range-labels" id="tempoRangeGroup">
         <button class="tempo-range-btn" data-range="adagio"   onclick="setTempoRange('adagio')">
-          <span class="tr-name">Adagio</span><span class="tr-hint">slow</span>
+          <span class="tr-name">Adagio</span>
         </button>
         <button class="tempo-range-btn" data-range="moderato" onclick="setTempoRange('moderato')">
-          <span class="tr-name">Moderato</span><span class="tr-hint">medium</span>
+          <span class="tr-name">Moderato</span>
         </button>
         <button class="tempo-range-btn" data-range="allegro"  onclick="setTempoRange('allegro')">
-          <span class="tr-name">Allegro</span><span class="tr-hint">fast</span>
+          <span class="tr-name">Allegro</span>
         </button>
         <button class="tempo-range-btn" data-range="presto"   onclick="setTempoRange('presto')">
-          <span class="tr-name">Presto</span><span class="tr-hint">very fast</span>
+          <span class="tr-name">Presto</span>
         </button>
       </div>
     </div>
@@ -3495,7 +3690,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-songbook">📖</span>
           Song Book
-          <small>Show notes to play along with songs</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="songSheetToggle" onchange="toggleSongSheet()" />
@@ -3505,9 +3700,9 @@
 
       <div class="setting-row is-substep" id="lyricsRow" style="display:none">
         <div class="setting-label">
-          <span class="setting-label-icon icon-lyrics">💬</span>
+          <span class="setting-label-icon icon-lyrics">🎤</span>
           Lyrics
-          <small>Show song lyrics above each note</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="lyricsMode" onchange="toggleLyrics()" />
@@ -3519,7 +3714,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-lyriccolors">🎨</span>
           Colored Lyrics
-          <small>Lyric words take each note's color</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" />
@@ -3531,7 +3726,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-tempo">⏱️</span>
           Self-Tempo
-          <small>Notes wait for you — advance only when you release the right key</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="selfTempoMode" onchange="toggleSelfTempo()" />
@@ -3545,7 +3740,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-sheetmusic">🎵</span>
           Sheet Music
-          <small>Show notes on a music staff while playing</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="sheetMusicMode" onchange="toggleSheetMusic()" />
@@ -3555,9 +3750,9 @@
 
       <div class="setting-row is-substep" id="sheetMusicLyricsRow" style="display:none">
         <div class="setting-label">
-          <span class="setting-label-icon icon-lyrics">💬</span>
+          <span class="setting-label-icon icon-lyrics">🎤</span>
           Lyrics
-          <small>Show song lyrics on the staff</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="sheetMusicLyricsMode" onchange="toggleSheetMusicLyrics()" />
@@ -3575,7 +3770,7 @@
       <summary>
         <span class="summary-icon summary-icon-piano">🎹</span>
         <span>Piano Layout
-          <small>What's shown on the keyboard</small>
+
         </span>
       </summary>
 
@@ -3583,7 +3778,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-notelabels">🏷️</span>
           Show Note Labels
-          <small>Display note names on piano keys</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="showNotes" checked onchange="updateLabels()" />
@@ -3603,7 +3798,7 @@
           <div class="setting-label">
             <span class="setting-label-icon icon-expanded">⇔</span>
             Expanded Keyboard
-            <small>Show multiple octaves on the piano</small>
+  
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="expandedKeyboard" onchange="toggleExpandedKeyboard()" />
@@ -3622,7 +3817,7 @@
           <div class="setting-label" style="width:100%">
             <span class="setting-label-icon icon-octavesshown">🎹</span>
             Octaves Shown
-            <small>How many octaves the expanded keyboard displays</small>
+  
           </div>
           <div class="octave-slider-row">
             <input class="oct-range" type="range" id="octavesShownSlider"
@@ -3642,7 +3837,7 @@
       <summary>
         <span class="summary-icon summary-icon-colors">🎨</span>
         <span>Colors
-          <small>Wallpaper, key colors, note colors</small>
+
         </span>
       </summary>
 
@@ -3650,7 +3845,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-wallpaper">🖼️</span>
           Wallpaper
-          <small>Background color for the app</small>
+
         </div>
         <div class="wallpaper-grid" id="wallpaperGrid"></div>
       </div>
@@ -3659,7 +3854,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-keycolors">🌈</span>
           Piano Key Colors
-          <small>How white keys are colored at rest</small>
+
         </div>
         <div class="segmented" id="keyColorSeg" role="radiogroup" aria-label="Piano key color style">
           <button class="seg-btn active" data-val="default" onclick="setKeyColorMode('default')">
@@ -3681,7 +3876,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-notecolors">😊</span>
           Note Colors
-          <small>Color shown when each note is pressed</small>
+
         </div>
         <div class="color-grid" id="colorGrid"></div>
         <button class="reset-colors-btn" onclick="resetColors()">↺ Reset to defaults</button>
@@ -3696,7 +3891,7 @@
       <summary>
         <span class="summary-icon summary-icon-advanced">⚙️</span>
         <span>Advanced
-          <small>Sound, modifiers, audible range</small>
+
         </span>
       </summary>
 
@@ -3704,7 +3899,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-volume">🔊</span>
           Volume
-          <small>Master volume</small>
+
         </div>
         <input type="range" min="0" max="100" value="70" id="volumeSlider"
           style="accent-color: var(--accent); width:100px"
@@ -3715,7 +3910,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-waveform">〰️</span>
           Waveform
-          <small>Tone character</small>
+
         </div>
         <select class="setting-select" id="waveformSelect">
           <option value="sine">Sine (pure)</option>
@@ -3729,7 +3924,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-bassclef">𝄢</span>
           Bass Clef
-          <small>Show bass staff in Sheet Music</small>
+
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="bassClefMode" onchange="toggleBassClef()" />
@@ -3747,7 +3942,7 @@
         <div class="setting-label" style="width:100%">
           <span class="setting-label-icon icon-octaverange">🎼</span>
           Octave Range
-          <small>Audible/playable range on this device</small>
+
         </div>
       </div>
       <div class="setting-row" style="flex-direction:column; align-items:stretch; gap:4px; padding-top:0">
@@ -3769,6 +3964,17 @@
           <div class="octave-range-display" id="octaveRangeDisplay">Showing octaves 2 – 6</div>
         </div>
       </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-label-icon icon-sustain" style="border-color:#e07800;background:#fff8ee;">🖍️</span>
+          Crayon Mode
+
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="lyricsCrayonMode" onchange="toggleLyricsCrayon()" />
+          <span class="slider"></span>
+        </label>
+      </div>
     </details>
 
     <button class="close-settings" onclick="closeSettings()">Close</button>
@@ -3782,14 +3988,14 @@
     <h2>? How to Play</h2>
 
     <div class="help-section">
-      <div class="help-section-title">🎹 Three Play Modes</div>
+      <div class="help-section-title" style="color:#e63946">🎹 Three Play Modes</div>
       <p>Switch between modes using the buttons in the top bar.</p>
       <div class="help-row">
-        <div class="help-chip">⌨ Keyboard</div>
+        <div class="help-chip">💻 Keyboard</div>
         <span>Use your computer keyboard — A B C D E F G play notes. Best for laptops &amp; desktops</span>
       </div>
       <div class="help-row">
-        <div class="help-chip">☞ Touch</div>
+        <div class="help-chip">⌨️ Touch</div>
         <span>On-screen QWERTY pad for touchscreens — best for phones &amp; tablets</span>
       </div>
       <div class="help-row">
@@ -3799,16 +4005,16 @@
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">⌨️ Keyboard Mode</div>
+      <div class="help-section-title" style="color:#ff9800">⌨️ Keyboard Mode</div>
       <p>The keys <strong>A B C D E F G</strong> play the notes of the same name in the current octave.</p>
       <div class="help-table">
-        <div class="help-table-row"><span class="hk">A</span><span>→ A</span></div>
-        <div class="help-table-row"><span class="hk">B</span><span>→ B</span></div>
-        <div class="help-table-row"><span class="hk">C</span><span>→ C</span></div>
-        <div class="help-table-row"><span class="hk">D</span><span>→ D</span></div>
-        <div class="help-table-row"><span class="hk">E</span><span>→ E</span></div>
-        <div class="help-table-row"><span class="hk">F</span><span>→ F</span></div>
-        <div class="help-table-row"><span class="hk">G</span><span>→ G</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#9c27b0">A</span><span style="color:#9c27b0;font-weight:700">→ A</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#f06292">B</span><span style="color:#f06292;font-weight:700">→ B</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#e63946">C</span><span style="color:#e63946;font-weight:700">→ C</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#ff9800">D</span><span style="color:#ff9800;font-weight:700">→ D</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#ffeb3b">E</span><span style="color:#c8a800;font-weight:700">→ E</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#4caf50">F</span><span style="color:#4caf50;font-weight:700">→ F</span></div>
+        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#00897b">G</span><span style="color:#00897b;font-weight:700">→ G</span></div>
       </div>
       <div class="help-row" style="margin-top:10px">
         <div class="help-chip">Shift + key</div>
@@ -3818,11 +4024,11 @@
         <div class="help-chip">Alt + key</div>
         <span>Play the flat (♭) of that note — e.g. Alt+D = D♭</span>
       </div>
-      <p style="margin-top:8px; font-size:11px; color:var(--text-dim)">You can swap Shift and Alt in Settings → Sharp Key.</p>
+      <p style="margin-top:8px; font-size:11px; color:var(--text-dim)">Hold Shift for sharp (♯), Alt for flat (♭).</p>
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">🎵 Changing Octave</div>
+      <div class="help-section-title" style="color:#4caf50">🎵 Changing Octave</div>
       <div class="help-row">
         <div class="help-chip">↑ / ]</div><span>Octave up</span>
       </div>
@@ -3841,24 +4047,22 @@
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">📋 Song Book</div>
+      <div class="help-section-title" style="color:#2196f3">📋 Song Book</div>
       <p>Enable Song Book in Settings to see a scrolling strip of notes to play along with. The highlighted note is the one to play next. Tap any note in the strip to jump to it.</p>
       <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. Each song remembers its last tempo for next time. 23 songs included — from Twinkle Twinkle to Chopsticks.</p>
       <p style="margin-top:6px">Some songs have <strong>chords</strong> — two notes played at the same time, shown as <strong>F+G</strong>. Press both together to advance.</p>
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">⚙️ Settings</div>
+      <div class="help-section-title" style="color:#9c27b0">⚙️ Settings</div>
       <div class="help-row"><div class="help-chip">Expanded Keyboard</div><span>Show multiple octaves on the piano at once</span></div>
-      <div class="help-row"><div class="help-chip">Octave Range</div><span>Set which octaves appear when Expanded is on</span></div>
-      <div class="help-row"><div class="help-chip">Sustain Mode</div><span>Notes ring until the next key is pressed</span></div>
       <div class="help-row"><div class="help-chip">Waveform</div><span>Sine (pure) · Triangle (soft) · Sawtooth (bright) · Square (harsh)</span></div>
       <div class="help-row"><div class="help-chip">Note Colors</div><span>Customize the color each note flashes when pressed</span></div>
       <div class="help-row"><div class="help-chip">Volume</div><span>Master output volume</span></div>
     </div>
 
     <div class="help-section">
-      <div class="help-section-title">📱 Mobile Tips</div>
+      <div class="help-section-title" style="color:#f06292">📱 Mobile Tips</div>
       <p>On iPhone, rotate to <strong>landscape</strong> for a wider keyboard and more comfortable playing. Portrait mode works well for quick practice. Make sure your <strong>ringer switch</strong> is not muted — it silences Web Audio on iOS.</p>
     </div>
 
@@ -3877,7 +4081,6 @@ const activeOscillators = {};
 let masterVolume = 0.7;
 let octave = 4;
 let mode = 'keyboard'; // 'keyboard' | 'touch'
-let sustainMode = false;
 let waveform = 'sine';
 
 function getAudioCtx() {
@@ -4080,12 +4283,29 @@ loadColors();
 // The "midnight" dark theme intentionally tweaks --text/--text-dim too,
 // so dark wallpaper doesn't hide the body text.
 const WALLPAPERS = [
-  { id: 'cream',    label: 'Cream',    bg: '#faf6ed', bg2: '#f5efe0' },
-  { id: 'pink',     label: 'Pink',     bg: '#ffe9ee', bg2: '#ffd6e0' },
-  { id: 'blue',     label: 'Sky',      bg: '#e6f2ff', bg2: '#cfe4fb' },
-  { id: 'mint',     label: 'Mint',     bg: '#e8f7ec', bg2: '#cdebd6' },
-  { id: 'lavender', label: 'Lavender', bg: '#efe9fb', bg2: '#dccff5' },
+  { id: 'cream',    label: 'Cream',    bg: '#faf6ed', bg2: '#f5efe0',
+    headerBg: 'linear-gradient(to right, #f5efe0, #ede8d5)',
+    infobarBg: 'linear-gradient(to left, #e3f2fd, #e8f5e9)' },
+  { id: 'pink',     label: 'Pink',     bg: '#ffe9ee', bg2: '#ffd6e0',
+    headerBg: 'linear-gradient(to right, #ffd6e0, #ffbccc)',
+    infobarBg: 'linear-gradient(to left, #e8f7ec, #d5f0e0)' },
+  { id: 'blue',     label: 'Sky',      bg: '#e6f2ff', bg2: '#cfe4fb',
+    headerBg: 'linear-gradient(to right, #cfe4fb, #b8d8f8)',
+    infobarBg: 'linear-gradient(to left, #fff1dc, #ffe5e8)' },
+  { id: 'mint',     label: 'Mint',     bg: '#e8f7ec', bg2: '#cdebd6',
+    headerBg: 'linear-gradient(to right, #cdebd6, #b5e2c4)',
+    infobarBg: 'linear-gradient(to left, #f3e5f5, #ede0f7)' },
+  { id: 'lavender', label: 'Lavender', bg: '#efe9fb', bg2: '#dccff5',
+    headerBg: 'linear-gradient(to right, #dccff5, #cbb8f0)',
+    infobarBg: 'linear-gradient(to left, #fffde7, #fff8cc)' },
+  { id: 'rainbow',  label: 'Rainbow',  bg: '#ffe5e8', bg2: '#f3e5f5',
+    gradient: 'linear-gradient(160deg, #ffe5e8 0%, #fff1dc 25%, #e8f5e9 60%, #f3e5f5 100%)',
+    splashBg: 'linear-gradient(160deg, #ffe5e8 0%, #fff1dc 25%, #fffde7 40%, #e8f5e9 60%, #e3f2fd 80%, #f3e5f5 100%)',
+    headerBg: 'linear-gradient(to right, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5)',
+    infobarBg: 'linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5)' },
   { id: 'midnight', label: 'Midnight', bg: '#1f1d2e', bg2: '#15131e',
+    headerBg: 'linear-gradient(to right, #2a2738, #1f1d2e)',
+    infobarBg: 'linear-gradient(to left, #2a2738, #1f1d2e)',
     text: '#f3eedb', textDim: '#bdb5a3', textDim2: '#7d7768',
     surface: '#2a2738', surface2: '#1a1825', border: '#3a3548', border2: '#46415a' },
 ];
@@ -4097,8 +4317,18 @@ function applyWallpaper(id) {
   const root = document.documentElement;
   root.style.setProperty('--bg', w.bg);
   root.style.setProperty('--bg2', w.bg2);
-  // Optional dark-mode variables — only set when the wallpaper provides
-  // them. Light themes leave these alone, so the original CSS values win.
+  // Header and info bar themed backgrounds
+  if (w.headerBg)  root.style.setProperty('--header-bg',  w.headerBg);  else root.style.removeProperty('--header-bg');
+  if (w.infobarBg) root.style.setProperty('--infobar-bg', w.infobarBg); else root.style.removeProperty('--infobar-bg');
+  if (w.splashBg)  root.style.setProperty('--splash-bg',  w.splashBg);  else root.style.removeProperty('--splash-bg');
+  // For wallpapers with a custom gradient, apply directly to html element
+  if (w.gradient) {
+    document.documentElement.style.background = w.gradient;
+    document.body.style.background = 'transparent';
+  } else {
+    document.documentElement.style.background = '';
+    document.body.style.background = '';
+  }
   if (w.text)     root.style.setProperty('--text',     w.text);     else root.style.removeProperty('--text');
   if (w.textDim)  root.style.setProperty('--text-dim', w.textDim);  else root.style.removeProperty('--text-dim');
   if (w.textDim2) root.style.setProperty('--text-dim2',w.textDim2); else root.style.removeProperty('--text-dim2');
@@ -4106,8 +4336,6 @@ function applyWallpaper(id) {
   if (w.surface2) root.style.setProperty('--surface2',w.surface2);  else root.style.removeProperty('--surface2');
   if (w.border)   root.style.setProperty('--border',  w.border);    else root.style.removeProperty('--border');
   if (w.border2)  root.style.setProperty('--border2', w.border2);   else root.style.removeProperty('--border2');
-  // Body class for any wallpaper-specific tweaks (e.g. tuning shadow
-  // strengths in dark mode without inline overrides).
   document.body.classList.toggle('wallpaper-dark', !!w.text);
   currentWallpaper = w.id;
 }
@@ -4187,7 +4415,6 @@ const QWERTY_ROWS = [
 const LETTER_KEYS = new Set(['A','B','C','D','E','F','G']);
 
 // State
-let sharpKey = 'Shift'; // or 'Alt'
 let modifiers = { Shift: false, Alt: false, Control: false };
 let pressedKeys = new Set();
 
@@ -4504,17 +4731,13 @@ function releaseNoteByPianoKey(note, oct) {
   const id = note + oct + '_piano';
   highlightPianoKey(note, oct, false);
   // Self-tempo mode: lifting the finger off a correctly-armed note is
-  // the "advance" trigger. Fire BEFORE the sustain-mode return below
-  // so it still works when sustain is on (the audio keeps ringing
+  // the "advance" trigger.
+  //
   // either way; the kid's release gesture is what we care about).
   advanceSongNoteOnRelease(note);
-  // In sustain mode, the note is still ringing — leave it in the display
-  // until another note replaces it. Otherwise remove it from the chord set.
-  if (!sustainMode) {
-    clearNoteDisplay(id);
-    untrackActiveSheetNote(id);
-  }
-  if (sustainMode) return;
+  // Remove from display and sheet tracking
+  clearNoteDisplay(id);
+  untrackActiveSheetNote(id);
   // Enforce minimum audible duration — iOS taps can be <50ms which is inaudible
   const elapsed = performance.now() - (noteTouchTime[id] || 0);
   const remaining = MIN_NOTE_MS - elapsed;
@@ -4591,19 +4814,11 @@ function buildQwerty() {
         el.addEventListener('touchend', (e) => {
           e.preventDefault();
           const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-          else {
-            const note = getNoteForKey(upper, isSharp, isFlat);
-            if (note) advanceSongNoteOnRelease(note);
-          }
+          handleNoteOff(upper, isSharp, isFlat);
         }, { passive: false });
         el.addEventListener('touchcancel', (e) => {
           const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-          else {
-            const note = getNoteForKey(upper, isSharp, isFlat);
-            if (note) advanceSongNoteOnRelease(note);
-          }
+          handleNoteOff(upper, isSharp, isFlat);
         });
 
         // Mouse only — pointer events fire on iOS touch too, so guard by pointerType
@@ -4618,20 +4833,12 @@ function buildQwerty() {
           if (e.pointerType !== 'mouse') return;
           e.preventDefault();
           const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-          else {
-            const note = getNoteForKey(upper, isSharp, isFlat);
-            if (note) advanceSongNoteOnRelease(note);
-          }
+          handleNoteOff(upper, isSharp, isFlat);
         });
         el.addEventListener('pointerleave', (e) => {
           if (e.pointerType !== 'mouse') return;
           const { isSharp, isFlat } = getModifiers();
-          if (!sustainMode) handleNoteOff(upper, isSharp, isFlat);
-          else {
-            const note = getNoteForKey(upper, isSharp, isFlat);
-            if (note) advanceSongNoteOnRelease(note);
-          }
+          handleNoteOff(upper, isSharp, isFlat);
         });
       } else if (['SHIFT','SHIFT2'].includes(upper)) {
         el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
@@ -4712,12 +4919,6 @@ function handleNoteOn(letter, isSharp, isFlat) {
   const freq = noteToFreq(note, octave);
   if (!freq) return;
   const id = note + octave + letter;
-  if (sustainMode) {
-    // In sustain mode, every new keypress stops the previous notes — so
-    // the display resets too (no stale chord buildup). stopAllNotes()
-    // handles clearing both audio and display state.
-    stopAllNotes();
-  }
   playNote(id, freq);
   highlightPianoKey(note, octave, true);
   highlightQKey(letter, true, note);
@@ -4734,11 +4935,9 @@ function handleNoteOff(letter, isSharp, isFlat) {
   const note = getNoteForKey(letter, isSharp, isFlat);
   if (!note) return;
   const id = note + octave + letter;
-  if (!sustainMode) {
-    stopNote(id);
-    clearNoteDisplay(id);
-    untrackActiveSheetNote(id);
-  }
+  stopNote(id);
+  clearNoteDisplay(id);
+  untrackActiveSheetNote(id);
   highlightPianoKey(note, octave, false);
   highlightQKey(letter, false, null);
   // Self-tempo: keyup is the advance trigger.
@@ -4810,8 +5009,8 @@ document.addEventListener('keydown', (e) => {
   if (heldKeys[upper]) return; // prevent repeat
   heldKeys[upper] = true;
 
-  const isSharp = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
-  const isFlat = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  const isSharp = modifiers.Shift;
+  const isFlat = modifiers.Alt;
   handleNoteOn(upper, isSharp, isFlat);
 });
 
@@ -4826,8 +5025,8 @@ document.addEventListener('keyup', (e) => {
   delete heldKeys[upper];
   if (!LETTER_KEYS.has(upper)) return;
 
-  const isSharp = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
-  const isFlat = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  const isSharp = modifiers.Shift;
+  const isFlat = modifiers.Alt;
   handleNoteOff(upper, isSharp, isFlat);
 });
 
@@ -4987,6 +5186,7 @@ function toggleSheetMusic() {
   // The condensed-tempo-bar layout (mobile landscape, self-tempo + sheet
   // music + song sheet) is gated on sheet-music-on, so re-evaluate.
   if (typeof syncLandscapeTopBar === 'function') syncLandscapeTopBar();
+  if (typeof syncInfoBarBtns === 'function') syncInfoBarBtns();
 }
 
 function loadSheetMusicSetting() {
@@ -5504,12 +5704,13 @@ function renderSheetMusicSong(svg) {
         }
 
         // Lyric text on top — always black for legibility; color comes from the box
+        const crayonOn = document.body.classList.contains('lyrics-crayon');
         const lyricEl = svgEl('text', {
           x: x,
           y: boxY + boxH - 3,
           'text-anchor': 'middle',
           'font-size': fs,
-          'font-family': "'Nunito', 'Varela Round', 'Comic Neue', 'Inter', sans-serif",
+          'font-family': crayonOn ? "'Short Stack', cursive" : "'Nunito', 'Varela Round', 'Comic Neue', 'Inter', sans-serif",
           'font-weight': isCurrent ? '800' : '700',
           fill: '#1a1a1a',
           opacity: isPast ? '0.5' : '1',
@@ -5525,14 +5726,14 @@ function updateModHint() {
   const hint = document.getElementById('modHint');
   const kbDiv = hint ? hint.querySelector('.mod-hint-keyboard') : null;
   if (!kbDiv) return;
-  const sharpActive = sharpKey === 'Shift' ? modifiers.Shift : modifiers.Alt;
-  const flatActive = sharpKey === 'Shift' ? modifiers.Alt : modifiers.Shift;
+  const sharpActive = modifiers.Shift;
+  const flatActive = modifiers.Alt;
   if (sharpActive) {
-    kbDiv.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♯ SHARP</span>';
+    kbDiv.innerHTML = '<span style="background:#e63946;color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(230,57,70,0.4)">♯ SHARP</span>';
   } else if (flatActive) {
-    kbDiv.innerHTML = '<span style="background:var(--accent);color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px var(--glow)">♭ FLAT</span>';
+    kbDiv.innerHTML = '<span style="background:#2196f3;color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(33,150,243,0.4)">♭ FLAT</span>';
   } else {
-    kbDiv.innerHTML = `Hold <strong>${sharpKey === 'Shift' ? 'SHIFT' : 'ALT'}</strong> → sharp (♯) · Hold <strong>${sharpKey === 'Shift' ? 'ALT' : 'SHIFT'}</strong> → flat (♭) · <span class="mod-hint-octaves"><strong>Space</strong> → oct ↑ · <strong>Tab</strong> → oct ↓</span>`;
+    kbDiv.innerHTML = `Hold <strong style="color:#e63946">SHIFT</strong> → <span style="color:#e63946">sharp (♯)</span> · Hold <strong style="color:#2196f3">ALT</strong> → <span style="color:#2196f3">flat (♭)</span> · <span class="mod-hint-octaves"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span>`;
   }
 }
 
@@ -5541,9 +5742,25 @@ function updateLabels() {
   document.querySelectorAll('.show-note').forEach(el => el.style.display = showNote ? '' : 'none');
 }
 
+const OCTAVE_COLORS = {
+  1: '#9c27b0', // purple
+  2: '#2196f3', // blue
+  3: '#4caf50', // green
+  4: '#ff9800', // orange
+  5: '#e63946', // red
+  6: '#f06292', // pink
+  7: '#78610a', // gold
+};
+
+function updateOctaveColor() {
+  const el = document.getElementById('octaveNum');
+  if (el) el.style.color = OCTAVE_COLORS[octave] || '#ff9800';
+}
+
 function changeOctave(delta) {
   octave = Math.max(minOctave, Math.min(maxOctave, octave + delta));
   document.getElementById('octaveNum').textContent = octave;
+  updateOctaveColor();
   updateActiveOctave();
 }
 
@@ -5641,6 +5858,7 @@ function updateOctaveRange() {
   document.getElementById('octaveRangeDisplay').textContent = `Showing octaves ${minOctave} – ${maxOctave}`;
   octave = Math.max(minOctave, Math.min(maxOctave, octave));
   document.getElementById('octaveNum').textContent = octave;
+  updateOctaveColor();
   // Octaves Shown slider's max is clamped to (max - min + 1); when the
   // range narrows below the user's Octaves Shown preference, the slider
   // visually clamps but the stored preference stays unchanged so it can
@@ -5650,10 +5868,6 @@ function updateOctaveRange() {
 }
 
 function setVolume(v) { masterVolume = v / 100; }
-function toggleSustain() {
-  sustainMode = document.getElementById('sustainMode').checked;
-  document.getElementById('sustainDot').className = 'sustain-dot' + (sustainMode ? ' on' : '');
-}
 
 let showBassClef = false;
 
@@ -5767,6 +5981,15 @@ function loadLyricsSetting() {
       const cb = document.getElementById('lyricsColorMode');
       if (cb) cb.checked = true;
       document.body.classList.add('lyrics-colored');
+    }
+  } catch(e) {}
+  try {
+    const v = localStorage.getItem('pianoLyricsCrayon');
+    if (v === '1') {
+      lyricsCrayon = true;
+      const cb = document.getElementById('lyricsCrayonMode');
+      if (cb) cb.checked = true;
+      document.body.classList.add('lyrics-crayon');
     }
   } catch(e) {}
 }
@@ -5990,7 +6213,6 @@ function openSettings() {
 function closeSettings() {
   document.getElementById('settingsPanel').classList.remove('open');
   waveform = document.getElementById('waveformSelect').value;
-  sharpKey = document.getElementById('sharpKey').value;
   updateModHint();
 }
 
@@ -7875,6 +8097,7 @@ const SONG_LYRICS = {
 
 let showLyrics = false;
 let lyricsColored = false;
+let lyricsCrayon = false;
 
 function toggleLyricsColor() {
   lyricsColored = document.getElementById('lyricsColorMode').checked;
@@ -7884,11 +8107,17 @@ function toggleLyricsColor() {
   if (sheetMusicEnabled) renderSheetMusic();
 }
 
+function toggleLyricsCrayon() {
+  lyricsCrayon = document.getElementById('lyricsCrayonMode').checked;
+  try { localStorage.setItem('pianoLyricsCrayon', lyricsCrayon ? '1' : '0'); } catch(e) {}
+  document.body.classList.toggle('lyrics-crayon', lyricsCrayon);
+  if (currentSong) renderNoteStrip();
+}
+
 function syncLyricsColorVisibility() {
   const row = document.getElementById('lyricsColorRow');
-  if (!row) return;
-  // Show only when song book is open AND lyrics are on
-  row.style.display = (songSheetVisible && showLyrics) ? '' : 'none';
+  const show = songSheetVisible && showLyrics;
+  if (row) row.style.display = show ? '' : 'none';
 }
 
 function toggleLyrics() {
@@ -7940,6 +8169,29 @@ function syncLyricsVisibility() {
 
 let currentSong = null;
 let currentNoteIdx = 0;
+function toggleSongSheetFromInfoBar() {
+  const cb = document.getElementById('songSheetToggle');
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  toggleSongSheet();
+  syncInfoBarBtns();
+}
+
+function toggleSheetMusicFromInfoBar() {
+  const cb = document.getElementById('sheetMusicMode');
+  if (!cb) return;
+  cb.checked = !cb.checked;
+  toggleSheetMusic();
+  syncInfoBarBtns();
+}
+
+function syncInfoBarBtns() {
+  const sbBtn = document.getElementById('songBookInfoBtn');
+  const smBtn = document.getElementById('sheetMusicInfoBtn');
+  if (sbBtn) sbBtn.classList.toggle('active', songSheetVisible);
+  if (smBtn) smBtn.classList.toggle('active', sheetMusicEnabled);
+}
+
 let songSheetVisible = false;
 
 function toggleSongSheet() {
@@ -7969,6 +8221,7 @@ function toggleSongSheet() {
   // and a single-octave song is loaded. Re-evaluate so we revert when
   // the sheet closes (and re-apply when it opens with such a song).
   applyPianoSingleOctaveIfApplicable();
+  syncInfoBarBtns();
 }
 
 function hideSongSheet() {
@@ -7982,6 +8235,7 @@ function hideSongSheet() {
   if (sheetMusicEnabled) renderSheetMusic();
   syncLandscapeTopBar();
   applyPianoSingleOctaveIfApplicable();
+  syncInfoBarBtns();
 }
 
 // A song is "multi-octave" only if it contains a CHORD whose members
@@ -8042,6 +8296,33 @@ function songFitsInSingleOctave(s) {
   return true;
 }
 
+// Rainbow colors for songs — cycles through 7 colors
+const SONG_RAINBOW = [
+  { bg: 'rgba(230,57,70,0.15)',  border: 'rgba(230,57,70,0.5)',  text: '#c92a36' },
+  { bg: 'rgba(255,152,0,0.15)',  border: 'rgba(255,152,0,0.5)',  text: '#c97000' },
+  { bg: 'rgba(255,214,0,0.25)',  border: 'rgba(200,168,0,0.5)',  text: '#78610a' },
+  { bg: 'rgba(76,175,80,0.15)',  border: 'rgba(76,175,80,0.5)',  text: '#2e7d32' },
+  { bg: 'rgba(33,150,243,0.15)', border: 'rgba(33,150,243,0.5)', text: '#1565c0' },
+  { bg: 'rgba(156,39,176,0.15)', border: 'rgba(156,39,176,0.5)', text: '#6a1b9a' },
+  { bg: 'rgba(240,98,146,0.15)', border: 'rgba(240,98,146,0.5)', text: '#c2185b' },
+];
+
+function getSongColor(songId) {
+  const idx = SONGS.findIndex(s => s.id === songId);
+  return SONG_RAINBOW[((idx % SONG_RAINBOW.length) + SONG_RAINBOW.length) % SONG_RAINBOW.length];
+}
+
+function applySongSelectColor(songId) {
+  const sel = document.getElementById('songSelect');
+  const title = document.getElementById('songTitle');
+  if (!sel) return;
+  const c = getSongColor(songId);
+  sel.style.background = c.bg;
+  sel.style.borderColor = c.border;
+  sel.style.color = '';  // keep select text default color
+  if (title) title.style.color = c.text;
+}
+
 function populateSongSelect() {
   const sel = document.getElementById('songSelect');
   sel.innerHTML = '';
@@ -8082,7 +8363,10 @@ function populateSongSelect() {
     }
   }
   // Keep the current song selected if it's still in the list.
-  if (currentSong) sel.value = currentSong.id;
+  if (currentSong) {
+    sel.value = currentSong.id;
+    applySongSelectColor(currentSong.id);
+  }
 }
 
 function loadSong(id) {
@@ -8101,6 +8385,7 @@ function loadSong(id) {
   refreshPendingChord();
   document.getElementById('songTitle').textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
+  applySongSelectColor(currentSong.id);
   document.getElementById('songComplete').style.display = 'none';
 
   // Compute song-level traits used for adaptive UI.
@@ -8974,8 +9259,9 @@ populateSongSelect();
 loadOctavesShownSetting();
 
 buildPiano();
+updateOctaveColor();
 
-// Restore the persisted sheet-music setting (off by default; if the user
+// Restore the persisted sheet-music setting
 // turned it on previously, restore that state and render the empty staff).
 loadSheetMusicSetting();
 if (sheetMusicEnabled) renderSheetMusic();
@@ -9134,12 +9420,8 @@ function setupPianoInput() {
   function release(pointerId) {
     const cur = active.get(pointerId);
     if (!cur) return;
-    if (!sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
-    // In sustain mode releaseNoteByPianoKey isn't called, so the
-    // self-tempo release-advance hook inside it never fires either.
-    // Fire it explicitly here so self-tempo + sustain still advances on
-    // finger-lift. (Outside self-tempo this is a cheap no-op.)
-    else advanceSongNoteOnRelease(cur.note);
+    releaseNoteByPianoKey(cur.note, cur.oct);
+    advanceSongNoteOnRelease(cur.note);
     active.delete(pointerId);
   }
 
@@ -9149,8 +9431,8 @@ function setupPianoInput() {
     const el = keyAtPoint(x, y);
     if (el === cur.el) return; // still on same key, nothing to do
     // Switched keys (or slid off into empty space)
-    if (!sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
-    else advanceSongNoteOnRelease(cur.note);
+    releaseNoteByPianoKey(cur.note, cur.oct);
+    advanceSongNoteOnRelease(cur.note);
     active.delete(pointerId);
     if (el) press(pointerId, el);
   }
@@ -9193,7 +9475,7 @@ function setupPianoInput() {
   window.addEventListener('blur', () => {
     for (const id of Array.from(active.keys())) {
       const cur = active.get(id);
-      if (cur && !sustainMode) releaseNoteByPianoKey(cur.note, cur.oct);
+      if (cur) releaseNoteByPianoKey(cur.note, cur.oct);
       active.delete(id);
     }
   });
