@@ -1631,6 +1631,9 @@
       body.mode-touch .mod-hint-keyboard { display: none; }
       .mod-hint-touch { display: none; font-size: 10px; gap: 2px 5px; }
       body.mode-touch .mod-hint-touch { display: flex; flex-wrap: wrap; justify-content: center; font-size: 10px; gap: 2px 5px; }
+      /* Song book open in touch mode: suppress the touch hint so the song
+         select slot shows — matching piano and keyboard mode behaviour. */
+      body.mode-touch.song-sheet-open .mod-hint-touch { display: none; }
 
       /* Mobile portrait: show song-select in info bar only when songbook is open
          and hint is not active (keyboard/touch mode). */
@@ -1805,52 +1808,45 @@
       .mode-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
 
-      /* Info bar: merge octave controls inline, reduce height. When the
-         song sheet is open, the note-played + octave displays get
-         reparented into the song-header row above (see syncLandscapeTopBar)
-         and the info-bar collapses to nothing — its CSS rule hides it. */
-      .info-bar { padding: 3px 10px; }
-      /* Sharp/flat reminder eats vertical room we don't have in landscape.
-         Hide it even when keyboard mode would normally show it. */
+      /* Info bar: compact height; always visible even with song sheet open.
+         When song sheet/sheet music are on, it becomes the single control
+         row (select + tempo + octave all reparented here by JS). */
+      .info-bar { padding: 3px 10px; flex-shrink: 0; }
+      /* Sharp/flat reminder eats vertical room we don't have in landscape. */
       .modifier-hint, body.mode-keyboard .modifier-hint, body.mode-touch .modifier-hint,
       body.song-sheet-open .modifier-hint, body.sheet-music-on .modifier-hint { display: none; }
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
-      /* Hide the standalone info-bar when its contents have been moved
-         into the song-header row (i.e. song-sheet is open). The piano
-         absorbs this height. */
-      body.song-sheet-open .info-bar {
-        display: none;
-      }
+      /* Landscape song-sheet: info bar stays visible; song-header row is
+         hidden — all controls move into the info bar via JS. */
+      body.song-sheet-open .info-bar { display: flex; }
+      body.song-sheet-open .song-header { display: none; }
 
-      /* Song-header in landscape: single packed row.
-         Song title hidden (shown in picker) so play/restart/repeat fit. */
-      .song-header {
-        margin-bottom: 0;
-        gap: 5px;
-        flex-wrap: nowrap;
-        align-items: center;
+      /* Show the landscape select + tempo slots when song sheet is open */
+      body.song-sheet-open #infobarLandscapeSelectSlot { display: flex; }
+      body.song-sheet-open #infobarLandscapeTempoSlot  { display: flex; }
+      /* Hide the modifier-hint middle section when landscape slots are active */
+      body.song-sheet-open #modHint { display: none; }
+
+      /* Compact select */
+      #infobarLandscapeSelectSlot .song-select {
+        font-size: 11px; padding: 3px 5px; max-width: 130px;
       }
-      /* Hide song title — already shown inside the song select dropdown */
-      body.song-sheet-open .song-title-wrap { display: none; }
-      .song-title { font-size: 13px; }
-      .song-tempo-hint { font-size: 10px; padding: 2px 7px 2px 6px; }
-      .song-tempo-hint .sth-icon { font-size: 10px; }
-      /* Octave slot — populated by JS in landscape with song-sheet open.
-         The note slot is no longer used (note display is hidden in
-         landscape song-sheet mode for all devices, see global rule). */
-      .song-header-octave-slot:not(:empty) {
-        display: flex;
-        align-items: center;
-        flex-shrink: 0;
+      /* Scale tempo buttons to fit the slim info bar */
+      #infobarLandscapeTempoSlot .tempo-btn {
+        width: 24px; height: 24px; font-size: 11px; box-shadow: none;
       }
-      .song-header-octave-slot:empty,
-      .song-header-note-slot { display: none; }
-      .song-header-octave-slot .octave-display {
-        font-size: 11px;
-        gap: 5px;
-      }
+      #infobarLandscapeTempoSlot .tempo-btn.play-btn { width: 26px; height: 26px; font-size: 12px; }
+      #infobarLandscapeTempoSlot .tempo-repeat-btn { font-size: 10px; }
+      #infobarLandscapeTempoSlot .song-tempo-hint { font-size: 9px; padding: 1px 5px 1px 4px; }
+      #infobarLandscapeTempoSlot .tempo-slider-wrap { flex: 1; min-width: 60px; }
+      #infobarLandscapeTempoSlot .tempo-range-labels { display: none; }
+      #infobarLandscapeTempoSlot .tempo-val { font-size: 10px; min-width: 38px; }
+
+      /* Song-header slots no longer used in landscape */
+      .song-header-octave-slot, .song-header-note-slot,
+      .song-header-tempo-slot { display: none !important; }
 
       /* In landscape we can show the big note display in keyboard and piano
          modes — but it has to be compact (smaller font, no vertical-fill
@@ -2021,44 +2017,14 @@
       body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 5px; }
       body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
-      /* ── CONDENSED SONG SHEET (mobile landscape) ──
-         Whenever song-sheet is open in landscape (non-touch), the play,
-         restart, and repeat-N buttons move into the song-header row via
-         syncLandscapeTopBar. The tempo bar shrinks to just the slider +
-         BPM, and the song title is hidden (it's in the picker anyway),
-         freeing vertical space for the keyboard. */
-      .song-header-tempo-slot {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-shrink: 0;
-      }
-      /* Scale buttons down to fit comfortably on the compact header row */
-      .song-header-tempo-slot .tempo-btn {
-        width: 26px;
-        height: 26px;
-        font-size: 12px;
-        box-shadow: none;
-      }
-      .song-header-tempo-slot .tempo-btn.play-btn {
-        width: 28px;
-        height: 28px;
-        font-size: 12px;
-      }
-      .song-header-tempo-slot .tempo-repeat-btn {
-        font-size: 10px;
-      }
-      /* With self-tempo on: also hide the note strip and progress bar
-         so the sheet music staff can claim the full freed space. */
-      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .tempo-bar,
-      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .note-strip-wrapper,
-      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .song-progress {
+      /* With self-tempo on in landscape: hide the note strip and progress bar
+         so the sheet music staff can claim the freed space. Tempo controls
+         are already in the info bar. */
+      body.self-tempo-on.sheet-music-on.song-sheet-open .note-strip-wrapper,
+      body.self-tempo-on.sheet-music-on.song-sheet-open .song-progress {
         display: none;
       }
-      /* With three rows of song-sheet chrome gone, the staff can grow
-         to full portrait height (280px). The piano and other landscape
-         rules still apply normally. */
-      body.self-tempo-on.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg {
+      body.self-tempo-on.sheet-music-on.song-sheet-open .sheet-music-svg {
         max-height: 280px;
         height: 280px;
       }
@@ -3869,6 +3835,9 @@
     <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
     <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
   </div>
+  <!-- Landscape song-sheet mode: select and tempo controls reparented here -->
+  <div id="infobarLandscapeSelectSlot" style="display:none;align-items:center;flex-shrink:0;"></div>
+  <div id="infobarLandscapeTempoSlot" style="display:none;align-items:center;gap:4px;flex:1;flex-shrink:0;"></div>
   <div class="infobar-right" style="display:flex;align-items:center;gap:8px;">
 
     <div class="octave-display">
@@ -4730,7 +4699,6 @@ const SHARP_TO_NOTE = {'C#':'C#','D#':'D#','E#':'F','F#':'F#','G#':'G#','A#':'A#
 
 // QWERTY rows
 const QWERTY_ROWS = [
-  ['`','1','2','3','4','5','6','7','8','9','0','-','='],
   ['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']'],
   ['Caps','A','S','D','F','G','H','J','K','L',';',"'"],
   ['Shift','Z','X','C','V','B','N','M',',','.','/','Shift2'],
@@ -6634,105 +6602,109 @@ function loadKeyColorMode() {
 // sheet toggle. Idempotent.
 function syncLandscapeTopBar() {
   const isLandscape = window.matchMedia('(max-height: 500px) and (orientation: landscape)').matches;
+  const isMobilePortrait = window.matchMedia('(max-width: 430px) and (orientation: portrait)').matches;
   const sheetOpen = document.body.classList.contains('song-sheet-open');
   const sheetMusicOn = document.body.classList.contains('sheet-music-on');
   const isTouch = document.body.classList.contains('mode-touch');
   const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
 
-  // Touch + both song book and sheet music open + not fullscreen:
-  // move songBook btn, sheetMusic btn, and octave display into header; hide info-bar.
-  const headerSlot = document.getElementById('headerCompactSlot');
-  const infoBar = document.querySelector('.info-bar');
-  const songBookBtn = document.getElementById('songBookInfoBtn');
-  const sheetMusicBtn = document.getElementById('sheetMusicInfoBtn');
-
-  const wantsTouchCompact = isTouch && sheetOpen && sheetMusicOn && !isFullscreen;
+  // touch-compact-header only fires in landscape (space is truly tight there)
+  const wantsTouchCompact = isTouch && sheetOpen && sheetMusicOn && !isFullscreen && isLandscape;
   document.body.classList.toggle('touch-compact-header', wantsTouchCompact);
 
-  if (headerSlot && infoBar && songBookBtn && sheetMusicBtn) {
-    const infobarLeft = infoBar.querySelector('.infobar-left');
-    if (wantsTouchCompact) {
-      if (songBookBtn.parentElement !== headerSlot) headerSlot.appendChild(songBookBtn);
-      if (sheetMusicBtn.parentElement !== headerSlot) headerSlot.appendChild(sheetMusicBtn);
-    } else {
-      if (infobarLeft && songBookBtn.parentElement !== infobarLeft) infobarLeft.appendChild(songBookBtn);
-      if (infobarLeft && sheetMusicBtn.parentElement !== infobarLeft) infobarLeft.appendChild(sheetMusicBtn);
-    }
-  }
+  // ── Landscape song-sheet: consolidate everything into the info bar ──
+  // When song book and/or sheet music are open in landscape (any mode),
+  // the song-header row is hidden via CSS and we reparent the select,
+  // tempo controls, and octave display into dedicated info-bar slots.
+  const wantsLandscapeInfoBar = isLandscape && sheetOpen;
 
-  // Octave display: reparent into header slot when touch-compact, otherwise restore to info-bar
-  const octEl = document.querySelector('.info-bar .octave-display') ||
-                document.querySelector('.song-header-octave-slot .octave-display') ||
-                (headerSlot && headerSlot.querySelector('.octave-display'));
+  const infoBar = document.querySelector('.info-bar');
+  const infobarLeft = infoBar ? infoBar.querySelector('.infobar-left') : null;
   const infobarRight = infoBar ? infoBar.querySelector('.infobar-right') : null;
+  const lsSelectSlot = document.getElementById('infobarLandscapeSelectSlot');
+  const lsTempoSlot  = document.getElementById('infobarLandscapeTempoSlot');
+  const songHeader   = document.querySelector('.song-header');
 
-  if (octEl && headerSlot) {
-    if (wantsTouchCompact) {
-      if (octEl.parentElement !== headerSlot) headerSlot.appendChild(octEl);
-    } else {
-      const octSlot = document.getElementById('songHeaderOctaveSlot');
-      const wantsLandscapeRelocated = isLandscape && sheetOpen;
-      if (wantsLandscapeRelocated && octSlot) {
-        if (octEl.parentElement !== octSlot) octSlot.appendChild(octEl);
-      } else if (infobarRight) {
-        if (octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
+  // Elements to reparent
+  const selectEl     = document.getElementById('songSelect');
+  const tempoBar     = document.querySelector('.tempo-bar');
+  const playBtn      = document.getElementById('tempoPlayBtn');
+  const restartBtn   = document.getElementById('tempoRestartBtn');
+  const repeatBtn    = document.getElementById('tempoRepeatBtn');
+  const tempoHintBtn = document.getElementById('songTempoHint');
+  const sliderWrap   = tempoBar ? tempoBar.querySelector('.tempo-slider-wrap') : null;
+  const tempoVal     = document.getElementById('tempoVal');
+  const octEl        = document.querySelector('.octave-display');
+
+  if (wantsLandscapeInfoBar && lsSelectSlot && lsTempoSlot) {
+    // ── Move select into landscape select slot ──
+    if (selectEl && selectEl.parentElement !== lsSelectSlot) {
+      lsSelectSlot.appendChild(selectEl);
+    }
+    // ── Move play, restart, repeat, tempo-hint, slider, BPM into tempo slot ──
+    if (playBtn && playBtn.parentElement !== lsTempoSlot)      lsTempoSlot.appendChild(playBtn);
+    if (restartBtn && restartBtn.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(restartBtn);
+    if (repeatBtn && repeatBtn.parentElement !== lsTempoSlot)  lsTempoSlot.appendChild(repeatBtn);
+    if (tempoHintBtn && tempoHintBtn.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(tempoHintBtn);
+    if (sliderWrap && sliderWrap.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(sliderWrap);
+    if (tempoVal && tempoVal.parentElement !== lsTempoSlot)    lsTempoSlot.appendChild(tempoVal);
+    // ── Octave display stays in infobar-right (already there) ──
+    if (octEl && infobarRight && octEl.parentElement !== infobarRight) {
+      infobarRight.appendChild(octEl);
+    }
+  } else {
+    // ── Restore all elements to their original homes ──
+
+    // Select → song-header (before tempo-hint button)
+    if (selectEl && songHeader) {
+      if (isMobilePortrait && sheetOpen) {
+        // Portrait + song sheet: select goes in the portrait infobar slot
+        const portraitSlot = document.getElementById('infobarSelectSlot');
+        if (portraitSlot && selectEl.parentElement !== portraitSlot) {
+          portraitSlot.appendChild(selectEl);
+        }
+      } else if (selectEl.parentElement !== songHeader) {
+        const th = document.getElementById('songTempoHint');
+        if (th && th.parentElement === songHeader) songHeader.insertBefore(selectEl, th);
+        else songHeader.appendChild(selectEl);
       }
     }
-  }
 
-  // Condensed tempo controls: in mobile landscape with song sheet open,
-  // move play + restart + repeat-N + tempo hint into the song-header row.
-  // Touch mode excluded (rotate overlay handles that case).
-  const tempoBar = document.querySelector('.tempo-bar');
-  const tempoSlot = document.getElementById('songHeaderTempoSlot');
-  const playBtn = document.getElementById('tempoPlayBtn');
-  const restartBtn = document.getElementById('tempoRestartBtn');
-  const repeatBtn = document.getElementById('tempoRepeatBtn');
-  const tempoHintBtn = document.getElementById('songTempoHint');
-  if (tempoBar && tempoSlot && playBtn && restartBtn && repeatBtn) {
-    const wantsCondensed = isLandscape && sheetOpen &&
-      !document.body.classList.contains('mode-touch');
-    if (wantsCondensed) {
-      // Order: Play, Restart, Repeat-N, Default-tempo-hint.
-      if (playBtn.parentElement !== tempoSlot) tempoSlot.appendChild(playBtn);
-      if (restartBtn.parentElement !== tempoSlot) tempoSlot.appendChild(restartBtn);
-      if (repeatBtn.parentElement !== tempoSlot) tempoSlot.appendChild(repeatBtn);
-      if (tempoHintBtn && tempoHintBtn.parentElement !== tempoSlot) tempoSlot.appendChild(tempoHintBtn);
-    } else {
-      // Restore to .tempo-bar. Original order: play → restart → repeat → hint → slider → BPM.
-      if (playBtn.parentElement !== tempoBar) {
-        const sliderWrap = tempoBar.querySelector('.tempo-slider-wrap');
-        tempoBar.insertBefore(playBtn, sliderWrap || tempoBar.firstChild);
+    // Tempo controls → .tempo-bar (original order: play → restart → repeat → hint → slider → BPM)
+    if (tempoBar) {
+      if (playBtn && playBtn.parentElement !== tempoBar) {
+        tempoBar.insertBefore(playBtn, tempoBar.firstChild);
       }
-      if (restartBtn.parentElement !== tempoBar) {
+      if (restartBtn && restartBtn.parentElement !== tempoBar) {
         playBtn.insertAdjacentElement('afterend', restartBtn);
       }
-      if (repeatBtn.parentElement !== tempoBar) {
+      if (repeatBtn && repeatBtn.parentElement !== tempoBar) {
         restartBtn.insertAdjacentElement('afterend', repeatBtn);
       }
       if (tempoHintBtn && tempoHintBtn.parentElement !== tempoBar) {
         repeatBtn.insertAdjacentElement('afterend', tempoHintBtn);
       }
-    }
-  }
-
-  // Mobile portrait: reparent song-select into infobar when hint is not shown.
-  // Hint is hidden when not in keyboard/touch mode and songbook is not open.
-  const isMobilePortrait = window.matchMedia('(max-width: 430px) and (orientation: portrait)').matches;
-  const selectEl = document.getElementById('songSelect');
-  const infobarSelectSlot = document.getElementById('infobarSelectSlot');
-  const songHeader = document.querySelector('.song-header');
-  if (selectEl && infobarSelectSlot && songHeader) {
-    const wantsInInfobar = isMobilePortrait && sheetOpen && !wantsTouchCompact;
-    if (wantsInInfobar) {
-      if (selectEl.parentElement !== infobarSelectSlot) infobarSelectSlot.appendChild(selectEl);
-    } else {
-      // Restore select to song-header (before tempo hint button)
-      const tempoHint = document.getElementById('songTempoHint');
-      if (selectEl.parentElement !== songHeader) {
-        if (tempoHint) songHeader.insertBefore(selectEl, tempoHint);
-        else songHeader.appendChild(selectEl);
+      if (sliderWrap && sliderWrap.parentElement !== tempoBar) {
+        tempoBar.appendChild(sliderWrap);
       }
+      if (tempoVal && tempoVal.parentElement !== tempoBar) {
+        tempoBar.appendChild(tempoVal);
+      }
+    }
+
+    // Portrait: restore select to song-header if not in portrait slot
+    if (!isMobilePortrait || !sheetOpen) {
+      const portraitSlot = document.getElementById('infobarSelectSlot');
+      if (selectEl && songHeader && portraitSlot && selectEl.parentElement === portraitSlot) {
+        const th = document.getElementById('songTempoHint');
+        if (th && th.parentElement === songHeader) songHeader.insertBefore(selectEl, th);
+        else if (songHeader) songHeader.appendChild(selectEl);
+      }
+    }
+
+    // Octave display → infobar-right
+    if (octEl && infobarRight && octEl.parentElement !== infobarRight) {
+      infobarRight.appendChild(octEl);
     }
   }
 }
