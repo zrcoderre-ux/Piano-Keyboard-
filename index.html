@@ -169,7 +169,7 @@
       justify-content: space-between;
       padding: 12px 20px 10px;
       border-bottom: 1.5px solid #000000;
-      background: var(--header-bg, linear-gradient(to right, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
+      background: var(--header-bg, linear-gradient(to right, #faf6ed, #f5efe0));
       flex-shrink: 0;
       position: relative;
     }
@@ -896,15 +896,6 @@
       letter-spacing: 0.05em;
     }
 
-    /* Touch mode: hide the tiny info-bar note display entirely — the QWERTY
-       pad is the focus and there's no piano visual to anchor the note to. */
-    body.mode-touch .info-bar .note-display { display: none; }
-
-    /* Hide the tiny info-bar note display by default (the big one above the
-       piano takes its place). It reappears in landscape touch mode where
-       there's no vertical room for the big display. */
-    .info-bar .note-display { display: none; }
-
     /* Touch mode: hide the visual piano keys everywhere except portrait.
        In portrait there is enough vertical room to show both the QWERTY
        pad and the piano keys, so we leave them visible there.
@@ -923,8 +914,7 @@
        favours a taller, more playable piano. Portrait keeps the display
        on (there's room there). */
     @media (orientation: landscape) {
-      body.song-sheet-open .big-note-display,
-      body.song-sheet-open .info-bar .note-display {
+      body.song-sheet-open .big-note-display {
         display: none !important;
       }
 
@@ -943,33 +933,32 @@
       align-items: center;
       justify-content: space-between;
       padding: 8px 20px;
-      background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
+      background: var(--infobar-bg, linear-gradient(to left, #cfe4fb, #b8d8f8));
       border-bottom: 1.5px solid #000000;
       flex-shrink: 0;
       min-height: 48px;
     }
 
     body.song-sheet-open .info-bar {
-      background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
+      background: var(--infobar-bg, linear-gradient(to left, #cfe4fb, #b8d8f8));
     }
 
-    .note-display {
-      font-family: 'Inter', sans-serif;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--accent);
-      min-width: 140px;
-      letter-spacing: 0.03em;
-      transition: font-size 0.1s;
-      white-space: nowrap;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.2);
+    /* Touch mode + sheet music + song book open + not fullscreen:
+       compact mode moves info-bar controls into the header and hides the info-bar. */
+    .header-compact-slot {
+      display: none;
+      align-items: center;
+      gap: 6px;
     }
-
-    .note-display.dim { opacity: 0.2; }
+    body.touch-compact-header .header-compact-slot {
+      display: flex;
+    }
+    body.touch-compact-header .info-bar {
+      display: none;
+    }
 
     /* Multi-note display separator — keeps the double-space gap between
        chord letters from collapsing under default white-space rules. */
-    .note-display .nd-sep,
     .big-note-display .nd-sep {
       white-space: pre;
     }
@@ -993,7 +982,41 @@
     }
     body.mode-keyboard .modifier-hint { visibility: visible; }
     body.mode-touch .modifier-hint { visibility: visible; }
+    body.song-sheet-open .modifier-hint { visibility: visible; }
+    body.sheet-music-on .modifier-hint { visibility: visible; }
     body.song-sheet-open.song-no-accidentals .modifier-hint { visibility: hidden; }
+    body.sheet-music-on.song-no-accidentals .modifier-hint { visibility: hidden; }
+    /* Mobile portrait: modifier-hint always visible (may contain select or title) */
+    @media (max-width: 430px) and (orientation: portrait) {
+      .modifier-hint { visibility: visible; }
+    }
+
+    /* Song title in hint slot: only when songbook open + hint not active */
+    .infobar-song-title {
+      display: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    /* Show title: songbook open, not keyboard/touch mode */
+    body.song-sheet-open .infobar-song-title { display: block; }
+    /* Hide title when hint is active (keyboard or touch mode) */
+    body.song-sheet-open.mode-keyboard .infobar-song-title,
+    body.song-sheet-open.mode-touch .infobar-song-title { display: none; }
+    /* When hint suppressed by no-accidentals + songbook open: keep title, hide hint text */
+    body.song-sheet-open.song-no-accidentals .modifier-hint,
+    body.sheet-music-on.song-no-accidentals .modifier-hint { visibility: visible; }
+    body.song-sheet-open.song-no-accidentals .mod-hint-keyboard,
+    body.song-sheet-open.song-no-accidentals .mod-hint-touch,
+    body.sheet-music-on.song-no-accidentals .mod-hint-keyboard,
+    body.sheet-music-on.song-no-accidentals .mod-hint-touch { display: none; }
+
+    /* Infobar select slot: hidden by default, used on mobile when no hint shown */
+    #infobarSelectSlot { display: none; }
 
     /* Show only the relevant hint line for the current mode */
     .mod-hint-touch    { display: none; }
@@ -1346,14 +1369,13 @@
     body.keys-logo .piano.expanded:not(.piano-mode) .white-key.active-octave::before {
       content: '';
       position: absolute;
-      /* Stripe sits flush against the inner edge of the black border.
-         The black border itself merges visually with the piano frame
-         above, so the stripe appears to reach the very top of the key. */
       left: 0;
       right: 0;
-      top: 0;
-      /* 20% of the key's height — a bold, kid-readable band. */
-      height: 20%;
+      /* Pull up into the piano frame's 10px top padding so the stripe
+         appears flush with the very top of the piano. The key clips it. */
+      top: -10px;
+      /* Fixed pixel height: 10px bleed + 18px visible stripe = 28px total */
+      height: 28px;
       background: var(--key-rest-color, var(--accent));
       pointer-events: none;
     }
@@ -1432,14 +1454,14 @@
       background: linear-gradient(to bottom, #ffffff, #fafafa);
     }
     .swatch-logo {
-      background: linear-gradient(to bottom,
-        var(--accent) 0%, var(--accent) 28%,
-        #ffffff 28%, #fafafa 100%);
+      background: #ffffff;
+      border-top: 4px solid #2196f3;
     }
     .swatch-full {
-      background: var(--accent);
+      background: #4caf50;
     }
     .seg-btn.active .seg-swatch { border-color: rgba(255,255,255,0.4); }
+    .seg-btn.active .swatch-logo { border-top-color: #2196f3; }
 
     /* ── QWERTY TOUCHPAD ── */
     .qwerty-area {
@@ -1600,12 +1622,28 @@
       .mode-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
 
-      /* Slim info bar — hint and octave controls share one centered row.
-         The note-display is hidden (display:none) so justify-center puts
-         the remaining two items side-by-side in the middle. */
-      .info-bar { padding: 5px 12px 5px 12px; justify-content: center; gap: 14px; }
-      .note-display { font-size: 16px; min-width: 100px; }
-      .modifier-hint { font-size: 12px; text-align: left; margin-right: auto; }
+      /* Slim info bar — always space-between so icons stay left, octave right */
+      .info-bar { padding: 5px 12px; justify-content: space-between; gap: 0; min-height: 44px; }
+      .infobar-left { gap: 4px !important; }
+      .infobar-icon-btn { width: 28px; height: 28px; font-size: 14px; }
+      .modifier-hint { font-size: 10px; text-align: center; margin-left: 0; margin-right: 0; flex: 1; }
+      .mod-hint-keyboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 6px; font-size: 10px; }
+      body.mode-touch .mod-hint-keyboard { display: none; }
+      .mod-hint-touch { display: none; font-size: 10px; gap: 2px 5px; }
+      body.mode-touch .mod-hint-touch { display: flex; flex-wrap: wrap; justify-content: center; font-size: 10px; gap: 2px 5px; }
+
+      /* Mobile portrait: show song-select in info bar only when songbook is open
+         and hint is not active (keyboard/touch mode). */
+      body.song-sheet-open #infobarSelectSlot { display: block; width: 100%; }
+      /* Style the select to fill the slot naturally */
+      #infobarSelectSlot .song-select {
+        width: 100%;
+        font-size: 12px;
+        padding: 4px 6px;
+      }
+      /* On mobile, select replaces the song title in the hint slot */
+      body.song-sheet-open .infobar-song-title { display: none; }
+
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
       .octave-display { gap: 4px; }
       .octave-label-group {
@@ -1615,10 +1653,6 @@
         line-height: 1.1;
         gap: 0;
       }
-      /* Piano mode has no modifier hint, so use space-between to keep
-         note display left and icon/octave buttons right — same as keyboard. */
-      body.mode-piano .info-bar,
-      body.song-sheet-open .info-bar { justify-content: space-between; gap: 0; }
 
       /* Big note display — smaller on iPhone but still prominent.
          Flex:1 + centering inherited from base rule, so it floats
@@ -1631,7 +1665,6 @@
          room), fall back to the compact info-bar version. */
       body.mode-touch .big-note-display,
       body.song-sheet-open .big-note-display { display: none; }
-      body.song-sheet-open .info-bar .note-display { display: block; }
 
       /* Mobile portrait touch mode: hide the piano keys entirely (QWERTY
          is the only input). */
@@ -1777,10 +1810,10 @@
          reparented into the song-header row above (see syncLandscapeTopBar)
          and the info-bar collapses to nothing — its CSS rule hides it. */
       .info-bar { padding: 3px 10px; }
-      .note-display { font-size: 14px; min-width: 80px; }
       /* Sharp/flat reminder eats vertical room we don't have in landscape.
          Hide it even when keyboard mode would normally show it. */
-      .modifier-hint, body.mode-keyboard .modifier-hint, body.mode-touch .modifier-hint { display: none; }
+      .modifier-hint, body.mode-keyboard .modifier-hint, body.mode-touch .modifier-hint,
+      body.song-sheet-open .modifier-hint, body.sheet-music-on .modifier-hint { display: none; }
       .octave-btn { width: 22px; height: 22px; font-size: 13px; }
       .octave-display { font-size: 11px; gap: 6px; }
 
@@ -2972,7 +3005,6 @@
 
     /* Helper — shared crayon font stack */
     body.lyrics-crayon .big-note-display,
-    body.lyrics-crayon .note-display,
     body.lyrics-crayon .song-title,
     body.lyrics-crayon .settings-card h2,
     body.lyrics-crayon .modifier-hint strong,
@@ -3000,12 +3032,6 @@
       filter: none !important;
     }
       transform: rotate(-1deg);
-      letter-spacing: 0.04em;
-    }
-
-    /* Note display in info bar */
-    body.lyrics-crayon .note-display {
-      transform: rotate(-0.8deg);
       letter-spacing: 0.04em;
     }
 
@@ -3662,7 +3688,7 @@
     /* ── SUSTAIN INDICATOR ── */
   </style>
 </head>
-<body class="mode-keyboard lyrics-crayon lyrics-colored">
+<body class="mode-keyboard lyrics-crayon lyrics-colored keys-logo">
 
 <!-- SVG filter for crayon effect -->
 <svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true">
@@ -3804,6 +3830,8 @@
       </svg>
     </span>
   </div>
+  <!-- Slot for songBook/sheetMusic buttons + octave when touch + both open + not fullscreen -->
+  <div class="header-compact-slot" id="headerCompactSlot"></div>
   <div class="controls">
     <div class="mode-toggle">
       <button class="mode-btn" id="btnPiano" onclick="setMode('piano')"><span class="btn-label">Piano</span> <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:20px;height:15px;vertical-align:middle;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></svg></button>
@@ -3836,11 +3864,13 @@
     <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
   </div>
   <div class="modifier-hint" id="modHint">
-    <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
-    <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> · <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
+    <span class="infobar-song-title" id="infobarSongTitle">⭐ Twinkle Twinkle Little Star</span>
+    <div id="infobarSelectSlot"></div>
+    <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
+    <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
   </div>
   <div class="infobar-right" style="display:flex;align-items:center;gap:8px;">
-    <div class="note-display dim" id="noteDisplay">—</div>
+
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
       <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
@@ -4154,13 +4184,13 @@
 
         </div>
         <div class="segmented" id="keyColorSeg" role="radiogroup" aria-label="Piano key color style">
-          <button class="seg-btn active" data-val="default" onclick="setKeyColorMode('default')">
+          <button class="seg-btn" data-val="default" onclick="setKeyColorMode('default')">
             <span class="seg-swatch swatch-default"></span>
-            Default
+            White
           </button>
-          <button class="seg-btn" data-val="logo" onclick="setKeyColorMode('logo')">
+          <button class="seg-btn active" data-val="logo" onclick="setKeyColorMode('logo')">
             <span class="seg-swatch swatch-logo"></span>
-            Logo
+            Stripe
           </button>
           <button class="seg-btn" data-val="full" onclick="setKeyColorMode('full')">
             <span class="seg-swatch swatch-full"></span>
@@ -4576,19 +4606,19 @@ loadColors();
 // so dark wallpaper doesn't hide the body text.
 const WALLPAPERS = [
   { id: 'cream',    label: 'Cream',    bg: '#faf6ed', bg2: '#f5efe0',
-    headerBg: 'linear-gradient(to right, #f5efe0, #ede8d5)',
-    infobarBg: 'linear-gradient(to left, #e3f2fd, #e8f5e9)' },
+    headerBg: 'linear-gradient(to right, #faf6ed, #f5efe0)',
+    infobarBg: 'linear-gradient(to left, #cfe4fb, #b8d8f8)' },
   { id: 'pink',     label: 'Pink',     bg: '#ffe9ee', bg2: '#ffd6e0',
-    headerBg: 'linear-gradient(to right, #ffd6e0, #ffbccc)',
-    infobarBg: 'linear-gradient(to left, #e8f7ec, #d5f0e0)' },
+    headerBg: 'linear-gradient(to right, #ffe9ee, #ffd6e0)',
+    infobarBg: 'linear-gradient(to left, #cdebd6, #b5e2c4)' },
   { id: 'blue',     label: 'Sky',      bg: '#e6f2ff', bg2: '#cfe4fb',
-    headerBg: 'linear-gradient(to right, #cfe4fb, #b8d8f8)',
+    headerBg: 'linear-gradient(to right, #e6f2ff, #cfe4fb)',
     infobarBg: 'linear-gradient(to left, #fff1dc, #ffe5e8)' },
   { id: 'mint',     label: 'Mint',     bg: '#e8f7ec', bg2: '#cdebd6',
-    headerBg: 'linear-gradient(to right, #cdebd6, #b5e2c4)',
-    infobarBg: 'linear-gradient(to left, #f3e5f5, #ede0f7)' },
+    headerBg: 'linear-gradient(to right, #e8f7ec, #cdebd6)',
+    infobarBg: 'linear-gradient(to left, #efe9fb, #dccff5)' },
   { id: 'lavender', label: 'Lavender', bg: '#efe9fb', bg2: '#dccff5',
-    headerBg: 'linear-gradient(to right, #dccff5, #cbb8f0)',
+    headerBg: 'linear-gradient(to right, #efe9fb, #dccff5)',
     infobarBg: 'linear-gradient(to left, #fffde7, #fff8cc)' },
   { id: 'rainbow',  label: 'Rainbow',  bg: '#ffe5e8', bg2: '#f3e5f5',
     gradient: 'linear-gradient(160deg, #ffe5e8 0%, #fff1dc 25%, #e8f5e9 60%, #f3e5f5 100%)',
@@ -4596,7 +4626,7 @@ const WALLPAPERS = [
     headerBg: 'linear-gradient(to right, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5)',
     infobarBg: 'linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5)' },
   { id: 'midnight', label: 'Midnight', bg: '#1f1d2e', bg2: '#15131e',
-    headerBg: 'linear-gradient(to right, #2a2738, #1f1d2e)',
+    headerBg: 'linear-gradient(to right, #1f1d2e, #15131e)',
     infobarBg: 'linear-gradient(to left, #2a2738, #1f1d2e)',
     text: '#f3eedb', textDim: '#bdb5a3', textDim2: '#7d7768',
     surface: '#2a2738', surface2: '#1a1825', border: '#3a3548', border2: '#46415a' },
@@ -4653,7 +4683,11 @@ function buildWallpaperGrid() {
     const btn = document.createElement('button');
     btn.className = 'wallpaper-swatch' + (w.id === currentWallpaper ? ' active' : '');
     btn.title = w.label;
-    btn.style.background = `linear-gradient(160deg, ${w.bg} 0%, ${w.bg2} 100%)`;
+    if (w.id === 'rainbow') {
+      btn.style.background = 'conic-gradient(from 0deg, #e63946, #ff9800, #ffd60a, #4caf50, #2196f3, #9c27b0, #e63946)';
+    } else {
+      btn.style.background = `linear-gradient(160deg, ${w.bg} 0%, ${w.bg2} 100%)`;
+    }
     btn.addEventListener('click', () => setWallpaper(w.id));
     grid.appendChild(btn);
   });
@@ -5351,11 +5385,9 @@ function pulseViz(color) {
 const activeDisplayNotes = new Map();
 
 function renderNoteDisplay() {
-  const small = document.getElementById('noteDisplay');
   const big = document.getElementById('bigNoteDisplay');
 
   if (activeDisplayNotes.size === 0) {
-    if (small) small.classList.add('dim');
     if (big) big.classList.add('dim');
     return;
   }
@@ -5375,11 +5407,6 @@ function renderNoteDisplay() {
     fallbackColor = entries[entries.length - 1].color || 'var(--accent)';
   }
 
-  if (small) {
-    small.innerHTML = html;
-    small.style.color = fallbackColor;
-    small.classList.remove('dim');
-  }
   if (big) {
     big.innerHTML = html;
     big.style.color = fallbackColor;
@@ -5463,6 +5490,16 @@ function toggleSheetMusic() {
   document.body.classList.toggle('sheet-music-on', sheetMusicEnabled);
   try { localStorage.setItem('pianoSheetMusic', sheetMusicEnabled ? '1' : '0'); } catch(e) {}
   if (sheetMusicEnabled) renderSheetMusic();
+  // In touch mode, sheet music benefits greatly from the extra space that
+  // fullscreen provides — enter it automatically when the user turns on
+  // sheet music while in touch mode.
+  if (sheetMusicEnabled && mode === 'touch') {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    }
+  }
   // Switching the staff in/out changes the piano area's available height,
   // so the black-key positioner needs a re-run.
   if (typeof schedulePositionBlackKeys === 'function') schedulePositionBlackKeys();
@@ -6019,7 +6056,7 @@ function updateModHint() {
   } else if (flatActive) {
     kbDiv.innerHTML = '<span style="background:#2196f3;color:#fff;padding:4px 14px;border-radius:999px;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(33,150,243,0.4)">♭ FLAT</span>';
   } else {
-    kbDiv.innerHTML = `<span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> · <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> · <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> · <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span>`;
+    kbDiv.innerHTML = `<span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span>`;
   }
 }
 
@@ -6289,6 +6326,14 @@ function toggleAutoPlay() {
     document.body.classList.remove('self-tempo-on');
     try { localStorage.setItem('pianoSelfTempo', '0'); } catch(e) {}
   }
+  // Auto play and practice mode are mutually exclusive
+  if (autoPlayMode && practiceMode) {
+    const cb = document.getElementById('practiceModeToggle');
+    if (cb) cb.checked = false;
+    practiceMode = false;
+    practiceResetCounters();
+    try { localStorage.setItem('pianoPracticeMode', '0'); } catch(e) {}
+  }
   if (!autoPlayMode && tempoPlaying) stopTempo();
   if (currentSong) renderNoteStrip();
 }
@@ -6311,6 +6356,14 @@ function loadAutoPlaySetting() {
 function togglePracticeMode() {
   practiceMode = document.getElementById('practiceModeToggle').checked;
   try { localStorage.setItem('pianoPracticeMode', practiceMode ? '1' : '0'); } catch(e) {}
+  // Practice mode and auto play are mutually exclusive
+  if (practiceMode && autoPlayMode) {
+    const cb = document.getElementById('autoPlayMode');
+    if (cb) cb.checked = false;
+    autoPlayMode = false;
+    if (tempoPlaying) stopTempo();
+    try { localStorage.setItem('pianoAutoPlay', '0'); } catch(e) {}
+  }
   practiceResetCounters();
 }
 
@@ -6438,40 +6491,21 @@ function practiceShowResult() {
   const rawPct = total > 0 ? (practiceScoreSum / total) * 100 : 0;
   const pct = Math.round(Math.min(100, rawPct));
 
-  const emoji = pct === 100 ? '🌟' :
-                pct >= 80  ? '🎉' :
-                pct >= 60  ? '😊' :
-                pct >= 40  ? '💪' : '🎹';
-
-  const messages = {
-    100: ["Perfect score! You're a piano superstar! 🌟", "Flawless! Every note, perfectly timed!", "100%! That was absolutely incredible!"],
-    80:  ["Amazing playing! You are SO good at this!", "Wow, that was fantastic! You're a natural!", "You're a piano star — that was brilliant!"],
-    60:  ["Great job! You're doing so well!", "You played beautifully! Keep it up!", "Wonderful playing! You make it look easy!"],
-    40:  ["You're doing amazing — keep playing!", "Every time you play you get better and better!", "You're so great at this — keep going!"],
-    0:   ["Keep playing — you're doing great!", "You're amazing! Let's play again!", "Keep going — this is so fun!"],
-  };
-
-  const bucket = pct === 100 ? 100 : pct >= 80 ? 80 : pct >= 60 ? 60 : pct >= 40 ? 40 : 0;
-  const msgs = messages[bucket];
-  const msg = msgs[Math.floor(Math.random() * msgs.length)];
-
-  // Sub-label explains what the score measures
-  const subLabel = selfTempoMode ? 'Notes correct' : 'Timing &amp; accuracy';
-
-  const card = `
-    <div class="practice-result-card">
-      <button class="practice-result-x" onclick="practiceCloseResult()" aria-label="Close">✕</button>
-      <div class="practice-result-emoji">${emoji}</div>
-      <div class="practice-result-score">${pct}%</div>
-      <div class="practice-result-label">${subLabel}</div>
-      <div class="practice-result-msg">${msg}</div>
-      <button class="practice-result-close" onclick="practiceCloseResult()">Play Again 🎵</button>
-    </div>`;
-
-  const el = document.getElementById('practiceResult');
-  el.innerHTML = card;
-  el.classList.add('open');
-  el.style.display = 'flex';
+  // Prepend percentage to the regular Well done banner — no modal needed
+  const completeEl = document.getElementById('songComplete');
+  completeEl.textContent = pct + '% — Well done! Play again?';
+  completeEl.style.display = 'block';
+  setTimeout(() => {
+    completeEl.style.display = 'none';
+    completeEl.textContent = '🎉 Well done! Play again?';
+    practiceResetCounters();
+    practiceNotesTotal = practiceCountTotal();
+    currentNoteIdx = 0;
+    currentRepeat = 1;
+    refreshPendingChord();
+    updateRepeatBtn();
+    renderNoteStrip();
+  }, 3500);
 }
 
 function practiceCloseResult() {
@@ -6544,10 +6578,10 @@ function loadLyricsSetting() {
 //   'full'    — white keys are entirely note-colored at rest;
 //               pressed → flash white. Most colorful option.
 // Black keys are unaffected by all modes.
-let keyColorMode = 'default'; // 'default' | 'logo' | 'full'
+let keyColorMode = 'logo'; // 'default' | 'logo' | 'full'
 
 function setKeyColorMode(mode) {
-  keyColorMode = (mode === 'logo' || mode === 'full') ? mode : 'default';
+  keyColorMode = (mode === 'logo' || mode === 'full') ? mode : (mode === 'default' ? 'default' : 'logo');
   document.body.classList.toggle('keys-logo', keyColorMode === 'logo');
   document.body.classList.toggle('keys-inverted', keyColorMode === 'full');
   try { localStorage.setItem('pianoKeyColorMode', keyColorMode); } catch(e) {}
@@ -6571,8 +6605,13 @@ function loadKeyColorMode() {
     const v = localStorage.getItem('pianoKeyColorMode');
     if (v === 'logo' || v === 'full' || v === 'default') {
       setKeyColorMode(v);
+    } else {
+      // No saved preference — apply the new default (stripe/logo)
+      setKeyColorMode('logo');
     }
-  } catch(e) {}
+  } catch(e) {
+    setKeyColorMode('logo');
+  }
 }
 
 // ── Landscape top-bar reflow ──
@@ -6596,19 +6635,48 @@ function loadKeyColorMode() {
 function syncLandscapeTopBar() {
   const isLandscape = window.matchMedia('(max-height: 500px) and (orientation: landscape)').matches;
   const sheetOpen = document.body.classList.contains('song-sheet-open');
-  const octEl = document.querySelector('.info-bar .octave-display') ||
-                document.querySelector('.song-header-octave-slot .octave-display');
-  const octSlot = document.getElementById('songHeaderOctaveSlot');
-  const infoBar = document.querySelector('.info-bar');
-  if (!octEl || !octSlot || !infoBar) return;
+  const sheetMusicOn = document.body.classList.contains('sheet-music-on');
+  const isTouch = document.body.classList.contains('mode-touch');
+  const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
 
-  const wantsRelocated = isLandscape && sheetOpen;
-  if (wantsRelocated) {
-    if (octEl.parentElement !== octSlot) octSlot.appendChild(octEl);
-  } else {
-    // Restore: octave is last child of info-bar.
-    if (octEl.parentElement !== infoBar) {
-      infoBar.appendChild(octEl);
+  // Touch + both song book and sheet music open + not fullscreen:
+  // move songBook btn, sheetMusic btn, and octave display into header; hide info-bar.
+  const headerSlot = document.getElementById('headerCompactSlot');
+  const infoBar = document.querySelector('.info-bar');
+  const songBookBtn = document.getElementById('songBookInfoBtn');
+  const sheetMusicBtn = document.getElementById('sheetMusicInfoBtn');
+
+  const wantsTouchCompact = isTouch && sheetOpen && sheetMusicOn && !isFullscreen;
+  document.body.classList.toggle('touch-compact-header', wantsTouchCompact);
+
+  if (headerSlot && infoBar && songBookBtn && sheetMusicBtn) {
+    const infobarLeft = infoBar.querySelector('.infobar-left');
+    if (wantsTouchCompact) {
+      if (songBookBtn.parentElement !== headerSlot) headerSlot.appendChild(songBookBtn);
+      if (sheetMusicBtn.parentElement !== headerSlot) headerSlot.appendChild(sheetMusicBtn);
+    } else {
+      if (infobarLeft && songBookBtn.parentElement !== infobarLeft) infobarLeft.appendChild(songBookBtn);
+      if (infobarLeft && sheetMusicBtn.parentElement !== infobarLeft) infobarLeft.appendChild(sheetMusicBtn);
+    }
+  }
+
+  // Octave display: reparent into header slot when touch-compact, otherwise restore to info-bar
+  const octEl = document.querySelector('.info-bar .octave-display') ||
+                document.querySelector('.song-header-octave-slot .octave-display') ||
+                (headerSlot && headerSlot.querySelector('.octave-display'));
+  const infobarRight = infoBar ? infoBar.querySelector('.infobar-right') : null;
+
+  if (octEl && headerSlot) {
+    if (wantsTouchCompact) {
+      if (octEl.parentElement !== headerSlot) headerSlot.appendChild(octEl);
+    } else {
+      const octSlot = document.getElementById('songHeaderOctaveSlot');
+      const wantsLandscapeRelocated = isLandscape && sheetOpen;
+      if (wantsLandscapeRelocated && octSlot) {
+        if (octEl.parentElement !== octSlot) octSlot.appendChild(octEl);
+      } else if (infobarRight) {
+        if (octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
+      }
     }
   }
 
@@ -6647,6 +6715,26 @@ function syncLandscapeTopBar() {
       }
     }
   }
+
+  // Mobile portrait: reparent song-select into infobar when hint is not shown.
+  // Hint is hidden when not in keyboard/touch mode and songbook is not open.
+  const isMobilePortrait = window.matchMedia('(max-width: 430px) and (orientation: portrait)').matches;
+  const selectEl = document.getElementById('songSelect');
+  const infobarSelectSlot = document.getElementById('infobarSelectSlot');
+  const songHeader = document.querySelector('.song-header');
+  if (selectEl && infobarSelectSlot && songHeader) {
+    const wantsInInfobar = isMobilePortrait && sheetOpen && !wantsTouchCompact;
+    if (wantsInInfobar) {
+      if (selectEl.parentElement !== infobarSelectSlot) infobarSelectSlot.appendChild(selectEl);
+    } else {
+      // Restore select to song-header (before tempo hint button)
+      const tempoHint = document.getElementById('songTempoHint');
+      if (selectEl.parentElement !== songHeader) {
+        if (tempoHint) songHeader.insertBefore(selectEl, tempoHint);
+        else songHeader.appendChild(selectEl);
+      }
+    }
+  }
 }
 
 function setMode(m) {
@@ -6680,6 +6768,15 @@ function setMode(m) {
 
   if (m === 'touch') {
     buildQwerty();
+    // If sheet music is already on when entering touch mode, go fullscreen
+    // so the staff has enough room to be readable.
+    if (sheetMusicEnabled) {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen().catch(() => {});
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      }
+    }
   }
   stopAllNotes();
   // Mode switching shows/hides the QWERTY pad and the modifier hint, both of
@@ -8048,51 +8145,51 @@ const SONG_LYRICS = {
   // 120 notes — 6 rounds × 20 (14-note verse + 6 letter spots)
   bingo: [
     // round 1: B-I-N-G-O
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     'B','I','N','G','O',
     // round 2: clap-I-N-G-O
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     '(clap)','I','N','G','O',
     // round 3: clap-clap-N-G-O
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     '(clap)','(clap)','N','G','O',
     // round 4: clap-clap-clap-G-O
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     '(clap)','(clap)','(clap)','G','O',
     // round 5: clap-clap-clap-clap-O
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     '(clap)','(clap)','(clap)','(clap)','O',
     // round 6: all claps
-    'there','was','a','farm','er','had','a','dog','and',
+    'There','was','a','farm','er','had','a','dog','and',
     'Bin','go','was','his',
     'na','me',
     '(clap)','(clap)','(clap)','(clap)','(clap)'
   ],
   happybirthday: [
-    'hap','py','birth','day','to','you',
+    'Hap','py','birth','day','to','you',
     'hap','py','birth','day','to','you',
     'hap','py','birth','day','dear',
     'friend','',
     'hap','py','birth','day','to','you'
   ],
   hotcrossbuns: [
-    'hot','cross','buns',
+    'Hot','cross','buns',
     'hot','cross','buns',
     'one','a','pen','ny','two','a','pen','ny',
     'hot','cross','buns'
   ],
   itsy: [
-    'it','sy','bit','sy','spi','der','went','up',
+    'It','sy','bit','sy','spi','der','went','up',
     'the','wa','ter','spout','','down','came','the',
     'rain','and','washed','the','spi','der','out','',
     'out','came','the','sun','and','dried','up','all',
@@ -8100,7 +8197,7 @@ const SONG_LYRICS = {
     'spi','der','went','up','the','again'
   ],
   jinglebells: [
-    'jin','gle','bells','',
+    'Jin','gle','bells','',
     'jin','gle','bells','',
     'jin','gle','all','the',
     'way','',
@@ -8117,7 +8214,7 @@ const SONG_LYRICS = {
     'sleigh',''
   ],
   silent_night: [
-    'si','lent','night','',
+    'Si','lent','night','',
     'ho','ly','night','',
     'all','is','calm','',
     'all','is','bright','',
@@ -8131,7 +8228,7 @@ const SONG_LYRICS = {
     'peace',''
   ],
   we_wish: [
-    'we',
+    'We',
     'wish','you','a','mer','ry','Christ','mas',
     'we','wish','you','a',
     'mer','ry','Christ','mas',
@@ -8150,7 +8247,7 @@ const SONG_LYRICS = {
     'my','fair','la','dy',''
   ],
   row_boat: [
-    'row','row','row','your','boat','gent','ly','down',
+    'Row','row','row','your','boat','gent','ly','down',
     'the','stream','','mer','ri','ly','mer','ri',
     'ly','mer','ri','ly','mer','ri','ly','life',
     'is','but','dream'
@@ -8174,7 +8271,7 @@ const SONG_LYRICS = {
     'din','din','don',''
   ],
   joy_world: [
-    'joy','to','the','world','',
+    'Joy','to','the','world','',
     'the','Lord','has','come','',
     'let','earth','re','ceive','her',
     'king','',
@@ -8184,7 +8281,7 @@ const SONG_LYRICS = {
     'na','ture','sing','',''
   ],
   baa_baa: [
-    'baa','baa','black','sheep',
+    'Baa','baa','black','sheep',
     'have','you','a','ny','wool','',
     'yes','sir','yes','sir',
     'three','bags','full','',
@@ -8197,7 +8294,7 @@ const SONG_LYRICS = {
     'in','the','lane','','','','',
   ],
   old_macdonald: [
-    'old','Mac','Don','ald','had','a','farm',
+    'Old','Mac','Don','ald','had','a','farm',
     'E','I','E','I',
     'O','',
     'and','on','that','farm','he',
@@ -8211,7 +8308,7 @@ const SONG_LYRICS = {
 
   // 25 notes
   three_blind_mice: [
-    'three','blind','mice','three','blind','mice','see','how',
+    'Three','blind','mice','three','blind','mice','see','how',
     'they','run','see','how','they','run','they','all',
     'ran','af','ter','the','farm','ers','wife','',
     ''
@@ -8219,7 +8316,7 @@ const SONG_LYRICS = {
 
   // 31 notes
   wheels_bus: [
-    'the','wheels','on','the','bus','go','round','and',
+    'The','wheels','on','the','bus','go','round','and',
     'round','',
     'round','and','round',
     'round','and','round',
@@ -8231,7 +8328,7 @@ const SONG_LYRICS = {
 
   // 33 notes
   happy_clap: [
-    'if','youre','hap','py','and','you','know','it',
+    'If','youre','hap','py','and','you','know','it',
     'clap','your','hands','','clap','your','hands','if',
     'youre','hap','py','and','you','know','it','then',
     'your','face','will','sure','ly','show','it','if',
@@ -8240,7 +8337,7 @@ const SONG_LYRICS = {
 
   // 26 notes
   sunshine: [
-    'you','are','my','sun','shine','my','on','ly',
+    'You','are','my','sun','shine','my','on','ly',
     'sun','shine','you','make','me','hap','py','when',
     'skies','are','grey','youll','nev','er','know','dear',
     'how','you'
@@ -8249,80 +8346,92 @@ const SONG_LYRICS = {
   // 28 notes
   this_old_man: [
     // verse 1 — one / thumb
-    'this','old','man','he','played','one',
+    // notes: this(G) old(E) man(G) | he(G) played(E) one(G) | he(A) played(G) knick(F) knack(E) | on(D) my(E) thumb(F) |
+    //        knick(C) knack(C) pad(C) dy(D) whack(E) give(F) | a(G) dog(C5) | a(A) bone(G) this(F) old(E) | man(F) came(D) roll(C) ing(E) home(G) -(C)
+    'This','old','man','he','played','one',
     'he','played','knick','knack','on','my',
-    'thumb','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'thumb',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 2 — two / shoe
-    'this','old','man','he','played','two',
+    'This','old','man','he','played','two',
     'he','played','knick','knack','on','my',
-    'shoe','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'shoe',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 3 — three / knee
-    'this','old','man','he','played','three',
+    'This','old','man','he','played','three',
     'he','played','knick','knack','on','my',
-    'knee','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'knee',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 4 — four / door
-    'this','old','man','he','played','four',
+    'This','old','man','he','played','four',
     'he','played','knick','knack','on','my',
-    'door','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'door',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 5 — five / hive
-    'this','old','man','he','played','five',
+    'This','old','man','he','played','five',
     'he','played','knick','knack','on','my',
-    'hive','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'hive',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 6 — six / sticks
-    'this','old','man','he','played','six',
+    'This','old','man','he','played','six',
     'he','played','knick','knack','on','my',
-    'sticks','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
-    // verse 7 — seven / heaven
-    'this','old','man','he','played','sev',
+    'sticks',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
+    // verse 7 — seven / heaven (both rhyme words fit across the 7 notes of phrase 2)
+    'This','old','man','he','played','sev',
     'en','played','knick','knack','up','in',
-    'heav','en',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'heav',
+    'en','knick','knack','pad','dy','whack',
+    'give','a',
+    'dog','a','bone','this',
+    'old','man','came','roll','ing','home',
     // verse 8 — eight / gate
-    'this','old','man','he','played','eight',
+    'This','old','man','he','played','eight',
     'he','played','knick','knack','on','my',
-    'gate','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'gate',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 9 — nine / spine
-    'this','old','man','he','played','nine',
+    'This','old','man','he','played','nine',
     'he','played','knick','knack','on','my',
-    'spine','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home',
+    'spine',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home','',
     // verse 10 — ten / once again
-    'this','old','man','he','played','ten',
+    'This','old','man','he','played','ten',
     'he','played','knick','knack','once','a',
-    'gain','',
-    'knick','knack','pad','dy','whack',
-    'give','a','dog','a','bone',
-    'this','old','man','came','roll','ing','home'
+    'gain',
+    'knick','knack','pad','dy','whack','give',
+    'a','dog',
+    'a','bone','this','old',
+    'man','came','roll','ing','home',''
   ],
 
   // 24 notes
   scarborough: [
-    'are','you','go','ing','to',
+    'Are','you','go','ing','to',
     'Scar','bor','ough',
     'Fair','',
     'pars','ley',
@@ -8333,7 +8442,7 @@ const SONG_LYRICS = {
 
   // 29 notes
   greensleeves: [
-    'a','las','my','love','you','do','me','wrong',
+    'A','las','my','love','you','do','me','wrong',
     'to','cast','me','off','dis','court','eous','ly',
     'for','I','have','loved','you','so','long','de',
     'light','ing','in','your','pany'
@@ -8354,7 +8463,7 @@ const SONG_LYRICS = {
   // 26 notes
   // 78 notes — verse 1 + verse 2 + chorus
   clementine: [
-    'in','a','cav','ern','in','a','can','yon',
+    'In','a','cav','ern','in','a','can','yon',
     'ex','ca','vat','ing','for','a','mine','',
     'lived','a','min','er','for','ty','nin','er',
     'and','his','light','she','was','and','like','a',
@@ -8370,17 +8479,17 @@ const SONG_LYRICS = {
   // 49 notes — verse ×2 + chorus
   camptown: [
     'Camp','town','la','dies','sing','this','song','',
-    'doo','da','doo','Camp','town','race','tracks','five',
-    'miles','long','','oh','doo','da','day','gwine',
-    'to','run','all','night','','gwine','to','run',
-    'all','day','','I','bet','my','mon','ey',
-    'on','a','bob','tail','nag','bet','on','the',
+    'doo','da','doo','Camp','town','race','track\'s','five',
+    'miles','long','','oh','the','doo','da','day',
+    'gon','na','run','all','night','','gon','na',
+    'run','all','day','','I\'ll','bet','my','mon','ey',
+    'on','the','bob','tail','nag','some','one','bet',
     'bay'
   ],
 
   // 27 notes
   skip_lou: [
-    'skip','skip','skip','to','my',
+    'Skip','skip','skip','to','my',
     'Lou','',
     'skip','skip','skip','to','my',
     'Lou','',
@@ -8392,7 +8501,7 @@ const SONG_LYRICS = {
 
   // 27 notes  (rests at index 4, 9 → '')
   saints: [
-    'oh','when','the','saints','',
+    'Oh','when','the','saints','',
     'go','march','ing','in','',
     'oh','when','the','saints','go',
     'march','ing','in',
@@ -8405,7 +8514,7 @@ const SONG_LYRICS = {
 
   // 21 notes  (rest at index 10 → '')
   home_range: [
-    'oh','give','me','a','home',
+    'Oh','give','me','a','home',
     'where','the','buf','fa','lo',
     'roam','',
     'where','the','deer','and','the',
@@ -8420,7 +8529,7 @@ const SONG_LYRICS = {
 
   // 28 notes
   kumbaya: [
-    'kum','ba','ya','my','Lord',
+    'Kum','ba','ya','my','Lord',
     'kum','ba','ya',
     'kum','ba','ya','my',
     'Lord','',
@@ -8434,7 +8543,7 @@ const SONG_LYRICS = {
 
   // 38 notes
   mulberry: [
-    'here','we','go','round','the','mul','ber','ry',
+    'Here','we','go','round','the','mul','ber','ry',
     'bush','the',
     'mul','ber','ry','bush','the',
     'mul','ber','ry',
@@ -8450,7 +8559,7 @@ const SONG_LYRICS = {
 
   // 30 notes  (ode_ode = Deck the Halls)
   ode_ode: [
-    'deck','the','halls','with','boughs','of','hol','ly',
+    'Deck','the','halls','with','boughs','of','hol','ly',
     '','fa','la','la','la','la','la','la',
     'la','la','','tis','the','sea','son','to',
     'be','jol','ly','fa','la','la'
@@ -8458,7 +8567,7 @@ const SONG_LYRICS = {
 
   // 29 notes  (rest at index 10, 21 → '')
   we_three_kings: [
-    'we','three','kings','of','O','ri','ent','are',
+    'We','three','kings','of','O','ri','ent','are',
     'bear','ing','','gifts','we','trav','erse','a',
     'far','','field','and','foun','tain','moor','and',
     'moun','tain','fol','low','ing','oh','star','of',
@@ -8468,7 +8577,7 @@ const SONG_LYRICS = {
 
   // 28 notes
   up_housetop: [
-    'up','on','the','house','top','rein','deer','pause',
+    'Up','on','the','house','top','rein','deer','pause',
     'out','jumps','good','old','San','ta','Claus','down',
     'through','the','chim','ney','with','lots','of','toys',
     '','all','for','the','lit','tle','ones','Christ',
@@ -8480,7 +8589,7 @@ const SONG_LYRICS = {
 
   // 24 notes
   auld_lang: [
-    'should','auld','ac','quaint','ance','be','for','got',
+    'Should','auld','ac','quaint','ance','be','for','got',
     'and','nev','er','brought','to','mind','should','auld',
     'ac','quaint','ance','be','for','got','and','days',
     '','and','for','auld','lang','syne','my','dear',
@@ -8510,7 +8619,7 @@ const SONG_LYRICS = {
 
   // 23 notes
   take_me_ballgame: [
-    'take','me','out','to','the','ball','game','take',
+    'Take','me','out','to','the','ball','game','take',
     'me','out','with','the','crowd','','buy','me',
     'some','pea','nuts','and','crack','er','jack','I',
     'dont','care','if','I','nev','er','back','let',
@@ -8521,7 +8630,7 @@ const SONG_LYRICS = {
 
   // 22 notes  (rest at index 12 → '')
   star_spangled: [
-    'oh','say','can','you',
+    'Oh','say','can','you',
     'see','by','the',
     'dawns','ear','ly',
     'light','',
@@ -8550,7 +8659,7 @@ const SONG_LYRICS = {
 
   // 16 notes
   amazing_grace: [
-    'a','maz','ing',
+    'A','maz','ing',
     'grace','how',
     'sweet','the',
     'sound','that',
@@ -8571,21 +8680,21 @@ const SONG_LYRICS = {
   // 70 notes — verse (21) + chorus ×2 (49)
   jinglebells_full: [
     // verse (21)
-    'dash','ing','through','the','snow','in','a',
+    'Dash','ing','through','the','snow','in','a',
     'one','horse','o','pen',
     'sleigh','o\'er',
     'the','fields','we','go',
     'laugh','ing','all','the',
     // chorus 1 (22)
     'way','',
-    'jin','gle','bells','',
+    'Jin','gle','bells','',
     'jin','gle','all','the',
     'way','',
     'oh','what','fun','it',
     'is','to','ride',
     // chorus 2 (27)
     'in',
-    'jin','gle','bells','',
+    'Jin','gle','bells','',
     'jin','gle','bells','',
     'jin','gle','all','the',
     'way','',
@@ -8892,6 +9001,8 @@ function loadSong(id) {
   refreshPendingChord();
   practiceResetCounters();
   document.getElementById('songTitle').textContent = currentSong.title;
+  const infobarTitle = document.getElementById('infobarSongTitle');
+  if (infobarTitle) infobarTitle.textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
   applySongSelectColor(currentSong.id);
   document.getElementById('songComplete').style.display = 'none';
@@ -9406,21 +9517,21 @@ function finalizeAdvance() {
     }
     // Otherwise this was the last (or only) iteration — celebrate.
     renderNoteStrip();
-    const completeEl = document.getElementById('songComplete');
-    completeEl.style.display = 'block';
-    setTimeout(() => {
-      completeEl.style.display = 'none';
-      // Practice mode: show score card instead of immediately resetting
-      if (practiceMode) {
-        practiceShowResult();
-        return;
-      }
-      currentNoteIdx = 0;
-      currentRepeat = 1;
-      refreshPendingChord();
-      updateRepeatBtn();
-      renderNoteStrip();
-    }, 3500);
+    // Practice mode: practiceShowResult handles its own banner with the score
+    if (practiceMode) {
+      practiceShowResult();
+    } else {
+      const completeEl = document.getElementById('songComplete');
+      completeEl.style.display = 'block';
+      setTimeout(() => {
+        completeEl.style.display = 'none';
+        currentNoteIdx = 0;
+        currentRepeat = 1;
+        refreshPendingChord();
+        updateRepeatBtn();
+        renderNoteStrip();
+      }, 3500);
+    }
   } else {
     renderNoteStrip();
   }
@@ -9779,20 +9890,21 @@ function scheduleNextNote(immediate) {
       // Final iteration done — show the celebration and reset.
       stopTempo();
       renderNoteStrip();
-      const completeEl = document.getElementById('songComplete');
-      completeEl.style.display = 'block';
-      setTimeout(() => {
-        completeEl.style.display = 'none';
-        if (practiceMode) {
-          practiceShowResult();
-          return;
-        }
-        currentNoteIdx = 0;
-        currentRepeat = 1;
-        refreshPendingChord();
-        updateRepeatBtn();
-        renderNoteStrip();
-      }, 3500);
+      // Practice mode: practiceShowResult handles its own banner with the score
+      if (practiceMode) {
+        practiceShowResult();
+      } else {
+        const completeEl = document.getElementById('songComplete');
+        completeEl.style.display = 'block';
+        setTimeout(() => {
+          completeEl.style.display = 'none';
+          currentNoteIdx = 0;
+          currentRepeat = 1;
+          refreshPendingChord();
+          updateRepeatBtn();
+          renderNoteStrip();
+        }, 3500);
+      }
       return;
     }
   }
@@ -10341,6 +10453,7 @@ function updateFullscreenUI() {
   // piano may shift vertically, invalidating any previously measured positions.
   requestAnimationFrame(() => {
     applyFullscreenZoom();
+    syncLandscapeTopBar();
     // Give the browser one more frame to commit the new height before measuring
     requestAnimationFrame(() => schedulePositionBlackKeys());
   });
