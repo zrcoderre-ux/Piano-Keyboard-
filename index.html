@@ -180,11 +180,12 @@
       font-weight: 800;
       letter-spacing: 0.02em;
       color: var(--accent);
+      align-items: center;
     }
 
     .logo-icon {
-      width: 32px;
-      height: 24px;
+      width: 40px;
+      height: 30px;
       flex-shrink: 0;
       filter: drop-shadow(0 2px 3px rgba(0,0,0,0.25));
     }
@@ -195,10 +196,20 @@
       font-size: 1.15em;
     }
 
+    .logo-piano-wrap {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
     .logo-piano {
       color: var(--text-dim);
-      font-weight: 600;
-      font-size: 1em;
+      font-weight: 700;
+      font-size: 0.85em;
+      font-family: 'Playfair Display', Georgia, serif;
+      line-height: 1;
+      text-align: center;
     }
 
     .controls {
@@ -892,9 +903,10 @@
 
     /* ── INFO BAR ── */
     .info-bar {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      justify-content: space-between;
+      gap: 12px;
       padding: 8px 20px;
       background: var(--infobar-bg, linear-gradient(to left, #ffe5e8, #fff1dc, #fffde7, #e8f5e9, #e3f2fd, #f3e5f5));
       border-bottom: 1.5px solid #000000;
@@ -933,10 +945,12 @@
       color: var(--text);
       text-align: center;
       display: none;
+      overflow: hidden;
+      min-width: 0;
     }
     body.mode-keyboard .modifier-hint { display: block; }
     body.mode-touch .modifier-hint { display: block; }
-    body.song-sheet-open.song-no-accidentals .modifier-hint { display: none; }
+    body.mode-piano .modifier-hint { display: none; }
 
     /* Show only the relevant hint line for the current mode */
     .mod-hint-touch    { display: none; }
@@ -1520,22 +1534,17 @@
         padding: 8px 12px 7px;
       }
       .logo { font-size: 14px; gap: 7px; }
-      .logo-icon { width: 22px; height: 16px; }
+      .logo-icon { width: 28px; height: 21px; }
+      .logo-piano { font-size: 0.8em; }
       .mode-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
 
-      /* Slim info bar — hint and octave controls share one centered row.
-         The note-display is hidden (display:none) so justify-center puts
-         the remaining two items side-by-side in the middle. */
-      .info-bar { padding: 5px 12px; justify-content: center; gap: 14px; }
-      .note-display { font-size: 16px; min-width: 100px; }
-      .modifier-hint { font-size: 12px; text-align: left; }
+      /* Slim info bar — stable 3-column grid keeps buttons anchored right.
+         Hint stays visible and shrinks to fit between note display and buttons. */
+      .info-bar { padding: 5px 12px; gap: 6px; }
+      .note-display { font-size: 16px; min-width: 70px; }
+      .modifier-hint { font-size: 10px; text-align: center; }
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
-      /* When note-display IS shown (touch/song-sheet modes), put it on the
-         left and keep hint+octave together on the right so they stay on
-         one row without crowding. */
-      body.mode-touch .info-bar,
-      body.song-sheet-open .info-bar { justify-content: space-between; gap: 0; }
 
       /* Big note display — smaller on iPhone but still prominent.
          Flex:1 + centering inherited from base rule, so it floats
@@ -1683,7 +1692,7 @@
         flex-shrink: 0;
       }
       .logo { font-size: 13px; gap: 6px; }
-      .logo-icon { width: 20px; height: 15px; }
+      .logo-icon { width: 26px; height: 19px; }
       .mode-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
       .settings-btn { padding: 6px 11px; font-size: 12px; font-weight: 700; }
 
@@ -1777,7 +1786,7 @@
         padding: 2px 12px;
       }
       body.sheet-music-on .logo { font-size: 12px; }
-      body.sheet-music-on .logo-icon { width: 17px; height: 13px; }
+      body.sheet-music-on .logo-icon { width: 22px; height: 16px; }
       body.sheet-music-on .mode-btn,
       body.sheet-music-on .settings-btn { padding: 4px 9px; font-size: 11px; }
 
@@ -2249,9 +2258,9 @@
     }
 
     #splash .splash-tap-keys .splash-key {
-      width: 30px;
-      height: 44px;
-      font-size: 13px;
+      width: 42px;
+      height: 62px;
+      font-size: 17px;
       transition: transform 0.1s;
     }
 
@@ -3448,7 +3457,7 @@
 
 <div id="splash">
   <div class="splash-title">
-    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.35em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:88px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.82em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:88px;height:66px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
+    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.85em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px;margin-top:46px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:108px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.92em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:108px;height:81px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
         <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
         <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
@@ -3490,37 +3499,38 @@
 <!-- HEADER -->
 <header>
   <div class="logo">
-    <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <!-- piano body -->
-      <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a" stroke="#3a2a2a" stroke-width="0.5"/>
-      <!-- 7 white keys (C–B), 4 wide each, packed left-to-right inside body -->
-      <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
-      <!-- rainbow color band across the white keys (7 colours, same widths) -->
-      <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
-      <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
-      <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
-      <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
-      <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
-      <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
-      <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
-      <!-- 5 black keys: C# D# (group of 2) gap F# G# A# (group of 3) gap.
-           Each black key sits over the gap between two whites. Keys 4 wide
-           with ~0.2 gap = pitch 3.9. Black keys are 2.2 wide, centred on gaps. -->
-      <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
-      <!-- top stripe -->
-      <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
-    </svg>
-    <span class="logo-text">Arthur's </span><span class="logo-piano">Piano</span>
+    <span class="logo-text">Arthur's</span>
+    <span class="logo-piano-wrap">
+      <span class="logo-piano">Piano</span>
+      <svg class="logo-icon" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="margin-top:2px;">
+        <!-- piano body -->
+        <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a" stroke="#3a2a2a" stroke-width="0.5"/>
+        <!-- 7 white keys (C–B), 4 wide each, packed left-to-right inside body -->
+        <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
+        <!-- rainbow color band across the white keys (7 colours, same widths) -->
+        <rect x="2.5"  y="9" width="3.7" height="3" fill="#e63946"/>
+        <rect x="6.4"  y="9" width="3.7" height="3" fill="#ff9800"/>
+        <rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/>
+        <rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/>
+        <rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/>
+        <rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/>
+        <rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/>
+        <!-- 5 black keys -->
+        <rect x="5.2"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="9.1"  y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/>
+        <!-- top stripe -->
+        <rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/>
+      </svg>
+    </span>
   </div>
   <div class="controls">
     <div class="mode-toggle">
@@ -3710,17 +3720,6 @@
         </label>
       </div>
 
-      <div class="setting-row is-sub-substep" id="lyricsColorRow" style="display:none">
-        <div class="setting-label">
-          <span class="setting-label-icon icon-lyriccolors">🎨</span>
-          Colored Lyrics
-
-        </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" />
-          <span class="slider"></span>
-        </label>
-      </div>
 
       <div class="setting-row is-substep" id="selfTempoRow" style="display:none">
         <div class="setting-label">
@@ -3963,6 +3962,17 @@
           </div>
           <div class="octave-range-display" id="octaveRangeDisplay">Showing octaves 2 – 6</div>
         </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">
+          <span class="setting-label-icon icon-lyriccolors">🎨</span>
+          Colored Lyrics
+
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" />
+          <span class="slider"></span>
+        </label>
       </div>
       <div class="setting-row">
         <div class="setting-label">
@@ -5976,7 +5986,7 @@ function loadLyricsSetting() {
   } catch(e) {}
   try {
     const v = localStorage.getItem('pianoLyricsColored');
-    if (v === '1') {
+    if (v !== '0') {
       lyricsColored = true;
       const cb = document.getElementById('lyricsColorMode');
       if (cb) cb.checked = true;
@@ -5985,7 +5995,7 @@ function loadLyricsSetting() {
   } catch(e) {}
   try {
     const v = localStorage.getItem('pianoLyricsCrayon');
-    if (v === '1') {
+    if (v !== '0') {
       lyricsCrayon = true;
       const cb = document.getElementById('lyricsCrayonMode');
       if (cb) cb.checked = true;
@@ -6872,6 +6882,10 @@ const SONGS = [
       {n:'E',o:5,k:'E',d:2},{n:'E',o:5,k:'E',d:1},{n:'D',o:5,k:'D',d:1},
       {n:'C',o:5,k:'C',d:2},{n:'A',o:4,k:'A',d:1},{n:'A',o:4,k:'A',d:1},
       {n:'F',o:4,k:'F',d:2},{n:'C',o:4,k:'C',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:5,k:'C',d:0.5},{n:'C',o:5,k:'C',d:1},{n:'C',o:5,k:'C',d:1},{n:'D',o:5,k:'D',d:1},
+      {n:'E',o:5,k:'E',d:2},{n:'E',o:5,k:'E',d:1},{n:'D',o:5,k:'D',d:1},
+      {n:'C',o:5,k:'C',d:2},{n:'A',o:4,k:'A',d:1},{n:'A',o:4,k:'A',d:1},
+      {n:'G',o:4,k:'G',d:2},{n:'G',o:4,k:'G',d:2},
     ]
   },
   {
@@ -7742,7 +7756,8 @@ const SONG_LYRICS = {
     'you','are','my','sun','shine','my','on','ly',
     'sun','shine','you','make','me','hap','py','when',
     'skies','are','grey','youll','nev','er','know','dear',
-    'how','you'
+    'how','much','I','love','you','please','dont','take',
+    'my','sun','shine','a','way','',
   ],
 
   // 28 notes
@@ -8115,9 +8130,7 @@ function toggleLyricsCrayon() {
 }
 
 function syncLyricsColorVisibility() {
-  const row = document.getElementById('lyricsColorRow');
-  const show = songSheetVisible && showLyrics;
-  if (row) row.style.display = show ? '' : 'none';
+  // Colored Lyrics setting is now in Advanced — always visible, no sync needed.
 }
 
 function toggleLyrics() {
