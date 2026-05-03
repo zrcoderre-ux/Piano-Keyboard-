@@ -359,6 +359,35 @@
     .fullscreen-btn { background: rgba(156,39,176,0.18) !important; border: 1px solid rgba(156,39,176,0.45) !important; }
     .fullscreen-btn:hover { background: rgba(156,39,176,0.30) !important; border-color: rgba(156,39,176,0.7) !important; }
 
+    /* ── INSTALL PWA BUTTON ──
+       Only shown on touch/mobile devices (where hover:hover doesn't apply)
+       and only when Chrome fires beforeinstallprompt. Hidden when already
+       running as a standalone PWA (no URL bar = already installed). */
+    .install-btn {
+      display: none; /* shown by JS when prompt is available */
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(33,150,243,0.18);
+      border: 1px solid rgba(33,150,243,0.45);
+      border-radius: 999px;
+      color: #1565c0;
+      cursor: pointer;
+      letter-spacing: 0.01em;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .install-btn:hover { background: rgba(33,150,243,0.30); border-color: rgba(33,150,243,0.7); }
+    .install-btn:active { transform: scale(0.97); }
+    /* Never show if already running standalone */
+    @media (display-mode: standalone) {
+      .install-btn { display: none !important; }
+    }
+
     /* ── SETTINGS PANEL ── */
     #settingsPanel {
       display: none;
@@ -961,6 +990,20 @@
     /* Landscape info bar slots — hidden by default, shown by landscape media query */
     #infobarLandscapeSelectSlot,
     #infobarLandscapeTempoSlot { display: none; }
+
+    /* Song select always moves to info bar when song book is open — all devices */
+    body.song-sheet-open #infobarLandscapeSelectSlot { display: flex; align-items: center; flex-shrink: 0; gap: 6px; }
+
+    /* Hide the modifier-hint center section when the select has moved into the
+       info bar — they compete for the same middle slot. */
+    body.song-sheet-open #modHint { display: none; }
+
+    /* On non-landscape screens the select sits in the info bar at full size */
+    #infobarLandscapeSelectSlot .song-select {
+      font-size: 12px;
+      padding: 6px 12px;
+      max-width: 220px;
+    }
 
     /* Multi-note display separator — keeps the double-space gap between
        chord letters from collapsing under default white-space rules. */
@@ -3809,6 +3852,14 @@
     </div>
     <button class="settings-btn settings-btn-settings" onclick="openSettings()">⚙️ <span>Settings</span></button>
     <button class="settings-btn settings-btn-help" onclick="openHelp()">? <span>Help</span></button>
+    <button class="install-btn" id="installBtn" title="Install app — opens without browser bar">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      <span>Install App</span>
+    </button>
     <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen (F)">
       <svg id="fsIconEnter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6a1b9a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
@@ -6614,9 +6665,11 @@ function syncLandscapeTopBar() {
   // touch-compact-header: disabled — info bar is now always used in landscape
   document.body.classList.remove('touch-compact-header');
 
-  // ── Whether to activate the landscape info-bar layout ──
-  // Any mode, any combination of song book / sheet music open in landscape.
-  const wantsLandscapeInfoBar = isLandscape && sheetOpen;
+  // ── Whether to activate the info-bar select slot ──
+  // Song select moves into the info bar whenever the song book is open,
+  // on ALL devices (not just mobile landscape). Tempo controls only move
+  // on mobile landscape where vertical space is critical.
+  const wantsLandscapeInfoBar = sheetOpen;
 
   // Core DOM references
   const infoBar       = document.querySelector('.info-bar');
@@ -7445,91 +7498,91 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 2: "he played two, knick-knack on my shoe"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 3: "he played three, knick-knack on my knee"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 4: "he played four, knick-knack on my door"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 5: "he played five, knick-knack on my hive"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 6: "he played six, knick-knack on my sticks"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 7: "he played seven, knick-knack up in heaven"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 8: "he played eight, knick-knack on my gate"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 9: "he played nine, knick-knack on my spine"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 10: "he played ten, knick-knack once again"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},
-      {n:'G',o:4,k:'G',d:2},{n:'C',o:5,k:'C',d:2},
-      {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
-      {n:'F',o:4,k:'F',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:1},{n:'C',o:4,k:'C',d:2},
+      {n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:1},
+      {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:1},{n:'G',o:4,k:'G',d:1},
+      {n:'G',o:4,k:'G',d:1},{n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},
+      {n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
     ]
   },
   // ─────────────────────────────────────────────────────────────────
@@ -8833,6 +8886,26 @@ function isSongMultiOctave(s) {
   return s._mo;
 }
 
+// Returns true only if the song contains a chord where simultaneous notes
+// span more than one octave. These songs genuinely need an expanded keyboard
+// because you can't play both notes in a single-octave view.
+// Sequential multi-octave songs (different octaves played one at a time)
+// return false here — the auto-octave-shift handles those instead.
+function isSongSimultaneousMultiOctave(s) {
+  if (s._smo != null) return s._smo;
+  s._smo = false;
+  for (const n of s.notes) {
+    if (isRestEntry(n) || !n.chord) continue;
+    let lo = Infinity, hi = -Infinity;
+    for (const e of n.chord) {
+      if (e.o < lo) lo = e.o;
+      if (e.o > hi) hi = e.o;
+    }
+    if (hi - lo >= 1) { s._smo = true; break; }
+  }
+  return s._smo;
+}
+
 // Returns { minOct, maxOct, numOcts } for a song's full note range.
 // Used to set up expanded keyboard when auto-expanding for a multi-octave song.
 function getSongOctaveRange(s) {
@@ -8848,10 +8921,12 @@ function getSongOctaveRange(s) {
   return { minOct: lo, maxOct: hi, numOcts: hi - lo + 1 };
 }
 
-// Multi-octave songs are hidden from the picker unless the player has
-// an expanded view — or is in Piano mode where we auto-expand on load.
+// Songs that require simultaneous notes across octaves need an expanded
+// keyboard view or Piano mode (which auto-expands). Songs that only move
+// between octaves sequentially are always pickable — the auto-octave-shift
+// handles them in any mode.
 function songIsPickable(s) {
-  if (!isSongMultiOctave(s)) return true;
+  if (!isSongSimultaneousMultiOctave(s)) return true;
   if (mode === 'piano') return true; // auto-expands to cover the song's range on load
   return expandedKeyboard;
 }
@@ -8961,6 +9036,7 @@ function loadSong(id) {
   currentNoteIdx = 0;
   currentRepeat = 1; // reset repeat progress for the new song
   refreshPendingChord();
+  autoShiftOctaveToCurrentNote();
   practiceResetCounters();
   document.getElementById('songTitle').textContent = currentSong.title;
   const infobarTitle = document.getElementById('infobarSongTitle');
@@ -9080,7 +9156,9 @@ function applyPianoSingleOctaveIfApplicable() {
 // starts at the right place. Reverts when the song changes to a single-
 // octave one, or when leaving Piano mode.
 function applyPianoAutoExpandIfApplicable() {
-  const wantsExpand = mode === 'piano' && currentSong && isSongMultiOctave(currentSong);
+  // Only auto-expand for songs that need simultaneous notes from different
+  // octaves. Sequential multi-octave songs auto-shift the octave instead.
+  const wantsExpand = mode === 'piano' && currentSong && isSongSimultaneousMultiOctave(currentSong);
 
   if (wantsExpand) {
     const { minOct, maxOct, numOcts } = getSongOctaveRange(currentSong);
@@ -9427,6 +9505,30 @@ function advanceSongNoteOnRelease(playedNote) {
   finalizeAdvance();
 }
 
+// Auto-shift the active octave to match the next note in the song.
+// Called after currentNoteIdx has advanced. Only fires in non-expanded
+// single-octave views (keyboard/touch mode, or piano mode single-octave).
+// Silently moves the octave display so the next note is always reachable
+// without the player having to tap +/− manually.
+function autoShiftOctaveToCurrentNote() {
+  if (!currentSong) return;
+  // Don't shift when expanded keyboard is showing — the player can see all
+  // octaves simultaneously and shifting would be disorienting.
+  if (expandedKeyboard) return;
+  const cur = currentSong.notes[currentNoteIdx];
+  if (!cur || isRestEntry(cur)) return;
+  const entries = noteEntries(cur);
+  if (!entries.length) return;
+  // For a chord, use the lowest octave (most of the notes will be there).
+  const targetOct = Math.min(...entries.map(e => e.o));
+  if (targetOct !== octave) {
+    octave = targetOct;
+    document.getElementById('octaveNum').textContent = octave;
+    updateOctaveColor();
+    buildPiano();
+  }
+}
+
 // Common tail: advance currentNoteIdx, handle wrap-around for repeat
 // loops, fire completion celebration if at the end. Called by both
 // the press-driven (tempo-mode) and release-driven (self-tempo) paths
@@ -9446,6 +9548,7 @@ function finalizeAdvance() {
   if (currentNoteIdx === 0 && currentRepeat === 1 && !selfTempoMode) {
     currentNoteIdx++;
     refreshPendingChord();
+    autoShiftOctaveToCurrentNote();
     renderNoteStrip();
     startTempo();
     return;
@@ -9458,6 +9561,7 @@ function finalizeAdvance() {
     currentNoteIdx++;
   }
   refreshPendingChord();
+  autoShiftOctaveToCurrentNote();
 
   if (currentNoteIdx >= currentSong.notes.length) {
     // Reached the end of one play-through. If the user dialed in a multi-
@@ -10439,6 +10543,40 @@ document.addEventListener('keydown', function(e) {
     toggleFullscreen();
   }
 });
+
+// ── PWA INSTALL PROMPT ──────────────────────────────
+// Capture the beforeinstallprompt event so we can trigger it from our
+// own button instead of relying on Chrome's automatic banner (which
+// appears inconsistently). The button is shown only when the prompt is
+// available and hidden once the app is installed or already running
+// standalone.
+let _installPrompt = null;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Prevent Chrome from showing its own mini-infobar
+  e.preventDefault();
+  _installPrompt = e;
+  // Show our button
+  if (installBtn) installBtn.style.display = 'flex';
+});
+
+if (installBtn) {
+  installBtn.addEventListener('click', async () => {
+    if (!_installPrompt) return;
+    _installPrompt.prompt();
+    const { outcome } = await _installPrompt.userChoice;
+    // Whether accepted or dismissed, we can only use the prompt once
+    _installPrompt = null;
+    installBtn.style.display = 'none';
+  });
+}
+
+// If already running as standalone PWA, ensure button stays hidden
+if (window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true) {
+  if (installBtn) installBtn.style.display = 'none';
+}
 
 // Click outside to close modals
 document.getElementById('settingsPanel').addEventListener('click', function(e) {
