@@ -23,6 +23,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&family=Playfair+Display:wght@700&family=Caveat:wght@600;700&family=Fredoka+One&family=Boogaloo&family=Lilita+One&family=Titan+One&family=Chewy&family=Short+Stack&family=Gochi+Hand&family=Bubblegum+Sans&family=Indie+Flower&family=Gloria+Hallelujah&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1952,6 +1953,13 @@
       body.song-sheet-open .piano-area { padding-top: 2px; }
       body.sheet-music-on.song-sheet-open .piano-area { padding-top: 0; }
 
+      /* In landscape the tempo controls moved into the info bar, so hide
+         the now-empty tempo-bar shell and progress bar inside #songSheet.
+         This frees the vertical space for the piano/keyboard below. */
+      body.song-sheet-open .tempo-bar,
+      body.song-sheet-open .song-progress,
+      body.song-sheet-open .song-complete { display: none; }
+
       /* ── TOUCH MODE + SONG BOOK: compact song sheet so QWERTY fits ──
          Piano keys are hidden in touch+landscape (QWERTY is input source).
          The QWERTY pad competes for vertical space with the song book, so
@@ -2232,6 +2240,8 @@
       justify-content: center;
       gap: 24px;
       cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s ease;
     }
 
     /* Inner column: sized to the title, so tap-keys can never overflow it */
@@ -2934,7 +2944,7 @@
       top: -22px;
       left: 50%;
       transform: translateX(-50%);
-      font-family: 'Nunito', 'Varela Round', 'Comic Neue', 'Inter', sans-serif;
+      font-family: 'Short Stack', cursive;
       font-size: 13px;
       font-weight: 700;
       color: var(--text-dim);
@@ -2972,7 +2982,7 @@
        hand-written crayon look. Only accent-colored elements get the
        treatment — black/dark text stays clean for readability. */
     @font-face {
-      font-family: 'Nunito';
+      font-family: 'Short Stack', cursive;
     }
 
     /* Helper — shared crayon font stack */
@@ -2998,7 +3008,7 @@
       font-family: 'Short Stack', cursive !important;
     }
       filter: none !important;
-      font-family: 'Playfair Display', Georgia, serif;
+      font-family: 'Short Stack', cursive;
     }
     body.lyrics-crayon .logo-icon {
       filter: none !important;
@@ -10248,6 +10258,7 @@ function hideSplash() {
   splashDone = true;
   const splash = document.getElementById('splash');
   if (splash) {
+    splash.style.opacity = '';  // let .hidden transition take over
     splash.classList.add('hidden');
     setTimeout(() => { if (splash.parentNode) splash.remove(); }, 400);
   }
@@ -10255,6 +10266,13 @@ function hideSplash() {
 
 // iOS grants AudioContext gesture trust on touchend and click, NOT touchstart.
 // resume() called from touchstart returns a promise that never resolves on iOS.
+// Reveal splash only after Short Stack font is ready — prevents the
+// Inter→Short Stack flash that would otherwise occur on first load.
+document.fonts.ready.then(() => {
+  const splash = document.getElementById('splash');
+  if (splash && !splash.classList.contains('hidden')) splash.style.opacity = '1';
+});
+
 const splashBtn = document.getElementById('splashBtn');
 splashBtn.addEventListener('touchend', unlockAndStart, { passive: false });
 splashBtn.addEventListener('click', unlockAndStart);
