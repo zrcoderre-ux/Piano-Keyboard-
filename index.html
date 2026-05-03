@@ -1870,14 +1870,14 @@
 
       /* Sheet music in landscape: staff fixed height, flush to top */
       .sheet-music-display { flex: 0 0 auto; padding: 0; margin: 0; }
-      .sheet-music-svg { max-height: 160px; max-width: 720px; height: 160px; width: auto; }
+      .sheet-music-svg { max-height: 190px; max-width: 720px; height: 190px; width: auto; }
 
       /* With song sheet open: same staff size across all modes */
-      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 130px; height: 130px; }
+      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 160px; height: 160px; }
 
       /* Touch: same staff as keyboard/piano */
-      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 160px; height: 160px; }
-      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 130px; height: 130px; }
+      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 190px; height: 190px; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 160px; height: 160px; }
 
       /* Header: shave more padding when sheet music is on to give staff room */
       body.sheet-music-on header { padding: 2px 12px; }
@@ -1901,15 +1901,20 @@
       body.sheet-music-on .piano-area  { padding: 0 8px; }
 
       /* Children must NOT flex-grow — they sit at the top of .piano-area
-         with no extra space between them. */
-      .sheet-music-display { flex: 0 0 auto !important; }
+         with no extra space between them. Zero all vertical padding/margin
+         so no dead air accumulates between the staff and the keys. */
+      .sheet-music-display { flex: 0 0 auto !important; padding: 0 !important; margin: 0 !important; }
       .big-note-display    { flex: 0 0 auto !important; font-size: 28px; padding: 2px 0; }
-      .piano-wrapper       { flex: 0 0 auto !important; padding-bottom: 2px; align-items: flex-start; }
+      .piano-wrapper       { flex: 0 0 auto !important; padding: 0 !important; margin: 0 !important; align-items: flex-start; }
+      /* Reduce the piano frame's top internal padding in landscape — the red
+         accent strip only needs 3px clearance, not 10px. This closes the
+         gap between the staff bottom and the top of the visible keys. */
+      .piano { padding-top: 4px; }
 
-      .piano { max-height: 200px; }
-      body.song-sheet-open .piano           { max-height: 200px; }
-      body.sheet-music-on .piano            { max-height: 170px; }
-      body.sheet-music-on.song-sheet-open .piano { max-height: 150px; }
+      .piano { max-height: 220px; }
+      body.song-sheet-open .piano           { max-height: 220px; }
+      body.sheet-music-on .piano            { max-height: 185px; }
+      body.sheet-music-on.song-sheet-open .piano { max-height: 165px; }
 
       /* Touch mode: hide piano wrapper, collapse piano-area */
       body.mode-touch.song-sheet-open .piano-wrapper,
@@ -1964,11 +1969,11 @@
       /* QWERTY: no top padding — sits immediately below song sheet */
       .qwerty-area { padding: 0 0 4px; flex-shrink: 0; }
       .qwerty-row { gap: 2px; margin-bottom: 2px; }
-      .qkey { width: 28px; height: 32px; border-radius: 5px; }
-      .qkey .qkey-char { font-size: 11px; }
-      .qkey .qkey-note { font-size: 8px; margin-top: 1px; }
-      .qkey.modifier-key { min-width: 32px; padding: 0 4px; }
-      .qkey.modifier-key .qkey-char { font-size: 9px; }
+      .qkey { width: 32px; height: 38px; border-radius: 5px; }
+      .qkey .qkey-char { font-size: 12px; }
+      .qkey .qkey-note { font-size: 9px; margin-top: 1px; }
+      .qkey.modifier-key { min-width: 38px; padding: 0 4px; }
+      .qkey.modifier-key .qkey-char { font-size: 10px; }
 
       /* Song sheet: single-line strip, landscape-optimised. */
       #songSheet { padding: 3px 8px; }
@@ -2002,8 +2007,8 @@
         display: none;
       }
       body.self-tempo-on.sheet-music-on.song-sheet-open .sheet-music-svg {
-        max-height: 280px;
-        height: 280px;
+        max-height: 300px;
+        height: 300px;
       }
 
       /* The keyboard shortcut hint (Shift=sharp, Tab=Oct- etc.) at the
