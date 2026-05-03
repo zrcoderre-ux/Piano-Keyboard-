@@ -1935,8 +1935,11 @@
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
       body.mode-touch .piano-area { flex: 0 0 0px !important; padding: 0 !important; min-height: 0; overflow: hidden; }
 
-      /* qwerty-area must never shrink — every row including spacebar must show */
-      .qwerty-area { flex-shrink: 0 !important; }
+      /* qwerty-area: pin to the bottom of the body flex column in touch landscape.
+         margin-top:auto consumes all remaining space above it (including the
+         collapsed piano-area) so the spacebar always sits at the screen bottom.
+         flex-shrink:0 prevents any row from being squashed out of view. */
+      body.mode-touch .qwerty-area { margin-top: auto !important; flex-shrink: 0 !important; padding-bottom: max(4px, env(safe-area-inset-bottom)) !important; }
 
       /* In landscape the tempo controls moved into the info bar, so hide
          the now-empty tempo-bar shell and progress bar inside #songSheet.
@@ -1981,8 +1984,9 @@
         max-width: none;
       }
 
-      /* QWERTY: no top padding — sits immediately below song sheet */
-      .qwerty-area { padding: 0 0 4px; flex-shrink: 0; }
+      /* QWERTY: no top padding — sits immediately below song sheet.
+         touch-mode bottom padding handled separately above. */
+      .qwerty-area { padding: 0; flex-shrink: 0; }
       .qwerty-row { gap: 2px; margin-bottom: 2px; }
       .qkey { width: 32px; height: 38px; border-radius: 5px; }
       .qkey .qkey-char { font-size: 12px; }
