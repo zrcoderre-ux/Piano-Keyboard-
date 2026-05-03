@@ -1893,23 +1893,35 @@
       body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
       body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
-      /* Piano area: fills the remaining body column (flex:1) but stacks its
-         children from the TOP with no internal flex-grow gaps.
-         justify-content:flex-start pins staff→note→keys in sequence. */
-      .piano-area { padding: 0 8px; flex: 1; min-height: 0; justify-content: flex-start; }
+      /* Piano area: flex:1 fills remaining column space. justify-content:flex-end
+         pins the piano wrapper to the BOTTOM of the available space so keys
+         never float at the top with dead space below. */
+      .piano-area {
+        padding: 0 8px;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+      }
       body.song-sheet-open .piano-area { padding: 0 8px; }
       body.sheet-music-on .piano-area  { padding: 0 8px; }
 
-      /* Children must NOT flex-grow — they sit at the top of .piano-area
-         with no extra space between them. */
+      /* sheet-music-display: auto height, zero padding, sits immediately above piano */
       .sheet-music-display { flex: 0 0 auto !important; padding: 0 !important; margin: 0 !important; height: auto !important; }
-      .big-note-display    { flex: 0 0 auto !important; font-size: 28px; padding: 2px 0; }
-      /* piano-wrapper: zero only the vertical padding that creates dead space;
-         keep align-items default (flex-end) so keys stay anchored to the bottom. */
-      .piano-wrapper       { flex: 0 0 auto !important; padding-top: 0 !important; padding-bottom: 0 !important; }
-      /* Reduce the piano frame's top internal padding — the red accent strip
-         only needs ~4px clearance, not 10px. Closes the gap between staff
-         bottom and the first visible key. */
+      /* big-note-display: compact, no flex growth */
+      .big-note-display { flex: 0 0 auto !important; font-size: 28px; padding: 2px 0; }
+      /* piano-wrapper: grows to fill all remaining space above the piano frame,
+         keys align to the bottom so the frame sits at the screen bottom edge. */
+      .piano-wrapper {
+        flex: 1 1 auto !important;
+        padding: 0 !important;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+      }
+      /* Shrink the piano frame's internal top padding — accent strip needs
+         only 4px, not 10px. Removes dead air at top of piano frame. */
       .piano { padding-top: 4px; }
 
       .piano { max-height: 220px; }
@@ -1917,10 +1929,14 @@
       body.sheet-music-on .piano            { max-height: 185px; }
       body.sheet-music-on.song-sheet-open .piano { max-height: 165px; }
 
-      /* Touch mode: hide piano wrapper, collapse piano-area */
+      /* Touch mode: collapse piano-area to zero (QWERTY is the input source).
+         qwerty-area is a body sibling so it fills from the bottom naturally. */
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
-      body.mode-touch .piano-area { flex: 0 0 auto !important; padding: 0; min-height: 0; }
+      body.mode-touch .piano-area { flex: 0 0 0px !important; padding: 0 !important; min-height: 0; overflow: hidden; }
+
+      /* qwerty-area must never shrink — every row including spacebar must show */
+      .qwerty-area { flex-shrink: 0 !important; }
 
       /* In landscape the tempo controls moved into the info bar, so hide
          the now-empty tempo-bar shell and progress bar inside #songSheet.
@@ -1947,9 +1963,7 @@
       body.mode-touch.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
       body.mode-touch.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
       body.mode-touch.song-sheet-open .tempo-val { font-size: 10px; min-width: 40px; }
-      /* Collapse the empty piano-area (piano-wrapper is hidden in touch landscape)
-         so there's no gap between the song book panel and the QWERTY keyboard. */
-      body.mode-touch.song-sheet-open .piano-area { flex: 0 0 auto; padding: 0; min-height: 0; }
+      /* piano-area already collapsed to 0 by the rule above for all touch-mode variants */
       .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
       .key-note { font-size: 12px; }
 
