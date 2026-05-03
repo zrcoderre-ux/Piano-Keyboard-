@@ -1868,18 +1868,16 @@
       body.mode-touch .big-note-display,
       body.song-sheet-open .big-note-display { display: none; }
 
-      /* Sheet music in landscape — fixed height so piano always has room. */
-      .sheet-music-display { flex: 0 0 auto; padding: 0; }
-      .sheet-music-svg { max-height: 200px; max-width: 720px; height: 200px; width: auto; }
+      /* Sheet music in landscape: staff fixed height, flush to top */
+      .sheet-music-display { flex: 0 0 auto; padding: 0; margin: 0; }
+      .sheet-music-svg { max-height: 160px; max-width: 720px; height: 160px; width: auto; }
 
-      /* With song sheet open: staff same size in all modes (keyboard/piano/touch) */
-      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 160px; height: 160px; }
+      /* With song sheet open: same staff size across all modes */
+      body.sheet-music-on.song-sheet-open .sheet-music-svg { max-height: 130px; height: 130px; }
 
-      /* Touch mode: match keyboard/piano staff size exactly */
-      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 200px; height: 200px; }
-      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 160px; height: 160px; }
-      body.sheet-music-on.mode-touch .piano-area { flex: 0 0 auto; padding: 0; }
-      body.sheet-music-on.song-sheet-open.mode-touch .piano-area { flex: 0 0 auto; padding: 0; }
+      /* Touch: same staff as keyboard/piano */
+      body.sheet-music-on.mode-touch .sheet-music-svg { max-height: 160px; height: 160px; }
+      body.sheet-music-on.song-sheet-open.mode-touch .sheet-music-svg { max-height: 130px; height: 130px; }
 
       /* Header: shave more padding when sheet music is on to give staff room */
       body.sheet-music-on header { padding: 2px 12px; }
@@ -1895,21 +1893,28 @@
       body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
       body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
-      /* Piano: max height, minimal padding — give keys as much room as possible */
-      .piano-area { padding: 2px 8px 0; flex: 1; min-height: 0; }
-      .piano-wrapper { padding-bottom: 2px; }
+      /* Piano area: zero padding, tightly stacked column starting from top.
+         flex: 0 0 auto means it only takes what its children need — no
+         leftover space between the staff and the piano keys below it. */
+      .piano-area { padding: 0 8px; flex: 0 0 auto; min-height: 0; justify-content: flex-start; }
+      body.song-sheet-open .piano-area { padding: 0 8px; }
+      body.sheet-music-on .piano-area { padding: 0 8px; }
+
+      /* Piano wrapper: don't flex-grow, pin keys to top of wrapper */
+      .piano-wrapper { flex: 0 0 auto; padding-bottom: 2px; align-items: flex-start; }
+
       .piano { max-height: 200px; }
       body.song-sheet-open .piano { max-height: 200px; }
-      body.sheet-music-on .piano { max-height: 160px; }
-      body.sheet-music-on.song-sheet-open .piano { max-height: 140px; }
+      body.sheet-music-on .piano { max-height: 170px; }
+      body.sheet-music-on.song-sheet-open .piano { max-height: 150px; }
 
-      /* No gap between song sheet and piano area */
-      body.song-sheet-open .piano-area { padding-top: 0; }
-      body.sheet-music-on.song-sheet-open .piano-area { padding-top: 0; }
+      /* big-note-display: don't let it flex-grow and push piano down */
+      .big-note-display { flex: 0 0 auto; padding: 2px 0; font-size: 28px; }
 
-      /* Touch mode: hide piano wrapper (QWERTY is input), collapse piano-area */
+      /* Touch mode: hide piano wrapper, collapse piano-area entirely */
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
+      body.mode-touch .piano-area { flex: 0 0 auto; padding: 0; min-height: 0; }
 
       /* In landscape the tempo controls moved into the info bar, so hide
          the now-empty tempo-bar shell and progress bar inside #songSheet.
