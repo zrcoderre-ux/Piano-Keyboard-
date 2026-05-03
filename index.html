@@ -1893,28 +1893,28 @@
       body.sheet-music-on.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
       body.sheet-music-on.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
 
-      /* Piano area: zero padding, tightly stacked column starting from top.
-         flex: 0 0 auto means it only takes what its children need — no
-         leftover space between the staff and the piano keys below it. */
-      .piano-area { padding: 0 8px; flex: 0 0 auto; min-height: 0; justify-content: flex-start; }
+      /* Piano area: fills the remaining body column (flex:1) but stacks its
+         children from the TOP with no internal flex-grow gaps.
+         justify-content:flex-start pins staff→note→keys in sequence. */
+      .piano-area { padding: 0 8px; flex: 1; min-height: 0; justify-content: flex-start; }
       body.song-sheet-open .piano-area { padding: 0 8px; }
-      body.sheet-music-on .piano-area { padding: 0 8px; }
+      body.sheet-music-on .piano-area  { padding: 0 8px; }
 
-      /* Piano wrapper: don't flex-grow, pin keys to top of wrapper */
-      .piano-wrapper { flex: 0 0 auto; padding-bottom: 2px; align-items: flex-start; }
+      /* Children must NOT flex-grow — they sit at the top of .piano-area
+         with no extra space between them. */
+      .sheet-music-display { flex: 0 0 auto !important; }
+      .big-note-display    { flex: 0 0 auto !important; font-size: 28px; padding: 2px 0; }
+      .piano-wrapper       { flex: 0 0 auto !important; padding-bottom: 2px; align-items: flex-start; }
 
       .piano { max-height: 200px; }
-      body.song-sheet-open .piano { max-height: 200px; }
-      body.sheet-music-on .piano { max-height: 170px; }
+      body.song-sheet-open .piano           { max-height: 200px; }
+      body.sheet-music-on .piano            { max-height: 170px; }
       body.sheet-music-on.song-sheet-open .piano { max-height: 150px; }
 
-      /* big-note-display: don't let it flex-grow and push piano down */
-      .big-note-display { flex: 0 0 auto; padding: 2px 0; font-size: 28px; }
-
-      /* Touch mode: hide piano wrapper, collapse piano-area entirely */
+      /* Touch mode: hide piano wrapper, collapse piano-area */
       body.mode-touch.song-sheet-open .piano-wrapper,
       body.mode-touch.sheet-music-on .piano-wrapper { display: none; }
-      body.mode-touch .piano-area { flex: 0 0 auto; padding: 0; min-height: 0; }
+      body.mode-touch .piano-area { flex: 0 0 auto !important; padding: 0; min-height: 0; }
 
       /* In landscape the tempo controls moved into the info bar, so hide
          the now-empty tempo-bar shell and progress bar inside #songSheet.
