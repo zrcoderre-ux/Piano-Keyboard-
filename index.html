@@ -1017,7 +1017,7 @@
       display: flex;
       align-items: center;
       flex: 1;
-      min-width: 120px;
+      min-width: 0;
       padding: 0 8px;
     }
     body.song-sheet-open #infobarSelectSlot .song-select { width: 100%; }
@@ -1776,8 +1776,8 @@
       body.song-sheet-open .song-tempo-hint:not(.hidden) { padding: 5px 8px; font-size: 12px; }
       body.song-sheet-open .infobar-song-title { display: none; }
 
-      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; }
-      #infobarSelectSlot .song-select { font-size: 12px; padding: 4px 6px; }
+      body.song-sheet-open #infobarSelectSlot { padding: 0 2px; flex: 1; min-width: 0; }
+      #infobarSelectSlot .song-select { font-size: 12px; padding: 4px 6px; width: 100%; max-width: none; }
 
       /* No Italian tempo buttons on portrait */
       #infobarPortraitTempoSlot #tempoRangeGroup,
