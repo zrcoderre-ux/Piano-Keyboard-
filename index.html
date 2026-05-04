@@ -5072,6 +5072,10 @@ function triggerNoteByPianoKey(note, oct) {
   showNoteDisplay(id, labels.full, labels.short, color);
   trackActiveSheetNote(id, note, oct, color);
   pulseViz(color);
+  // Detect wrong / early notes for staff display before advancing
+  if (currentSong && songSheetVisible && pendingChordNotes.size > 0 && !pendingChordNotes.has(note)) {
+    recordWrongNote(id, note, oct, color);
+  }
   advanceSongNote(note);
 }
 
@@ -5085,6 +5089,8 @@ function releaseNoteByPianoKey(note, oct) {
   advanceSongNoteOnRelease(note);
   // Practice mode: record key release for duration scoring (tempo mode).
   practiceRecordRelease();
+  // Clear any wrong-note marker for this id
+  clearWrongNote(id);
   // Remove from display and sheet tracking
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
@@ -5277,6 +5283,10 @@ function handleNoteOn(letter, isSharp, isFlat) {
   showNoteDisplay(id, labels.full, labels.short, color);
   trackActiveSheetNote(id, note, octave, color);
   pulseViz(color);
+  // Detect wrong / early notes for staff display before advancing
+  if (currentSong && songSheetVisible && pendingChordNotes.size > 0 && !pendingChordNotes.has(note)) {
+    recordWrongNote(id, note, octave, color);
+  }
   advanceSongNote(note);
   pressedKeys.add(letter + (isSharp?'#':'') + (isFlat?'b':''));
 }
@@ -5288,6 +5298,8 @@ function handleNoteOff(letter, isSharp, isFlat) {
   stopNote(id);
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
+  // Clear any wrong-note marker for this id
+  clearWrongNote(id);
   highlightPianoKey(note, octave, false);
   highlightQKey(letter, false, null);
   // Self-tempo: keyup is the advance trigger.
@@ -6065,6 +6077,22 @@ function renderSheetMusicSong(svg) {
       }
     }
   }
+
+  // ── Wrong / early note overlay ──────────────────────────────────────────
+  // Notes played incorrectly or early are drawn at the current-note X slot
+  // so the player can see exactly what pitch they played. They look like
+  // ordinary notes and fade out over WRONG_NOTE_TTL ms.
+  if (wrongNoteEntries.size > 0) {
+    const now = performance.now();
+    const wrongX = slotX(curIdx);
+    wrongNoteEntries.forEach(entry => {
+      const age = now - entry.ts;
+      const opacity = Math.max(0, 1 - age / WRONG_NOTE_TTL);
+      if (opacity <= 0) return;
+      const color = noteColors[entry.note] || '#e63946';
+      renderSingleNote(svg, entry.note, entry.oct, color, wrongX, { opacity });
+    });
+  }
 }
 
 function updateModHint() {
@@ -6524,6 +6552,8 @@ function practiceShowResult() {
     practiceNotesTotal = practiceCountTotal();
     currentNoteIdx = 0;
     currentRepeat = 1;
+    wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
+    wrongNoteEntries.clear();
     refreshPendingChord();
     updateRepeatBtn();
     renderNoteStrip();
@@ -6538,6 +6568,8 @@ function practiceCloseResult() {
   practiceNotesTotal = practiceCountTotal();
   currentNoteIdx = 0;
   currentRepeat = 1;
+  wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
+  wrongNoteEntries.clear();
   refreshPendingChord();
   updateRepeatBtn();
   renderNoteStrip();
@@ -9035,6 +9067,9 @@ function loadSong(id) {
   }
   currentNoteIdx = 0;
   currentRepeat = 1; // reset repeat progress for the new song
+  // Clear any wrong-note overlays from a previous song
+  wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
+  wrongNoteEntries.clear();
   refreshPendingChord();
   autoShiftOctaveToCurrentNote();
   practiceResetCounters();
@@ -9413,6 +9448,33 @@ let pendingChordNotes = new Set();
 // Self-tempo only: notes the user has correctly pressed and is currently
 // holding down. Cleared on release. Not used outside self-tempo mode.
 let armedChordNotes = new Set();
+
+// Wrong / early note tracking for sheet music display.
+// Each entry: { note, oct, color, ts } — ts is performance.now() at press.
+// Entries are removed when the key is released or after WRONG_NOTE_TTL ms.
+const WRONG_NOTE_TTL = 1800; // ms to show a wrong note on staff before it fades
+const wrongNoteEntries = new Map(); // id → { note, oct, color, ts, timer }
+
+function recordWrongNote(id, note, oct, color) {
+  if (!currentSong || !songSheetVisible) return;
+  // Clear any existing timer for this id
+  const existing = wrongNoteEntries.get(id);
+  if (existing && existing.timer) clearTimeout(existing.timer);
+  const timer = setTimeout(() => {
+    wrongNoteEntries.delete(id);
+    if (sheetMusicEnabled) renderSheetMusic();
+  }, WRONG_NOTE_TTL);
+  wrongNoteEntries.set(id, { note, oct, color, ts: performance.now(), timer });
+  if (sheetMusicEnabled) renderSheetMusic();
+}
+
+function clearWrongNote(id) {
+  const entry = wrongNoteEntries.get(id);
+  if (!entry) return;
+  if (entry.timer) clearTimeout(entry.timer);
+  wrongNoteEntries.delete(id);
+  if (sheetMusicEnabled) renderSheetMusic();
+}
 
 function refreshPendingChord() {
   pendingChordNotes.clear();
