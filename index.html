@@ -1020,7 +1020,7 @@
       min-width: 0;
       padding: 0 8px;
     }
-    body.song-sheet-open #infobarSelectSlot .song-select { width: 100%; }
+    body.song-sheet-open #infobarSelectSlot .song-select { min-width: 80px; }
     /* Octave stays right of row 1 — margin-left:auto pushes it right */
     body.song-sheet-open .infobar-right { margin-left: 0; }
     /* Tempo hint: gap before octave */
@@ -1076,7 +1076,7 @@
     body.sheet-music-on.song-sheet-open .note-strip-wrapper { display: none; }
 
     /* Song select always moves to info bar when song book is open — all devices */
-    body.song-sheet-open #infobarLandscapeSelectSlot { display: flex; align-items: center; flex-shrink: 0; gap: 6px; }
+    body.song-sheet-open #infobarLandscapeSelectSlot { display: flex; align-items: center; flex-shrink: 0; flex-grow: 0; gap: 6px; }
 
     /* Hide the modifier-hint center section when the select has moved into the
        info bar — they compete for the same middle slot. */
@@ -1086,7 +1086,6 @@
     #infobarLandscapeSelectSlot .song-select {
       font-size: 12px;
       padding: 6px 12px;
-      max-width: 220px;
     }
 
     /* Multi-note display separator — keeps the double-space gap between
@@ -1773,11 +1772,26 @@
       .song-tempo-hint .sth-icon,
       .song-tempo-hint .sth-label { display: none; }
       .song-tempo-hint .sth-bpm { display: inline; }
-      body.song-sheet-open .song-tempo-hint:not(.hidden) { padding: 5px 8px; font-size: 12px; }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) {
+        padding: 5px 8px;
+        font-size: 12px;
+        flex-shrink: 0;
+        white-space: nowrap;
+      }
       body.song-sheet-open .infobar-song-title { display: none; }
+      /* Keep tempo hint always on same row as the select — never wrap it down */
+      body.song-sheet-open .infobar-right { flex-shrink: 0; }
+      body.song-sheet-open #songTempoHint { flex-shrink: 0; }
 
-      body.song-sheet-open #infobarSelectSlot { padding: 0 2px; flex: 1; min-width: 0; }
-      #infobarSelectSlot .song-select { font-size: 12px; padding: 4px 6px; width: 100%; max-width: none; }
+      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; }
+      #infobarSelectSlot .song-select {
+        font-size: 12px;
+        padding: 4px 6px;
+        /* JS sets inline width dynamically to fit selected text.
+           max-width ensures it never overflows to push tempo hint off. */
+        max-width: 100%;
+        min-width: 80px;
+      }
 
       /* No Italian tempo buttons on portrait */
       #infobarPortraitTempoSlot #tempoRangeGroup,
@@ -1902,7 +1916,7 @@
       #songSheet { padding: 6px 10px; }
       .song-header { margin-bottom: 5px; }
       .song-title { font-size: 11px; }
-      .song-select { font-size: 10px; max-width: 130px; }
+      .song-select { font-size: 10px; }
       .strip-note { width: 40px; height: 52px; border-radius: 8px; }
       .strip-note .sn-note { font-size: 13px; }
       .strip-note .sn-oct { font-size: 9px; }
@@ -1978,7 +1992,7 @@
 
       /* Compact select */
       #infobarLandscapeSelectSlot .song-select {
-        font-size: 11px; padding: 3px 5px; max-width: 130px;
+        font-size: 11px; padding: 3px 5px; min-width: 60px;
       }
       /* Scale tempo buttons to fit the slim info bar */
       #infobarLandscapeTempoSlot .tempo-btn {
@@ -2966,7 +2980,7 @@
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
-      max-width: 180px;
+      min-width: 80px;
       transition: background 0.2s, border-color 0.2s;
     }
 
@@ -6766,6 +6780,8 @@ function syncLandscapeTopBar() {
     // Landscape or songbook closed: octave stays in infobar-right
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
   }
+  // Resize the select to fit the current song title in whichever slot is active
+  requestAnimationFrame(fitSongSelectToContent);
 }
 
 
@@ -7460,7 +7476,7 @@ const SONGS = [
   },
   {
     id: 'wheels_bus',
-    title: '🚌 Wheels on the Bus',
+    title: '🚌 The Wheels on the Bus',
     category: 'nursery',
     notes: [
       {n:'C',o:4,k:'C',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},
@@ -7476,7 +7492,7 @@ const SONGS = [
   },
   {
     id: 'happy_clap',
-    title: '😊 If You\'re Happy',
+    title: '😊 If You\'re Happy and You Know It',
     category: 'nursery',
     notes: [
       {n:'C',o:4,k:'C',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},{n:'F',o:4,k:'F',d:1},
@@ -7771,7 +7787,7 @@ const SONGS = [
   },
   {
     id: 'mulberry',
-    title: '🌳 Mulberry Bush',
+    title: '🌳 Here We Go Round the Mulberry Bush',
     category: 'folk',
     notes: [
       {n:'D',o:4,k:'D',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'A',o:4,k:'A',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'F',o:4,k:'F',d:0.5},
@@ -7866,7 +7882,7 @@ const SONGS = [
   },
   {
     id: 'rudolph',
-    title: '🦌 Rudolph (We Wish)',
+    title: '🦌 Rudolph the Red-Nosed Reindeer',
     category: 'holiday',
     // Public-domain holiday tune; uses the "We Wish" feel for kid familiarity.
     notes: [
@@ -8862,6 +8878,8 @@ function toggleSongSheet() {
   // the sheet closes (and re-apply when it opens with such a song).
   applyPianoSingleOctaveIfApplicable();
   syncInfoBarBtns();
+  // Resize song select to fit the current song title now that the select is visible.
+  requestAnimationFrame(fitSongSelectToContent);
 }
 
 function hideSongSheet() {
@@ -8985,6 +9003,92 @@ function getSongColor(songId) {
 
 function applySongSelectColor(songId) {
   // Select always stays white — no dynamic color override needed
+  fitSongSelectToContent();
+}
+
+// Dynamically resize the song <select> to fit its selected option's text,
+// so short titles don't leave a big blank gap on mobile. Only active on
+// narrow portrait screens where the select fills the info bar row.
+function fitSongSelectToContent() {
+  const isLandscape = window.matchMedia('(max-width: 926px) and (orientation: landscape)').matches;
+  const isNarrowPortrait = window.innerWidth <= 430 && !isLandscape;
+  const sheetOpen = document.body.classList.contains('song-sheet-open');
+
+  const sel = document.getElementById('songSelect');
+  if (!sel) return;
+
+  if (!sheetOpen) {
+    sel.style.width = '';
+    return;
+  }
+
+  const selectedText = sel.options[sel.selectedIndex]?.text || '';
+  if (!selectedText) return;
+
+  // Font/padding differs by context:
+  // - Mobile landscape: 11px / weight 400 / hpad 10px / arrow 22px
+  // - Mobile portrait infobarSelectSlot: 12px / weight 500 / hpad 12px / arrow 26px
+  // - Desktop/tablet infobarLandscapeSelectSlot: 12px / weight 500 / hpad 28px / arrow 28px
+  let fontSize, fontWeight, hPad, arrowW;
+  if (isLandscape) {
+    fontSize = 11; fontWeight = '400'; hPad = 10; arrowW = 22;
+  } else if (isNarrowPortrait) {
+    fontSize = 12; fontWeight = '500'; hPad = 12; arrowW = 26;
+  } else {
+    // Desktop/tablet: padding: 7px 12px -> 24px horizontal
+    fontSize = 12; fontWeight = '500'; hPad = 24; arrowW = 28;
+  }
+
+  const span = document.createElement('span');
+  span.style.cssText = `
+    position: absolute;
+    visibility: hidden;
+    white-space: nowrap;
+    font-family: Inter, -apple-system, sans-serif;
+    font-size: ${fontSize}px;
+    font-weight: ${fontWeight};
+    padding: 0;
+    letter-spacing: normal;
+  `;
+  span.textContent = selectedText;
+  document.body.appendChild(span);
+  const textW = span.getBoundingClientRect().width;
+  document.body.removeChild(span);
+
+  const targetW = Math.ceil(textW) + hPad + arrowW;
+
+  // Compute available width by measuring the info bar and subtracting siblings.
+  // This works for all contexts — we never rely on the slot's own width since
+  // it has no intrinsic size before JS sets it.
+  let maxW;
+  if (isNarrowPortrait) {
+    // Portrait: slot is flex:1 so its measured width IS the available space
+    const slot = document.getElementById('infobarSelectSlot');
+    maxW = slot ? slot.getBoundingClientRect().width : window.innerWidth * 0.5;
+  } else {
+    // Landscape mobile + desktop/tablet: subtract sibling widths from info bar
+    const infoBar = document.querySelector('.info-bar');
+    const infoBarW = infoBar ? infoBar.getBoundingClientRect().width : window.innerWidth;
+    let siblingsW = 0;
+    const siblingSelectors = [
+      '.infobar-left',
+      '#infobarLandscapeTempoSlot',
+      '#infobarRight',
+      '#songTempoHint',
+      '#infobarPortraitTempoSlot',
+    ];
+    siblingSelectors.forEach(sel => {
+      const el = document.querySelector(sel);
+      if (el && el.offsetParent !== null && el.id !== 'songSelect') {
+        siblingsW += el.getBoundingClientRect().width;
+      }
+    });
+    // Info bar padding (10px each side landscape, 20px desktop) + gaps
+    const barPad = isLandscape ? 24 : 44;
+    maxW = Math.max(80, infoBarW - siblingsW - barPad);
+  }
+
+  sel.style.width = Math.min(targetW, maxW) + 'px';
 }
 
 function populateSongSelect() {
@@ -10448,7 +10552,7 @@ document.addEventListener('touchend', e => {
 // Rebuild piano on resize / rotation. iOS sometimes fires resize before the
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
-window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); });
+window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); fitSongSelectToContent(); });
 window.addEventListener('orientationchange', () => {
   buildPiano();
   schedulePositionBlackKeys();
