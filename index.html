@@ -1026,7 +1026,8 @@
     /* Tempo hint: gap before octave */
     body.song-sheet-open #songTempoHint { margin-right: 12px; }
 
-    /* Row 2: tempo slot — full width, play/restart/repeat/slider then octave on right */
+    /* Row 2: tempo slot — hidden by default, shown only when songbook open */
+    #infobarPortraitTempoSlot { display: none; }
     body.song-sheet-open #infobarPortraitTempoSlot {
       display: flex;
       align-items: center;
@@ -1042,18 +1043,20 @@
     /* tempoVal hidden in the slot — BPM shown by floating thumb label instead */
     #infobarPortraitTempoSlot .tempo-val { display: none; }
 
-    /* Floating BPM label under the slider thumb */
+    /* BPM label displayed inside the slider thumb */
     .tempo-slider-wrap { position: relative; }
     .tempo-thumb-val {
       position: absolute;
-      bottom: -16px;
-      transform: translateX(-50%);
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-dim);
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--text);
       pointer-events: none;
       white-space: nowrap;
+      line-height: 1;
       display: none; /* shown only in info bar slot */
+      z-index: 2;
     }
     #infobarPortraitTempoSlot .tempo-thumb-val { display: block; }
 
@@ -1063,7 +1066,7 @@
     body.song-sheet-open .song-progress { display: none; }
 
     /* Tempo hint: visible when songbook open, hidden when closed */
-    .song-tempo-hint { display: none; }
+    /* Tempo hint visible only when songbook open */
     body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; }
 
     body.song-sheet-open #modHint { display: none; }
@@ -1773,11 +1776,11 @@
       body.song-sheet-open .song-tempo-hint:not(.hidden) { padding: 5px 8px; font-size: 12px; }
       body.song-sheet-open .infobar-song-title { display: none; }
 
-      /* Mobile portrait: smaller select slot */
       body.song-sheet-open #infobarSelectSlot { padding: 0 4px; }
       #infobarSelectSlot .song-select { font-size: 12px; padding: 4px 6px; }
 
       /* No Italian tempo buttons on portrait */
+      #infobarPortraitTempoSlot #tempoRangeGroup,
       #tempoRangeGroup { display: none; }
 
       /* Portrait tempo row sizing */
@@ -1930,8 +1933,8 @@
       #tempoRangeGroup { display: none; }
       .tempo-range-labels { gap: 3px; }
       /* Slider thumb is also a bit big against the squeezed track below */
-      input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -3px; }
-      input#tempoSlider.tempo-slider-segmented::-moz-range-thumb { width: 18px; height: 18px; }
+      input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb { width: 18px; height: 18px; border-radius: 50%; margin-top: -3px; }
+      input#tempoSlider.tempo-slider-segmented::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; }
       .tempo-val { font-size: 11px; min-width: 46px; }
 
       /* Settings card full-width on small screens */
@@ -2903,7 +2906,7 @@
          • on hover/press the chip flips to a deeper red fill so the click
            lands obviously */
     .song-tempo-hint {
-      display: inline-flex;
+      display: none;
       align-items: center;
       gap: 4px;
       font-family: 'Inter', sans-serif;
@@ -3371,10 +3374,7 @@
 
     /* ── TEMPO CONTROLS ── */
     .tempo-bar {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 8px;
+      display: none; /* controls moved to #infobarPortraitTempoSlot */
     }
 
     /* Self-Tempo Mode hides the metronome controls entirely — in this
@@ -3491,6 +3491,7 @@
       flex-direction: column;
       gap: 2px;
       min-width: 0;
+      position: relative;
     }
 
     .tempo-val {
@@ -3535,12 +3536,17 @@
       appearance: none;
       width: 100%;
       height: 14px;
-      background: transparent; /* track is drawn by ::-webkit-slider-runnable-track */
+      background: transparent;
       cursor: pointer;
       padding: 0;
       margin: 0;
-      /* Reset accent-color so our gradient track shows through. */
       accent-color: transparent;
+      overflow: visible; /* allow thumb to extend above/below the track */
+      display: block;
+    }
+
+    input#tempoSlider.tempo-slider-segmented::-webkit-slider-container {
+      background: transparent;
     }
 
     /* Webkit (Chrome/Safari/iOS Safari) ── */
@@ -3548,6 +3554,7 @@
       height: 14px;
       border-radius: 7px;
       background: var(--tempo-track-gradient);
+      background-clip: padding-box;
       border: 1px solid rgba(0,0,0,0.15);
       box-shadow: inset 0 1px 2px rgba(0,0,0,0.12);
     }
@@ -3971,16 +3978,10 @@
     <button class="infobar-icon-btn" id="songBookInfoBtn" onclick="toggleSongSheetFromInfoBar()" title="Song Book">📖</button>
     <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
   </div>
-  <!-- Song select slot: visible in row 1 when songbook open -->
-  <div id="infobarSelectSlot"></div>
-  <!-- Suggested tempo chip: next to song select, hidden when songbook closed -->
-  <button class="song-tempo-hint" id="songTempoHint"
-          onclick="useSuggestedTempo()"
-          title="Tap to play at the song's traditional speed">
-    <span class="sth-icon" aria-hidden="true">▸</span><!--
-    --><span class="sth-label" id="songTempoHintLabel"></span><!--
-    --><span class="sth-bpm" id="songTempoHintBpm"></span>
-  </button>
+  <!-- Song select slot: select lives here permanently, visible when songbook open -->
+  <div id="infobarSelectSlot">
+    <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
+  </div>
   <div class="modifier-hint" id="modHint">
     <span class="infobar-song-title" id="infobarSongTitle">⭐ Twinkle Twinkle Little Star</span>
     <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
@@ -3989,16 +3990,44 @@
   <!-- Landscape song-sheet mode: select and tempo controls reparented here -->
   <div id="infobarLandscapeSelectSlot" style="align-items:center;flex-shrink:0;"></div>
   <div id="infobarLandscapeTempoSlot" style="align-items:center;gap:4px;flex:1;flex-shrink:0;"></div>
-  <!-- Octave always top-right of row 1 -->
-  <div class="infobar-right" id="infobarRight" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+  <!-- Octave: always row 1, pushed right. flex-shrink:0 prevents wrapping. -->
+  <div class="infobar-right" id="infobarRight" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;">
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
       <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
       <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
     </div>
   </div>
-  <!-- Row 2: tempo controls (play/restart/repeat/slider) + octave on right -->
-  <div id="infobarPortraitTempoSlot"></div>
+  <!-- Tempo hint: after octave in DOM, so it appears to the right of octave -->
+  <button class="song-tempo-hint" id="songTempoHint"
+          onclick="useSuggestedTempo()"
+          title="Tap to play at the song's traditional speed">
+    <span class="sth-icon" aria-hidden="true">▸</span><!--
+    --><span class="sth-label" id="songTempoHintLabel"></span><!--
+    --><span class="sth-bpm" id="songTempoHintBpm"></span>
+  </button>
+  <!-- Row 2: tempo controls — always here, hidden when songbook off -->
+  <div id="infobarPortraitTempoSlot">
+    <button class="tempo-btn play-btn" id="tempoPlayBtn" onclick="toggleTempo()">▶</button>
+    <button class="tempo-btn" id="tempoRestartBtn" onclick="restartSong()" title="Restart">↺</button>
+    <button class="tempo-btn tempo-repeat-btn" id="tempoRepeatBtn"
+            onclick="cycleRepeat()" title="Play this many times in a row">
+      <span class="repeat-count" id="repeatCount">1×</span>
+    </button>
+    <div class="tempo-slider-wrap">
+      <input type="range" id="tempoSlider" class="tempo-slider-segmented"
+        min="20" max="160" value="70" step="1"
+        oninput="updateTempo(this.value)" />
+      <span class="tempo-thumb-val" id="tempoThumbVal">70</span>
+      <div class="tempo-range-labels" id="tempoRangeGroup">
+        <button class="tempo-range-btn" data-range="adagio"   onclick="setTempoRange('adagio')"><span class="tr-name">Adagio</span></button>
+        <button class="tempo-range-btn" data-range="moderato" onclick="setTempoRange('moderato')"><span class="tr-name">Moderato</span></button>
+        <button class="tempo-range-btn" data-range="allegro"  onclick="setTempoRange('allegro')"><span class="tr-name">Allegro</span></button>
+        <button class="tempo-range-btn" data-range="presto"   onclick="setTempoRange('presto')"><span class="tr-name">Presto</span></button>
+      </div>
+    </div>
+    <span class="tempo-val" id="tempoVal">70 BPM</span>
+  </div>
 </div>
 
 <!-- SONG SHEET -->
@@ -4009,7 +4038,6 @@
          can absorb it, freeing vertical space for a taller piano. The
          slot is invisible (display:none) in portrait. -->
     <div class="song-header-note-slot" id="songHeaderNoteSlot"></div>
-    <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
     <!-- Landscape-only slot for the Octave display (mirrors the note slot
          above; reparenting handled by syncLandscapeTopBar()). -->
     <div class="song-header-octave-slot" id="songHeaderOctaveSlot"></div>
@@ -4026,50 +4054,7 @@
     <div class="ticker-bar-track"><div class="ticker-bar-fill" id="tickerBarFill"></div></div>
     <div class="note-strip" id="noteStrip"></div>
   </div>
-  <div class="tempo-bar">
-    <button class="tempo-btn play-btn" id="tempoPlayBtn" onclick="toggleTempo()">▶</button>
-    <button class="tempo-btn" id="tempoRestartBtn" onclick="restartSong()" title="Restart">↺</button>
-    <!-- Repeat-N-times: cycles 1× → 2× → 3× → 4× → 5× → 1× on each click.
-         When the song completes, it loops seamlessly until the target count
-         is hit. The small dot before the number lights up while playing to
-         show "you're inside a multi-loop." -->
-    <button class="tempo-btn tempo-repeat-btn" id="tempoRepeatBtn"
-            onclick="cycleRepeat()" title="Play this many times in a row">
-      <span class="repeat-count" id="repeatCount">1×</span>
-    </button>
-    <!-- The slider is still the source of truth for tempo and is fully
-         draggable. Its track is painted in four colored segments matching
-         the tempo ranges below. The four range buttons sit directly beneath
-         their segment of the bar and act as quick-snaps: clicking jumps the
-         tempo to the middle BPM of that range.
-            Adagio  (slow)       green  → 35 BPM
-            Moderato (medium)    red    → 65 BPM
-            Allegro  (fast)      orange → 100 BPM
-            Presto   (very fast) yellow → 140 BPM
-         Each button highlights when current BPM is in its range. -->
-    <div class="tempo-slider-wrap">
-      <input type="range" id="tempoSlider" class="tempo-slider-segmented"
-        min="20" max="160" value="70" step="1"
-        oninput="updateTempo(this.value)" />
-      <!-- Floating BPM that tracks the thumb position -->
-      <span class="tempo-thumb-val" id="tempoThumbVal">70</span>
-      <div class="tempo-range-labels" id="tempoRangeGroup">
-        <button class="tempo-range-btn" data-range="adagio"   onclick="setTempoRange('adagio')">
-          <span class="tr-name">Adagio</span>
-        </button>
-        <button class="tempo-range-btn" data-range="moderato" onclick="setTempoRange('moderato')">
-          <span class="tr-name">Moderato</span>
-        </button>
-        <button class="tempo-range-btn" data-range="allegro"  onclick="setTempoRange('allegro')">
-          <span class="tr-name">Allegro</span>
-        </button>
-        <button class="tempo-range-btn" data-range="presto"   onclick="setTempoRange('presto')">
-          <span class="tr-name">Presto</span>
-        </button>
-      </div>
-    </div>
-    <span class="tempo-val" id="tempoVal">70 BPM</span>
-  </div>
+  <div class="tempo-bar"></div>
   <div class="song-progress"><div class="song-progress-fill" id="songProgressFill"></div></div>
   <div class="song-complete" id="songComplete">🎉 Well done! Play again?</div>
   <div class="practice-result" id="practiceResult" style="display:none"></div>
@@ -6770,72 +6755,15 @@ function syncLandscapeTopBar() {
 
   document.body.classList.remove('touch-compact-header');
 
-  const infoBar      = document.querySelector('.info-bar');
   const infobarRight = document.getElementById('infobarRight');
-  const lsSelectSlot = document.getElementById('infobarLandscapeSelectSlot');
-  const lsTempoSlot  = document.getElementById('infobarLandscapeTempoSlot');
   const ptTempoSlot  = document.getElementById('infobarPortraitTempoSlot');
-  const songHeader   = document.querySelector('.song-header');
-  const tempoBar     = document.querySelector('.tempo-bar');
+  const octEl        = document.querySelector('.octave-display');
 
-  const selectEl   = document.getElementById('songSelect');
-  const playBtn    = document.getElementById('tempoPlayBtn');
-  const restartBtn = document.getElementById('tempoRestartBtn');
-  const repeatBtn  = document.getElementById('tempoRepeatBtn');
-  const sliderWrap = tempoBar ? tempoBar.querySelector('.tempo-slider-wrap') : null;
-  const tempoVal   = document.getElementById('tempoVal');
-  const octEl      = document.querySelector('.octave-display');
-
-  if (sheetOpen && isLandscape && lsSelectSlot && lsTempoSlot) {
-    // ── Mobile landscape: landscape slots ──
-    lsSelectSlot.style.display = 'flex';
-    lsTempoSlot.style.display  = 'flex';
-
-    if (selectEl && selectEl.parentElement !== lsSelectSlot) lsSelectSlot.appendChild(selectEl);
-    if (playBtn    && playBtn.parentElement    !== lsTempoSlot) lsTempoSlot.appendChild(playBtn);
-    if (restartBtn && restartBtn.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(restartBtn);
-    if (repeatBtn  && repeatBtn.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(repeatBtn);
-    if (sliderWrap && sliderWrap.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(sliderWrap);
-    if (tempoVal   && tempoVal.parentElement   !== lsTempoSlot) lsTempoSlot.appendChild(tempoVal);
-    // Octave stays in infobar-right for landscape
-    if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
-
-  } else if (sheetOpen && ptTempoSlot) {
-    // ── Portrait + desktop: row 1 = select, row 2 = tempo + octave ──
-    if (lsSelectSlot) lsSelectSlot.style.display = 'none';
-    if (lsTempoSlot)  lsTempoSlot.style.display  = 'none';
-
-    const selectSlot = document.getElementById('infobarSelectSlot');
-    if (selectEl && selectSlot && selectEl.parentElement !== selectSlot)
-      selectSlot.appendChild(selectEl);
-
-    if (playBtn    && playBtn.parentElement    !== ptTempoSlot) ptTempoSlot.appendChild(playBtn);
-    if (restartBtn && restartBtn.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(restartBtn);
-    if (repeatBtn  && repeatBtn.parentElement  !== ptTempoSlot) ptTempoSlot.appendChild(repeatBtn);
-    if (sliderWrap && sliderWrap.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(sliderWrap);
-    // Octave goes to right end of row 2
+  if (sheetOpen && !isLandscape && ptTempoSlot) {
+    // Portrait + desktop: octave goes to right end of row 2
     if (octEl && ptTempoSlot && octEl.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(octEl);
-
   } else {
-    // ── Restore everything ──
-    if (lsSelectSlot) lsSelectSlot.style.display = 'none';
-    if (lsTempoSlot)  lsTempoSlot.style.display  = 'none';
-
-    // Select → song-header
-    if (selectEl && songHeader && selectEl.parentElement !== songHeader) {
-      songHeader.insertBefore(selectEl, songHeader.firstChild);
-    }
-
-    // Tempo controls → .tempo-bar
-    if (tempoBar) {
-      if (playBtn    && playBtn.parentElement    !== tempoBar) tempoBar.insertBefore(playBtn, tempoBar.firstChild);
-      if (restartBtn && restartBtn.parentElement !== tempoBar) playBtn.insertAdjacentElement('afterend', restartBtn);
-      if (repeatBtn  && repeatBtn.parentElement  !== tempoBar) restartBtn.insertAdjacentElement('afterend', repeatBtn);
-      if (sliderWrap && sliderWrap.parentElement !== tempoBar) tempoBar.appendChild(sliderWrap);
-      if (tempoVal   && tempoVal.parentElement   !== tempoBar) tempoBar.appendChild(tempoVal);
-    }
-
-    // Octave → infobar-right
+    // Landscape or songbook closed: octave stays in infobar-right
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
   }
 }
@@ -9893,13 +9821,17 @@ function updateTempoThumbVal() {
   const thumbVal = document.getElementById('tempoThumbVal');
   if (!slider || !thumbVal) return;
   thumbVal.textContent = tempoBPM;
-  // Position: fraction of slider range × slider width, offset by thumb radius
+  const sliderW = slider.offsetWidth;
+  // If the slider isn't laid out yet (hidden container), retry next frame
+  if (!sliderW) { requestAnimationFrame(updateTempoThumbVal); return; }
+  // Position: fraction of slider range × slider width, offset by thumb half-width
   const min = parseInt(slider.min), max = parseInt(slider.max);
   const frac = (tempoBPM - min) / (max - min);
-  const sliderW = slider.offsetWidth;
-  const thumbR = 11; // half of thumb width (22px thumb)
-  const px = thumbR + frac * (sliderW - 2 * thumbR);
+  const thumbHalfW = 11; // half of thumb width (22px circular thumb)
+  const px = thumbHalfW + frac * (sliderW - 2 * thumbHalfW);
   thumbVal.style.left = px + 'px';
+  // Vertically center the label on the slider element within the wrap
+  thumbVal.style.top = (slider.offsetTop + slider.offsetHeight / 2) + 'px';
 }
 
 // ── Per-song tempo memory ──
