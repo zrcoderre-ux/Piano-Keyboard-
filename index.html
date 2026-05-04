@@ -1055,8 +1055,13 @@
       line-height: 1;
       display: none; /* shown only in info bar slot */
       z-index: 2;
+      /* Start invisible; JS reveals once left/top are positioned to avoid
+         a flash of the BPM number rendered at the slider's left edge. */
+      opacity: 0;
+      transition: opacity 0.1s ease-in;
     }
     #infobarPortraitTempoSlot .tempo-thumb-val { display: block; }
+    .tempo-thumb-val.positioned { opacity: 1; }
 
     /* Hide song-header and tempo-bar from song sheet */
     body.song-sheet-open .song-header { display: none; }
@@ -1248,6 +1253,23 @@
       }
       /* Non-portrait: show full label, hide bpm-only span */
       .song-tempo-hint .sth-bpm { display: none; }
+    }
+
+    /* Desktop & tablet-portrait (NOT mobile landscape): when song book is open,
+       move the tempo hint button down to row 2 so it sits next to the tempo
+       slider instead of floating up next to OCT on row 1. The portrait tempo
+       slot stops being 100%-wide so it can share row 2 with the hint. */
+    @media (min-width: 927px), (min-width: 431px) and (orientation: portrait) {
+      body.song-sheet-open #infobarPortraitTempoSlot {
+        width: auto;
+        flex: 1;
+        min-width: 0;
+      }
+      body.song-sheet-open #songTempoHint {
+        order: 100;
+        margin-left: 8px;
+        flex-shrink: 0;
+      }
     }
 
     /* ── PIANO KEYS ── */
@@ -8917,6 +8939,8 @@ function toggleSongSheet() {
   syncInfoBarBtns();
   // Resize song select to fit the current song title now that the select is visible.
   requestAnimationFrame(fitSongSelectToContent);
+  // Tempo slider just became visible (or hidden) — re-position the thumb-val.
+  requestAnimationFrame(updateTempoThumbVal);
 }
 
 function hideSongSheet() {
@@ -9122,9 +9146,14 @@ function fitSongSelectToContent() {
     const slot = document.getElementById('infobarSelectSlot');
     maxW = slot ? slot.getBoundingClientRect().width : window.innerWidth * 0.5;
   } else {
-    // Landscape mobile + desktop/tablet: subtract sibling widths from info bar
+    // Landscape mobile + desktop/tablet: subtract sibling widths from info bar.
+    // Only count siblings that are on the SAME row as the select — when the
+    // info bar wraps (e.g. desktop song-sheet-open), tempo controls and the
+    // tempo hint may live on row 2 and shouldn't eat row-1 space.
     const infoBar = document.querySelector('.info-bar');
     const infoBarW = infoBar ? infoBar.getBoundingClientRect().width : window.innerWidth;
+    const selectSlot = document.getElementById('infobarSelectSlot');
+    const selectTop = selectSlot ? Math.round(selectSlot.getBoundingClientRect().top) : null;
     let siblingsW = 0;
     const siblingSelectors = [
       '.infobar-left',
@@ -9133,9 +9162,14 @@ function fitSongSelectToContent() {
       '#songTempoHint',
       '#infobarPortraitTempoSlot',
     ];
-    siblingSelectors.forEach(sel => {
-      const el = document.querySelector(sel);
+    siblingSelectors.forEach(s => {
+      const el = document.querySelector(s);
       if (el && el.offsetParent !== null && el.id !== 'songSelect') {
+        // Skip siblings on a different row from the select
+        if (selectTop !== null) {
+          const elTop = Math.round(el.getBoundingClientRect().top);
+          if (Math.abs(elTop - selectTop) > 4) return;
+        }
         let w = el.getBoundingClientRect().width;
         // In landscape the tempo slot has flex:1 and grows large, which would
         // leave almost no maxW for the select. Cap it to its CSS max-width so
@@ -9149,7 +9183,11 @@ function fitSongSelectToContent() {
     maxW = Math.max(80, infoBarW - siblingsW - barPad);
   }
 
-  sel.style.width = (isLandscape ? maxW : Math.min(targetW, maxW)) + 'px';
+  // Both desktop/tablet and mobile-landscape paths fill the available space.
+  // Mobile landscape was handled in the earlier branch with a smarter
+  // fit-to-content min(); here we just fill so long titles aren't truncated
+  // and short titles don't leave huge gaps next to a half-empty pill.
+  sel.style.width = maxW + 'px';
 
   // If text still doesn't fit (title too long), shrink font in steps
   if (!isLandscape) {
@@ -10009,6 +10047,8 @@ function updateTempoThumbVal() {
   thumbVal.style.left = px + 'px';
   // Vertically center the label on the slider element within the wrap
   thumbVal.style.top = (slider.offsetTop + slider.offsetHeight / 2) + 'px';
+  // Reveal once positioned (avoids flash at left:0 on initial load)
+  thumbVal.classList.add('positioned');
 }
 
 // ── Per-song tempo memory ──
