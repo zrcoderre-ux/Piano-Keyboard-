@@ -1023,8 +1023,6 @@
     body.song-sheet-open #infobarSelectSlot .song-select { min-width: 80px; }
     /* Octave stays right of row 1 — margin-left:auto pushes it right */
     body.song-sheet-open .infobar-right { margin-left: 0; }
-    /* Tempo hint: gap before octave */
-    body.song-sheet-open #songTempoHint { margin-right: 12px; }
 
     /* Row 2: tempo slot — hidden by default, shown only when songbook open */
     #infobarPortraitTempoSlot { display: none; }
@@ -1777,13 +1775,28 @@
         font-size: 12px;
         flex-shrink: 0;
         white-space: nowrap;
+        /* Anchor to bottom-right of info-bar, on the tempo row */
+        position: absolute;
+        bottom: 8px;
+        right: 4px;
+        order: unset;
+        margin: 0;
       }
       body.song-sheet-open .infobar-song-title { display: none; }
-      /* Keep tempo hint always on same row as the select — never wrap it down */
-      body.song-sheet-open .infobar-right { flex-shrink: 0; }
+      /* infobar-right stays in flow (octave has been reparented into tempo slot by JS) */
+      body.song-sheet-open .infobar-right { flex-shrink: 0; order: unset; margin-left: auto; }
       body.song-sheet-open #songTempoHint { flex-shrink: 0; }
-
-      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; }
+      /* Tempo slot: width:100% forces row 2; pad right so slider doesn't overlap hint */
+      body.song-sheet-open #infobarPortraitTempoSlot { width: 100%; flex: none; order: 99; padding-right: 60px; }
+      /* Octave display is reparented into the tempo slot by JS — pull it out of flow
+         and pin it to the top-right of the info-bar, directly above the hint */
+      body.song-sheet-open #infobarPortraitTempoSlot .octave-display {
+        position: absolute;
+        top: 5px;
+        right: 4px;
+      }
+      .infobar-right { margin-right: 4px; }
+      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; order: unset; max-width: calc(100% - 100px); }
       #infobarSelectSlot .song-select {
         font-size: 12px;
         padding: 4px 6px;
@@ -1801,8 +1814,12 @@
       #infobarPortraitTempoSlot .tempo-btn { width: 28px; height: 28px; font-size: 13px; }
       #infobarPortraitTempoSlot .tempo-btn.play-btn { width: 28px; height: 28px; }
       #infobarPortraitTempoSlot .tempo-slider-wrap { flex: 1; min-width: 0; }
-      /* Extra bottom padding to make room for floating BPM label */
-      body.song-sheet-open #infobarPortraitTempoSlot { padding-bottom: 18px; }
+      /* Align tempo row contents to bottom to match the hint's vertical position */
+      body.song-sheet-open #infobarPortraitTempoSlot {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        align-items: center;
+      }
       /* Octave in row 2 — small */
       #infobarPortraitTempoSlot .octave-btn { width: 22px; height: 22px; font-size: 12px; }
       #infobarPortraitTempoSlot .octave-display { gap: 3px; }
@@ -1990,10 +2007,18 @@
       /* Hide the modifier-hint middle section when landscape slots are active */
       body.song-sheet-open #modHint { display: none; }
 
-      /* Compact select */
-      #infobarLandscapeSelectSlot .song-select {
-        font-size: 11px; padding: 3px 5px; min-width: 60px;
+      /* Select slot grows to fill row 1, stopping before the OCT controls.
+         Small right margin keeps a breathing gap before the octave buttons. */
+      body.song-sheet-open #infobarLandscapeSelectSlot {
+        flex: 1 1 0 !important;
+        min-width: 0;
+        margin-right: 8px;
       }
+      /* Compact select — fills its slot so it expands toward the OCT buttons */
+      #infobarLandscapeSelectSlot .song-select {
+        font-size: 11px; padding: 3px 8px; min-width: 0; width: 100%;
+      }
+      body.song-sheet-open #infobarSelectSlot { flex: 6; }
       /* Scale tempo buttons to fit the slim info bar */
       #infobarLandscapeTempoSlot .tempo-btn {
         width: 24px; height: 24px; font-size: 11px; box-shadow: none;
@@ -2005,13 +2030,15 @@
       #infobarLandscapeTempoSlot .tempo-range-labels { display: none; }
       body.mode-touch.song-sheet-open .tempo-range-labels { display: none; }
       #infobarLandscapeTempoSlot .tempo-val { font-size: 10px; min-width: 38px; }
+      /* Landscape: shrink the tempo slot so tempo hint can sit to its right */
+      body.song-sheet-open #infobarLandscapeTempoSlot { flex: 1 1 0 !important; min-width: 0; max-width: 260px; flex-shrink: 1 !important; }
       /* Landscape tempo hint: number-only */
       .song-tempo-hint .sth-icon,
       .song-tempo-hint .sth-label { display: none; }
       .song-tempo-hint .sth-bpm { display: inline; }
       /* Tempo hint hidden when songbook closed on landscape too */
       .song-tempo-hint { display: none; }
-      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; padding: 3px 7px; font-size: 11px; }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; padding: 3px 7px; font-size: 11px; flex-shrink: 0; margin-left: 4px; }
 
       /* Song-header slots no longer used in landscape */
       .song-header-octave-slot, .song-header-note-slot,
@@ -2728,21 +2755,12 @@
       text-align: center;
       font-family: 'Inter', sans-serif;
       font-size: 9px;
-      /* Sits on the dark piano frame's bottom strip. The default
-         --text-dim is too dark to read against #1a1a1a, so we use a
-         soft white that's clearly legible without screaming. The
-         active-octave label below switches to the brand red so the
-         current octave still stands out. Single-octave mode only ever
-         renders one (active) label, so this color only shows when
-         expanded mode displays multiple octaves at once. */
-      color: rgba(255,255,255,0.75);
       padding: 2px 0 0;
       letter-spacing: 0.05em;
       flex-shrink: 0;
     }
 
     .octave-label.active-oct-label {
-      color: var(--accent);
       font-weight: 700;
     }
 
@@ -2974,7 +2992,7 @@
       background: #ffffff;
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 7px 12px;
+      padding: 7px 16px 7px 12px;
       border-radius: 999px;
       font-family: 'Inter', sans-serif;
       font-size: 12px;
@@ -2982,6 +3000,15 @@
       cursor: pointer;
       min-width: 80px;
       transition: background 0.2s, border-color 0.2s;
+      -webkit-appearance: none;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1 5l4-4 4 4' stroke='%234a4a4a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M1 9l4 4 4-4' stroke='%234a4a4a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 6px center;
+      background-size: 10px 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .song-close-btn {
@@ -4977,8 +5004,11 @@ function buildPiano() {
     const group = piano.querySelector(`.octave-group[data-oct="${oct}"]`);
     if (!group) continue;
     const lbl = document.createElement('div');
-    lbl.className = 'octave-label' + (oct === octave ? ' active-oct-label' : '');
+    const isActive = oct === octave;
+    lbl.className = 'octave-label' + (isActive ? ' active-oct-label' : '');
     lbl.textContent = oct;
+    lbl.style.color = OCTAVE_COLORS[oct] || '#ff9800';
+    lbl.style.opacity = isActive ? '1' : '0.45';
     group.appendChild(lbl);
   }
 
@@ -5126,7 +5156,11 @@ function updateActiveOctave() {
     k.classList.toggle('active-octave', parseInt(k.dataset.oct) === octave);
   });
   piano.querySelectorAll('.octave-label').forEach(l => {
-    l.classList.toggle('active-oct-label', parseInt(l.textContent) === octave);
+    const oct = parseInt(l.textContent);
+    const isActive = oct === octave;
+    l.classList.toggle('active-oct-label', isActive);
+    l.style.color = OCTAVE_COLORS[oct] || '#ff9800';
+    l.style.opacity = isActive ? '1' : '0.45';
   });
 }
 
@@ -9031,9 +9065,9 @@ function fitSongSelectToContent() {
   // - Desktop/tablet infobarLandscapeSelectSlot: 12px / weight 500 / hpad 28px / arrow 28px
   let fontSize, fontWeight, hPad, arrowW;
   if (isLandscape) {
-    fontSize = 11; fontWeight = '400'; hPad = 10; arrowW = 22;
+    fontSize = 11; fontWeight = '400'; hPad = 10; arrowW = 14;
   } else if (isNarrowPortrait) {
-    fontSize = 12; fontWeight = '500'; hPad = 12; arrowW = 26;
+    fontSize = 12; fontWeight = '500'; hPad = 12; arrowW = 14;
   } else {
     // Desktop/tablet: padding: 7px 12px -> 24px horizontal
     fontSize = 12; fontWeight = '500'; hPad = 24; arrowW = 28;
@@ -9054,6 +9088,30 @@ function fitSongSelectToContent() {
   document.body.appendChild(span);
   const textW = span.getBoundingClientRect().width;
   document.body.removeChild(span);
+
+  if (isLandscape) {
+    const infoBar = document.querySelector('.info-bar');
+    const infoBarW = infoBar ? infoBar.getBoundingClientRect().width : window.innerWidth;
+    const left = document.querySelector('.infobar-left');
+    const tempoSlot = document.getElementById('infobarLandscapeTempoSlot');
+    const octave = document.querySelector('.octave-display');
+    const hint = document.getElementById('songTempoHint');
+    const leftW = left ? left.getBoundingClientRect().width : 0;
+    // Only subtract tempo width if tempo is on the SAME row as the select.
+    // When the info bar wraps, tempo drops to row 2 and its width should not
+    // eat into the select's available row-1 space.
+    const selectSlot = document.getElementById('infobarLandscapeSelectSlot');
+    const sameRow = (tempoSlot && selectSlot)
+      ? Math.abs(tempoSlot.getBoundingClientRect().top - selectSlot.getBoundingClientRect().top) < 4
+      : true;
+    const tempoW = (tempoSlot && sameRow) ? Math.min(tempoSlot.getBoundingClientRect().width, 260) : 0;
+    const octaveW = octave ? octave.getBoundingClientRect().width : 0;
+    const hintW = hint && hint.offsetParent ? hint.getBoundingClientRect().width : 0;
+    const w = Math.max(60, infoBarW - leftW - tempoW - octaveW - hintW - 32);
+    console.log('landscape select debug:', {infoBarW, leftW, tempoW, octaveW, hintW, sameRow, w, currentW: sel.style.width, selOffsetW: sel.getBoundingClientRect().width});
+    sel.style.width = w + 'px';
+    return;
+  }
 
   const targetW = Math.ceil(textW) + hPad + arrowW;
 
@@ -9080,7 +9138,12 @@ function fitSongSelectToContent() {
     siblingSelectors.forEach(sel => {
       const el = document.querySelector(sel);
       if (el && el.offsetParent !== null && el.id !== 'songSelect') {
-        siblingsW += el.getBoundingClientRect().width;
+        let w = el.getBoundingClientRect().width;
+        // In landscape the tempo slot has flex:1 and grows large, which would
+        // leave almost no maxW for the select. Cap it to its CSS max-width so
+        // the select gets a fair share of the bar.
+        if (isLandscape && el.id === 'infobarLandscapeTempoSlot') w = Math.min(w, 260);
+        siblingsW += w;
       }
     });
     // Info bar padding (10px each side landscape, 20px desktop) + gaps
@@ -9088,7 +9151,19 @@ function fitSongSelectToContent() {
     maxW = Math.max(80, infoBarW - siblingsW - barPad);
   }
 
-  sel.style.width = Math.min(targetW, maxW) + 'px';
+  sel.style.width = (isLandscape ? maxW : Math.min(targetW, maxW)) + 'px';
+
+  // If text still doesn't fit (title too long), shrink font in steps
+  if (!isLandscape) {
+    const minFont = 9;
+    let fs = fontSize;
+    while (fs > minFont) {
+      const fitted = Math.ceil(textW * (fs / fontSize)) + hPad + arrowW;
+      if (fitted <= maxW) break;
+      fs--;
+    }
+    sel.style.fontSize = fs + 'px';
+  }
 }
 
 function populateSongSelect() {
