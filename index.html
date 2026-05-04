@@ -2016,7 +2016,7 @@
       }
       /* Compact select — fills its slot so it expands toward the OCT buttons */
       #infobarLandscapeSelectSlot .song-select {
-        font-size: 11px; padding: 3px 8px; min-width: 0; width: 100%;
+        font-size: 13px; padding: 3px 8px; min-width: 0; width: 100%;
       }
       body.song-sheet-open #infobarSelectSlot { flex: 6; }
       /* Scale tempo buttons to fit the slim info bar */
@@ -2038,7 +2038,10 @@
       .song-tempo-hint .sth-bpm { display: inline; }
       /* Tempo hint hidden when songbook closed on landscape too */
       .song-tempo-hint { display: none; }
-      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; padding: 3px 7px; font-size: 11px; flex-shrink: 0; margin-left: 4px; }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; padding: 3px 7px; font-size: 11px; flex-shrink: 0; margin-left: auto; order: 1; }
+      /* OCT controls sit to the RIGHT of the tempo hint, hugging the bar's right edge.
+         !important is needed to override the inline margin-left:auto on .infobar-right. */
+      body.song-sheet-open .infobar-right { margin-left: 8px !important; order: 2; }
 
       /* Song-header slots no longer used in landscape */
       .song-header-octave-slot, .song-header-note-slot,
@@ -9060,12 +9063,12 @@ function fitSongSelectToContent() {
   if (!selectedText) return;
 
   // Font/padding differs by context:
-  // - Mobile landscape: 11px / weight 400 / hpad 10px / arrow 22px
+  // - Mobile landscape: 13px / weight 400 / hpad 16px / arrow 22px
   // - Mobile portrait infobarSelectSlot: 12px / weight 500 / hpad 12px / arrow 26px
   // - Desktop/tablet infobarLandscapeSelectSlot: 12px / weight 500 / hpad 28px / arrow 28px
   let fontSize, fontWeight, hPad, arrowW;
   if (isLandscape) {
-    fontSize = 11; fontWeight = '400'; hPad = 10; arrowW = 14;
+    fontSize = 13; fontWeight = '400'; hPad = 16; arrowW = 14;
   } else if (isNarrowPortrait) {
     fontSize = 12; fontWeight = '500'; hPad = 12; arrowW = 14;
   } else {
@@ -9095,32 +9098,16 @@ function fitSongSelectToContent() {
     const left = document.querySelector('.infobar-left');
     const octave = document.querySelector('.octave-display');
     const hint = document.getElementById('songTempoHint');
-    const slot = document.getElementById('infobarLandscapeSelectSlot');
     const leftW = left ? left.getBoundingClientRect().width : 0;
     const octaveW = octave ? octave.getBoundingClientRect().width : 0;
     const hintW = hint && hint.offsetParent ? hint.getBoundingClientRect().width : 0;
-    const w = Math.max(60, infoBarW - leftW - octaveW - hintW - 12);
+    // Maximum width available before we'd hit the OCT − button (with 12px buffer).
+    const maxW = Math.max(60, infoBarW - leftW - octaveW - hintW - 12);
+    // Ideal width to fit the current song title snugly: text + horizontal padding + arrow.
+    const fitW = Math.ceil(textW) + hPad + arrowW;
+    // Use the smaller — short titles get a tight fit, long titles get the full row.
+    const w = Math.min(fitW, maxW);
     sel.style.width = w + 'px';
-
-    // ── On-page debug overlay ────────────────────────────────────────────
-    let dbg = document.getElementById('selectWidthDebug');
-    if (!dbg) {
-      dbg = document.createElement('div');
-      dbg.id = 'selectWidthDebug';
-      dbg.style.cssText = 'position:fixed;top:4px;left:4px;z-index:99999;background:rgba(0,0,0,0.85);color:#0f0;font:10px/1.3 monospace;padding:6px 8px;border-radius:6px;pointer-events:none;max-width:90vw;white-space:pre;';
-      document.body.appendChild(dbg);
-    }
-    const selRect = sel.getBoundingClientRect();
-    const slotRect = slot ? slot.getBoundingClientRect() : null;
-    const selParent = sel.parentElement ? sel.parentElement.id || sel.parentElement.className : '?';
-    dbg.textContent =
-      `bar=${Math.round(infoBarW)} left=${Math.round(leftW)} oct=${Math.round(octaveW)} hint=${Math.round(hintW)}\n` +
-      `calcW=${Math.round(w)} inlineW="${sel.style.width}"\n` +
-      `actualSelW=${Math.round(selRect.width)} actualSelH=${Math.round(selRect.height)}\n` +
-      `slotW=${slotRect ? Math.round(slotRect.width) : 'n/a'} slotH=${slotRect ? Math.round(slotRect.height) : 'n/a'}\n` +
-      `selParent=${selParent}`;
-    // ─────────────────────────────────────────────────────────────────────
-
     return;
   }
 
