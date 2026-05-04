@@ -1001,6 +1001,77 @@
     #infobarLandscapeSelectSlot,
     #infobarLandscapeTempoSlot { display: none; }
 
+    /* Song book open — all devices:
+       Row 1: icon btns | select | tempo-hint | [modHint hidden] | octave (right)
+       Row 2: play restart repeat | slider+BPM | octave (right of slider) */
+    body.song-sheet-open .info-bar {
+      flex-wrap: wrap;
+      justify-content: flex-start;
+      align-items: center;
+      align-content: space-between;
+      padding-bottom: 0;
+      min-height: unset;
+    }
+    /* Row 1: select slot grows to fill space between hint and octave */
+    body.song-sheet-open #infobarSelectSlot {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 120px;
+      padding: 0 8px;
+    }
+    body.song-sheet-open #infobarSelectSlot .song-select { width: 100%; }
+    /* Octave stays right of row 1 — margin-left:auto pushes it right */
+    body.song-sheet-open .infobar-right { margin-left: 0; }
+    /* Tempo hint: gap before octave */
+    body.song-sheet-open #songTempoHint { margin-right: 12px; }
+
+    /* Row 2: tempo slot — full width, play/restart/repeat/slider then octave on right */
+    body.song-sheet-open #infobarPortraitTempoSlot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      order: 99;
+      padding: 6px 0 5px;
+    }
+    /* Slider grows to fill; octave anchors right end of row 2 */
+    #infobarPortraitTempoSlot .tempo-slider-wrap { flex: 1; min-width: 0; }
+    /* Italian range buttons visible on desktop in the slider row */
+    #infobarPortraitTempoSlot .tempo-range-labels { display: flex; }
+    /* tempoVal hidden in the slot — BPM shown by floating thumb label instead */
+    #infobarPortraitTempoSlot .tempo-val { display: none; }
+
+    /* Floating BPM label under the slider thumb */
+    .tempo-slider-wrap { position: relative; }
+    .tempo-thumb-val {
+      position: absolute;
+      bottom: -16px;
+      transform: translateX(-50%);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      pointer-events: none;
+      white-space: nowrap;
+      display: none; /* shown only in info bar slot */
+    }
+    #infobarPortraitTempoSlot .tempo-thumb-val { display: block; }
+
+    /* Hide song-header and tempo-bar from song sheet */
+    body.song-sheet-open .song-header { display: none; }
+    body.song-sheet-open .tempo-bar   { display: none; }
+    body.song-sheet-open .song-progress { display: none; }
+
+    /* Tempo hint: visible when songbook open, hidden when closed */
+    .song-tempo-hint { display: none; }
+    body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; }
+
+    body.song-sheet-open #modHint { display: none; }
+
+    /* When sheet music also on: collapse song sheet entirely */
+    body.sheet-music-on.song-sheet-open #songSheet { padding: 0; }
+    body.sheet-music-on.song-sheet-open .note-strip-wrapper { display: none; }
+
     /* Song select always moves to info bar when song book is open — all devices */
     body.song-sheet-open #infobarLandscapeSelectSlot { display: flex; align-items: center; flex-shrink: 0; gap: 6px; }
 
@@ -1695,66 +1766,29 @@
          select slot shows — matching piano and keyboard mode behaviour. */
       body.mode-touch.song-sheet-open .mod-hint-touch { display: none; }
 
-      /* Mobile portrait: tempo hint hidden unless songbook open, number only */
-      .song-tempo-hint { display: none !important; }
-      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex !important; padding: 5px 8px; font-size: 12px; gap: 0; text-align: center; flex-shrink: 0; }
+      /* Mobile portrait: tempo hint number-only */
       .song-tempo-hint .sth-icon,
       .song-tempo-hint .sth-label { display: none; }
       .song-tempo-hint .sth-bpm { display: inline; }
-
-      /* Mobile portrait: show song-select in info bar row 1 when songbook open */
-      body.song-sheet-open #infobarSelectSlot {
-        display: flex;
-        align-items: center;
-        flex: 1;
-        min-width: 0;
-        padding: 0 4px;
-      }
-      #infobarSelectSlot .song-select {
-        width: 100%;
-        font-size: 12px;
-        padding: 4px 6px;
-      }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) { padding: 5px 8px; font-size: 12px; }
       body.song-sheet-open .infobar-song-title { display: none; }
 
-      /* Portrait + songbook: tempo controls moved to info bar row 2 */
-      body.song-sheet-open .tempo-bar { display: none; }
-      body.song-sheet-open .song-progress { display: none; }
+      /* Mobile portrait: smaller select slot */
+      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; }
+      #infobarSelectSlot .song-select { font-size: 12px; padding: 4px 6px; }
 
-      /* No Italian tempo buttons on portrait — slider only */
+      /* No Italian tempo buttons on portrait */
       #tempoRangeGroup { display: none; }
 
-      /* Portrait + songbook: info bar becomes two rows */
-      body.song-sheet-open .info-bar {
-        flex-wrap: wrap;
-        min-height: unset;
-        padding-bottom: 0;
-        align-items: center;
-        align-content: space-between;
-        justify-content: flex-start;
-      }
-      body.song-sheet-open #infobarSelectSlot { flex: 1; }
-      body.song-sheet-open #songTempoHint { margin-right: 8px; }
-      body.song-sheet-open .infobar-right { margin-left: auto; }
-
-      /* Tempo slot: full-width second row, flush to bottom */
-      #infobarPortraitTempoSlot { display: none; }
-      body.song-sheet-open #infobarPortraitTempoSlot {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        width: 100%;
-        order: 99;
-        padding: 6px 0 0;
-      }
-      /* Tempo controls sizing inside portrait slot */
+      /* Portrait tempo row sizing */
       #infobarPortraitTempoSlot .tempo-btn { width: 28px; height: 28px; font-size: 13px; }
       #infobarPortraitTempoSlot .tempo-btn.play-btn { width: 28px; height: 28px; }
-      #infobarPortraitTempoSlot .tempo-repeat-btn { font-size: 10px; }
       #infobarPortraitTempoSlot .tempo-slider-wrap { flex: 1; min-width: 0; }
-      #infobarPortraitTempoSlot .tempo-val { font-size: 10px; min-width: 36px; }
-      #infobarPortraitTempoSlot .tempo-range-btn .tr-name { display: none; }
-      #infobarPortraitTempoSlot .tempo-range-btn .tr-hint { display: none; }
+      /* Extra bottom padding to make room for floating BPM label */
+      body.song-sheet-open #infobarPortraitTempoSlot { padding-bottom: 18px; }
+      /* Octave in row 2 — small */
+      #infobarPortraitTempoSlot .octave-btn { width: 22px; height: 22px; font-size: 12px; }
+      #infobarPortraitTempoSlot .octave-display { gap: 3px; }
 
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
       .octave-display { gap: 4px; }
@@ -1949,10 +1983,18 @@
       }
       #infobarLandscapeTempoSlot .tempo-btn.play-btn { width: 26px; height: 26px; font-size: 12px; }
       #infobarLandscapeTempoSlot .tempo-repeat-btn { font-size: 10px; }
-      #infobarLandscapeTempoSlot .song-tempo-hint { font-size: 9px; padding: 1px 5px 1px 4px; }
       #infobarLandscapeTempoSlot .tempo-slider-wrap { flex: 1; min-width: 60px; }
+      /* No Italian buttons in landscape */
       #infobarLandscapeTempoSlot .tempo-range-labels { display: none; }
+      body.mode-touch.song-sheet-open .tempo-range-labels { display: none; }
       #infobarLandscapeTempoSlot .tempo-val { font-size: 10px; min-width: 38px; }
+      /* Landscape tempo hint: number-only */
+      .song-tempo-hint .sth-icon,
+      .song-tempo-hint .sth-label { display: none; }
+      .song-tempo-hint .sth-bpm { display: inline; }
+      /* Tempo hint hidden when songbook closed on landscape too */
+      .song-tempo-hint { display: none; }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex; padding: 3px 7px; font-size: 11px; }
 
       /* Song-header slots no longer used in landscape */
       .song-header-octave-slot, .song-header-note-slot,
@@ -2049,32 +2091,13 @@
       /* Landscape: no Italian tempo buttons anywhere */
       body.mode-touch.song-sheet-open .tempo-range-labels { display: none; }
 
-      /* In landscape the tempo controls moved into the info bar, so hide
-         the now-empty tempo-bar shell and progress bar inside #songSheet.
-         This frees the vertical space for the piano/keyboard below. */
-      body.song-sheet-open .tempo-bar,
-      body.song-sheet-open .song-progress,
-      body.song-sheet-open .song-complete { display: none; }
-
-      /* ── TOUCH MODE + SONG BOOK: compact song sheet so QWERTY fits ──
-         Piano keys are hidden in touch+landscape (QWERTY is input source).
-         The QWERTY pad competes for vertical space with the song book, so
-         apply the same compactions used in keyboard/piano mode. */
+      /* ── TOUCH MODE + SONG BOOK: compact note strip sizing ── */
       body.mode-touch.song-sheet-open #songSheet { padding: 2px 6px; }
-      body.mode-touch.song-sheet-open .song-header { margin-bottom: 1px; gap: 4px; }
       body.mode-touch.song-sheet-open .strip-note { width: 30px; height: 34px; border-radius: 5px; }
       body.mode-touch.song-sheet-open .strip-note .sn-note { font-size: 10px; }
       body.mode-touch.song-sheet-open .strip-note .sn-oct { font-size: 6px; }
       body.mode-touch.song-sheet-open .note-strip-wrapper { padding: 1px 0; }
       body.mode-touch.song-sheet-open .note-strip-wrapper.lyrics-on { padding-top: 14px; }
-      body.mode-touch.song-sheet-open .tempo-bar { padding: 2px 0; gap: 4px; }
-      body.mode-touch.song-sheet-open .tempo-btn { width: 26px; height: 26px; font-size: 12px; }
-      body.mode-touch.song-sheet-open .tempo-btn.play-btn { width: 28px; height: 28px; }
-      body.mode-touch.song-sheet-open .tempo-repeat-btn { font-size: 10px; }
-      body.mode-touch.song-sheet-open .tempo-range-btn .tr-hint { display: none; }
-      body.mode-touch.song-sheet-open .tempo-range-btn { min-height: 18px; padding: 2px 4px; }
-      body.mode-touch.song-sheet-open .tempo-val { font-size: 10px; min-width: 40px; }
-      /* piano-area already collapsed to 0 by the rule above for all touch-mode variants */
       .white-key { width: 64px; min-width: 44px; padding-bottom: 5px; }
       .key-note { font-size: 12px; }
 
@@ -3948,9 +3971,9 @@
     <button class="infobar-icon-btn" id="songBookInfoBtn" onclick="toggleSongSheetFromInfoBar()" title="Song Book">📖</button>
     <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
   </div>
-  <!-- Song select slot: visible in row 1 when songbook open (portrait) -->
+  <!-- Song select slot: visible in row 1 when songbook open -->
   <div id="infobarSelectSlot"></div>
-  <!-- Suggested tempo chip: always next to the song select -->
+  <!-- Suggested tempo chip: next to song select, hidden when songbook closed -->
   <button class="song-tempo-hint" id="songTempoHint"
           onclick="useSuggestedTempo()"
           title="Tap to play at the song's traditional speed">
@@ -3966,14 +3989,15 @@
   <!-- Landscape song-sheet mode: select and tempo controls reparented here -->
   <div id="infobarLandscapeSelectSlot" style="align-items:center;flex-shrink:0;"></div>
   <div id="infobarLandscapeTempoSlot" style="align-items:center;gap:4px;flex:1;flex-shrink:0;"></div>
-  <div class="infobar-right" style="display:flex;align-items:center;gap:8px;">
+  <!-- Octave always top-right of row 1 -->
+  <div class="infobar-right" id="infobarRight" style="display:flex;align-items:center;gap:8px;margin-left:auto;">
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
       <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
       <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
     </div>
   </div>
-  <!-- Mobile portrait song-sheet mode: tempo bar moves here as a second row -->
+  <!-- Row 2: tempo controls (play/restart/repeat/slider) + octave on right -->
   <div id="infobarPortraitTempoSlot"></div>
 </div>
 
@@ -4027,6 +4051,8 @@
       <input type="range" id="tempoSlider" class="tempo-slider-segmented"
         min="20" max="160" value="70" step="1"
         oninput="updateTempo(this.value)" />
+      <!-- Floating BPM that tracks the thumb position -->
+      <span class="tempo-thumb-val" id="tempoThumbVal">70</span>
       <div class="tempo-range-labels" id="tempoRangeGroup">
         <button class="tempo-range-btn" data-range="adagio"   onclick="setTempoRange('adagio')">
           <span class="tr-name">Adagio</span>
@@ -6740,93 +6766,64 @@ function loadKeyColorMode() {
 // sheet toggle. Idempotent.
 function syncLandscapeTopBar() {
   const isLandscape = window.matchMedia('(max-width: 926px) and (orientation: landscape)').matches;
-  const isMobilePortrait = window.matchMedia('(max-width: 430px) and (orientation: portrait)').matches;
   const sheetOpen = document.body.classList.contains('song-sheet-open');
-  const sheetMusicOn = document.body.classList.contains('sheet-music-on');
-  const isTouch = document.body.classList.contains('mode-touch');
-  const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
 
-  // touch-compact-header: disabled — info bar is now always used in landscape
   document.body.classList.remove('touch-compact-header');
 
-  // ── Whether to activate the info-bar select slot ──
-  // Song select moves into the info bar whenever the song book is open,
-  // on ALL devices (not just mobile landscape). Tempo controls only move
-  // on mobile landscape where vertical space is critical.
-  const wantsLandscapeInfoBar = sheetOpen && isLandscape;
-  const wantsPortraitInfoBar  = sheetOpen && isMobilePortrait;
+  const infoBar      = document.querySelector('.info-bar');
+  const infobarRight = document.getElementById('infobarRight');
+  const lsSelectSlot = document.getElementById('infobarLandscapeSelectSlot');
+  const lsTempoSlot  = document.getElementById('infobarLandscapeTempoSlot');
+  const ptTempoSlot  = document.getElementById('infobarPortraitTempoSlot');
+  const songHeader   = document.querySelector('.song-header');
+  const tempoBar     = document.querySelector('.tempo-bar');
 
-  // Core DOM references
-  const infoBar       = document.querySelector('.info-bar');
-  const infobarLeft   = infoBar ? infoBar.querySelector('.infobar-left') : null;
-  const infobarRight  = infoBar ? infoBar.querySelector('.infobar-right') : null;
-  const lsSelectSlot  = document.getElementById('infobarLandscapeSelectSlot');
-  const lsTempoSlot   = document.getElementById('infobarLandscapeTempoSlot');
-  const ptTempoSlot   = document.getElementById('infobarPortraitTempoSlot');
-  const songHeader    = document.querySelector('.song-header');
-  const tempoBar      = document.querySelector('.tempo-bar');
+  const selectEl   = document.getElementById('songSelect');
+  const playBtn    = document.getElementById('tempoPlayBtn');
+  const restartBtn = document.getElementById('tempoRestartBtn');
+  const repeatBtn  = document.getElementById('tempoRepeatBtn');
+  const sliderWrap = tempoBar ? tempoBar.querySelector('.tempo-slider-wrap') : null;
+  const tempoVal   = document.getElementById('tempoVal');
+  const octEl      = document.querySelector('.octave-display');
 
-  // Elements to reparent
-  const selectEl      = document.getElementById('songSelect');
-  const playBtn       = document.getElementById('tempoPlayBtn');
-  const restartBtn    = document.getElementById('tempoRestartBtn');
-  const repeatBtn     = document.getElementById('tempoRepeatBtn');
-  const sliderWrap    = tempoBar ? tempoBar.querySelector('.tempo-slider-wrap') : null;
-  const tempoVal      = document.getElementById('tempoVal');
-  const octEl         = document.querySelector('.octave-display');
-
-  if (wantsLandscapeInfoBar && lsSelectSlot && lsTempoSlot) {
-    // Show the landscape slots, hide portrait slot
+  if (sheetOpen && isLandscape && lsSelectSlot && lsTempoSlot) {
+    // ── Mobile landscape: landscape slots ──
     lsSelectSlot.style.display = 'flex';
     lsTempoSlot.style.display  = 'flex';
 
-    // Move song select into landscape select slot
     if (selectEl && selectEl.parentElement !== lsSelectSlot) lsSelectSlot.appendChild(selectEl);
-
-    // Move tempo controls into landscape tempo slot (hint stays in info bar)
-    if (playBtn     && playBtn.parentElement     !== lsTempoSlot) lsTempoSlot.appendChild(playBtn);
-    if (restartBtn  && restartBtn.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(restartBtn);
-    if (repeatBtn   && repeatBtn.parentElement   !== lsTempoSlot) lsTempoSlot.appendChild(repeatBtn);
-    if (sliderWrap  && sliderWrap.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(sliderWrap);
-    if (tempoVal    && tempoVal.parentElement    !== lsTempoSlot) lsTempoSlot.appendChild(tempoVal);
-
-    // Octave display stays in infobar-right
+    if (playBtn    && playBtn.parentElement    !== lsTempoSlot) lsTempoSlot.appendChild(playBtn);
+    if (restartBtn && restartBtn.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(restartBtn);
+    if (repeatBtn  && repeatBtn.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(repeatBtn);
+    if (sliderWrap && sliderWrap.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(sliderWrap);
+    if (tempoVal   && tempoVal.parentElement   !== lsTempoSlot) lsTempoSlot.appendChild(tempoVal);
+    // Octave stays in infobar-right for landscape
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
 
-  } else if (wantsPortraitInfoBar && ptTempoSlot) {
-    // Portrait + songbook: tempo controls move to second info-bar row
+  } else if (sheetOpen && ptTempoSlot) {
+    // ── Portrait + desktop: row 1 = select, row 2 = tempo + octave ──
     if (lsSelectSlot) lsSelectSlot.style.display = 'none';
     if (lsTempoSlot)  lsTempoSlot.style.display  = 'none';
 
-    // Select → portrait infobar slot
-    const portraitSelectSlot = document.getElementById('infobarSelectSlot');
-    if (selectEl && portraitSelectSlot && selectEl.parentElement !== portraitSelectSlot)
-      portraitSelectSlot.appendChild(selectEl);
+    const selectSlot = document.getElementById('infobarSelectSlot');
+    if (selectEl && selectSlot && selectEl.parentElement !== selectSlot)
+      selectSlot.appendChild(selectEl);
 
-    // Tempo controls → portrait tempo slot (second row)
     if (playBtn    && playBtn.parentElement    !== ptTempoSlot) ptTempoSlot.appendChild(playBtn);
     if (restartBtn && restartBtn.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(restartBtn);
     if (repeatBtn  && repeatBtn.parentElement  !== ptTempoSlot) ptTempoSlot.appendChild(repeatBtn);
     if (sliderWrap && sliderWrap.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(sliderWrap);
-    if (tempoVal   && tempoVal.parentElement   !== ptTempoSlot) ptTempoSlot.appendChild(tempoVal);
-
-    if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
+    // Octave goes to right end of row 2
+    if (octEl && ptTempoSlot && octEl.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(octEl);
 
   } else {
-    // ── Restore everything to original homes ──
+    // ── Restore everything ──
     if (lsSelectSlot) lsSelectSlot.style.display = 'none';
     if (lsTempoSlot)  lsTempoSlot.style.display  = 'none';
 
-    // Select → portrait infobar slot (if portrait+sheet open) or song-header
-    if (selectEl) {
-      if (isMobilePortrait && sheetOpen) {
-        const portraitSlot = document.getElementById('infobarSelectSlot');
-        if (portraitSlot && selectEl.parentElement !== portraitSlot) portraitSlot.appendChild(selectEl);
-      } else if (songHeader && selectEl.parentElement !== songHeader) {
-        const th = document.getElementById('songTempoHint');
-        if (th && th.parentElement === songHeader) songHeader.insertBefore(selectEl, th);
-        else songHeader.appendChild(selectEl);
-      }
+    // Select → song-header
+    if (selectEl && songHeader && selectEl.parentElement !== songHeader) {
+      songHeader.insertBefore(selectEl, songHeader.firstChild);
     }
 
     // Tempo controls → .tempo-bar
@@ -6838,15 +6835,7 @@ function syncLandscapeTopBar() {
       if (tempoVal   && tempoVal.parentElement   !== tempoBar) tempoBar.appendChild(tempoVal);
     }
 
-    // Portrait: restore select and tempo to original homes
-    if (!isMobilePortrait || !sheetOpen) {
-      const portraitSlot = document.getElementById('infobarSelectSlot');
-      if (selectEl && songHeader && portraitSlot && selectEl.parentElement === portraitSlot) {
-        songHeader.insertBefore(selectEl, songHeader.querySelector('.song-header-tempo-slot') || songHeader.firstChild);
-      }
-    }
-
-    // Octave display → infobar-right
+    // Octave → infobar-right
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
   }
 }
@@ -7598,7 +7587,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7607,7 +7596,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7616,7 +7605,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7625,7 +7614,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7634,7 +7623,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7643,7 +7632,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7652,7 +7641,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7661,7 +7650,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7670,7 +7659,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -7679,7 +7668,7 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
       {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
@@ -8957,6 +8946,7 @@ function hideSongSheet() {
   schedulePositionBlackKeys();
   if (sheetMusicEnabled) renderSheetMusic();
   syncLandscapeTopBar();
+  requestAnimationFrame(updateTempoThumbVal);
   applyPianoSingleOctaveIfApplicable();
   syncInfoBarBtns();
 }
@@ -9892,19 +9882,24 @@ function updateTempo(val) {
   tempoBPM = parseInt(val);
   document.getElementById('tempoVal').textContent = tempoBPM + ' BPM';
   updateActiveTempoRange();
-  // Persist under the current song's id so this BPM is remembered next
-  // time the song is loaded. We only save when a song is actually loaded —
-  // adjusting tempo with no song open doesn't get persisted (there's
-  // nothing to key it under, and the next song-load will either restore
-  // its own saved value or carry the current one through).
+  // Update floating thumb label position
+  updateTempoThumbVal();
   saveTempoForCurrentSong();
-  // Changing tempo mid-song pauses playback. Position and repeat counter
-  // are preserved (same pattern as opening Settings/Help/switching modes)
-  // so the player can hit Play again to resume at the new tempo. This
-  // avoids the disorienting "tempo jumps mid-bar" feel of restarting the
-  // timer in place — and it gives the player a clean moment to confirm
-  // they want this new speed.
   if (tempoPlaying) stopTempo();
+}
+
+function updateTempoThumbVal() {
+  const slider = document.getElementById('tempoSlider');
+  const thumbVal = document.getElementById('tempoThumbVal');
+  if (!slider || !thumbVal) return;
+  thumbVal.textContent = tempoBPM;
+  // Position: fraction of slider range × slider width, offset by thumb radius
+  const min = parseInt(slider.min), max = parseInt(slider.max);
+  const frac = (tempoBPM - min) / (max - min);
+  const sliderW = slider.offsetWidth;
+  const thumbR = 11; // half of thumb width (22px thumb)
+  const px = thumbR + frac * (sliderW - 2 * thumbR);
+  thumbVal.style.left = px + 'px';
 }
 
 // ── Per-song tempo memory ──
@@ -10224,6 +10219,7 @@ loadKeyColorMode();
 // Sync landscape top-bar reflow on initial load — handles the case where
 // the user reloads while already in landscape with song sheet open.
 syncLandscapeTopBar();
+requestAnimationFrame(updateTempoThumbVal);
 
 // Highlight the tempo range that contains the default BPM (Moderato).
 updateActiveTempoRange();
