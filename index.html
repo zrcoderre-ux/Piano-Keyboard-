@@ -24,7 +24,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&family=Playfair+Display:wght@700&family=Caveat:wght@600;700&family=Fredoka+One&family=Boogaloo&family=Lilita+One&family=Titan+One&family=Chewy&family=Short+Stack&family=Gochi+Hand&family=Bubblegum+Sans&family=Indie+Flower&family=Gloria+Hallelujah&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Nunito:wght@600;700;800&family=Playfair+Display:wght@700&family=Caveat:wght@600;700&family=Fredoka+One&family=Boogaloo&family=Lilita+One&family=Titan+One&family=Chewy&family=Short+Stack&family=Gochi+Hand&family=Bubblegum+Sans&family=Indie+Flower&family=Gloria+Hallelujah&display=block" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,6 +84,15 @@
          the visible area, clipping the bottom. Dividing by --fs-zoom shrinks
          the layout height so zoom * (100dvh / zoom) = 100dvh exactly fits. */
       height: calc(100dvh / var(--fs-zoom, 1));
+    }
+
+    /* Hide all direct body children except the splash until splash is dismissed,
+       preventing any page content from flashing through the transparent splash. */
+    body > *:not(#splash) {
+      visibility: hidden;
+    }
+    body.splash-done > *:not(#splash) {
+      visibility: visible;
     }
 
     /* ── DECORATIVE FLOATING NOTES ── */
@@ -199,6 +208,7 @@
       display: inline;
       color: var(--accent);
       font-size: 1.35em;
+      font-family: 'Short Stack', cursive;
       align-self: flex-end;
       padding-bottom: 10px;
     }
@@ -1165,6 +1175,8 @@
         padding: 0;
         margin-top: -12px;
       }
+      /* Non-portrait: show full label, hide bpm-only span */
+      .song-tempo-hint .sth-bpm { display: none; }
     }
 
     /* ── PIANO KEYS ── */
@@ -1683,17 +1695,66 @@
          select slot shows — matching piano and keyboard mode behaviour. */
       body.mode-touch.song-sheet-open .mod-hint-touch { display: none; }
 
-      /* Mobile portrait: show song-select in info bar only when songbook is open
-         and hint is not active (keyboard/touch mode). */
-      body.song-sheet-open #infobarSelectSlot { display: block; width: 100%; }
-      /* Style the select to fill the slot naturally */
+      /* Mobile portrait: tempo hint hidden unless songbook open, number only */
+      .song-tempo-hint { display: none !important; }
+      body.song-sheet-open .song-tempo-hint:not(.hidden) { display: inline-flex !important; padding: 5px 8px; font-size: 12px; gap: 0; text-align: center; flex-shrink: 0; }
+      .song-tempo-hint .sth-icon,
+      .song-tempo-hint .sth-label { display: none; }
+      .song-tempo-hint .sth-bpm { display: inline; }
+
+      /* Mobile portrait: show song-select in info bar row 1 when songbook open */
+      body.song-sheet-open #infobarSelectSlot {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+        padding: 0 4px;
+      }
       #infobarSelectSlot .song-select {
         width: 100%;
         font-size: 12px;
         padding: 4px 6px;
       }
-      /* On mobile, select replaces the song title in the hint slot */
       body.song-sheet-open .infobar-song-title { display: none; }
+
+      /* Portrait + songbook: tempo controls moved to info bar row 2 */
+      body.song-sheet-open .tempo-bar { display: none; }
+      body.song-sheet-open .song-progress { display: none; }
+
+      /* No Italian tempo buttons on portrait — slider only */
+      #tempoRangeGroup { display: none; }
+
+      /* Portrait + songbook: info bar becomes two rows */
+      body.song-sheet-open .info-bar {
+        flex-wrap: wrap;
+        min-height: unset;
+        padding-bottom: 0;
+        align-items: center;
+        align-content: space-between;
+        justify-content: flex-start;
+      }
+      body.song-sheet-open #infobarSelectSlot { flex: 1; }
+      body.song-sheet-open #songTempoHint { margin-right: 8px; }
+      body.song-sheet-open .infobar-right { margin-left: auto; }
+
+      /* Tempo slot: full-width second row, flush to bottom */
+      #infobarPortraitTempoSlot { display: none; }
+      body.song-sheet-open #infobarPortraitTempoSlot {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        width: 100%;
+        order: 99;
+        padding: 6px 0 0;
+      }
+      /* Tempo controls sizing inside portrait slot */
+      #infobarPortraitTempoSlot .tempo-btn { width: 28px; height: 28px; font-size: 13px; }
+      #infobarPortraitTempoSlot .tempo-btn.play-btn { width: 28px; height: 28px; }
+      #infobarPortraitTempoSlot .tempo-repeat-btn { font-size: 10px; }
+      #infobarPortraitTempoSlot .tempo-slider-wrap { flex: 1; min-width: 0; }
+      #infobarPortraitTempoSlot .tempo-val { font-size: 10px; min-width: 36px; }
+      #infobarPortraitTempoSlot .tempo-range-btn .tr-name { display: none; }
+      #infobarPortraitTempoSlot .tempo-range-btn .tr-hint { display: none; }
 
       .octave-btn { width: 24px; height: 24px; font-size: 14px; }
       .octave-display { gap: 4px; }
@@ -1752,10 +1813,9 @@
       body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-svg { height: 100%; width: auto; max-height: none; }
       body.sheet-music-on.song-sheet-open:not(.mode-touch) .sheet-music-display { height: 280px; flex: 0 0 280px; }
 
-      /* When sheet music is on AND the song sheet is open, shrink the
-         song sheet aggressively so the staff gets more room. */
-      body.sheet-music-on.song-sheet-open #songSheet { padding: 2px 8px; }
-      body.sheet-music-on.song-sheet-open .song-header { margin-bottom: 2px; }
+      /* When sheet music is on AND the song sheet is open, eliminate white gap */
+      body.sheet-music-on.song-sheet-open #songSheet { padding: 0; }
+      body.sheet-music-on.song-sheet-open .song-header { display: none; }
       body.sheet-music-on.song-sheet-open .strip-note { width: 28px; height: 36px; border-radius: 6px; }
       body.sheet-music-on.song-sheet-open .strip-note .sn-note { font-size: 10px; }
       body.sheet-music-on.song-sheet-open .strip-note .sn-key { font-size: 7px; margin-top: 0; }
@@ -1832,6 +1892,8 @@
       .tempo-range-btn { padding: 0; min-height: 22px; }
       .tempo-range-btn .tr-name,
       .tempo-range-btn .tr-hint { display: none; }
+      /* No Italian tempo buttons on portrait — slider only */
+      #tempoRangeGroup { display: none; }
       .tempo-range-labels { gap: 3px; }
       /* Slider thumb is also a bit big against the squeezed track below */
       input#tempoSlider.tempo-slider-segmented::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -3px; }
@@ -1983,6 +2045,9 @@
          collapsed piano-area) so the spacebar always sits at the screen bottom.
          flex-shrink:0 prevents any row from being squashed out of view. */
       body.mode-touch .qwerty-area { margin-top: auto !important; flex-shrink: 0 !important; padding-bottom: max(4px, env(safe-area-inset-bottom)) !important; }
+
+      /* Landscape: no Italian tempo buttons anywhere */
+      body.mode-touch.song-sheet-open .tempo-range-labels { display: none; }
 
       /* In landscape the tempo controls moved into the info bar, so hide
          the now-empty tempo-bar shell and progress bar inside #songSheet.
@@ -2271,6 +2336,7 @@
       gap: 24px;
       cursor: pointer;
       opacity: 0;
+      visibility: hidden;
       transition: opacity 0.15s ease;
     }
 
@@ -2840,6 +2906,9 @@
     .song-tempo-hint .sth-label {
       line-height: 1;
     }
+    .song-tempo-hint .sth-bpm {
+      line-height: 1;
+    }
     .song-tempo-hint:hover {
       background: var(--accent);
       color: #ffffff;
@@ -2862,7 +2931,7 @@
     }
 
     .song-select {
-      background: var(--surface2);
+      background: #ffffff;
       border: 1px solid var(--border);
       color: var(--text);
       padding: 7px 12px;
@@ -3011,10 +3080,6 @@
        When body.lyrics-crayon is active, all red/accent text uses the
        hand-written crayon look. Only accent-colored elements get the
        treatment — black/dark text stays clean for readability. */
-    @font-face {
-      font-family: 'Short Stack', cursive;
-    }
-
     /* Helper — shared crayon font stack */
     body.lyrics-crayon .big-note-display,
     body.lyrics-crayon .song-title,
@@ -3313,13 +3378,13 @@
     body.self-tempo-on .tempo-bar { gap: 8px; }
 
     .tempo-btn {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 999px;
       color: var(--text);
-      font-size: 16px;
+      font-size: 15px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -3329,12 +3394,12 @@
     }
 
     .tempo-btn.play-btn {
-      width: 40px;
-      height: 40px;
+      width: 34px;
+      height: 34px;
       background: var(--accent);
       border-color: var(--accent-deep);
       color: #ffffff;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
       box-shadow: 0 4px 10px var(--glow);
     }
@@ -3883,9 +3948,18 @@
     <button class="infobar-icon-btn" id="songBookInfoBtn" onclick="toggleSongSheetFromInfoBar()" title="Song Book">📖</button>
     <button class="infobar-icon-btn" id="sheetMusicInfoBtn" onclick="toggleSheetMusicFromInfoBar()" title="Sheet Music">🎵</button>
   </div>
+  <!-- Song select slot: visible in row 1 when songbook open (portrait) -->
+  <div id="infobarSelectSlot"></div>
+  <!-- Suggested tempo chip: always next to the song select -->
+  <button class="song-tempo-hint" id="songTempoHint"
+          onclick="useSuggestedTempo()"
+          title="Tap to play at the song's traditional speed">
+    <span class="sth-icon" aria-hidden="true">▸</span><!--
+    --><span class="sth-label" id="songTempoHintLabel"></span><!--
+    --><span class="sth-bpm" id="songTempoHintBpm"></span>
+  </button>
   <div class="modifier-hint" id="modHint">
     <span class="infobar-song-title" id="infobarSongTitle">⭐ Twinkle Twinkle Little Star</span>
-    <div id="infobarSelectSlot"></div>
     <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
     <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
   </div>
@@ -3893,13 +3967,14 @@
   <div id="infobarLandscapeSelectSlot" style="align-items:center;flex-shrink:0;"></div>
   <div id="infobarLandscapeTempoSlot" style="align-items:center;gap:4px;flex:1;flex-shrink:0;"></div>
   <div class="infobar-right" style="display:flex;align-items:center;gap:8px;">
-
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
       <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
       <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
     </div>
   </div>
+  <!-- Mobile portrait song-sheet mode: tempo bar moves here as a second row -->
+  <div id="infobarPortraitTempoSlot"></div>
 </div>
 
 <!-- SONG SHEET -->
@@ -3910,16 +3985,7 @@
          can absorb it, freeing vertical space for a taller piano. The
          slot is invisible (display:none) in portrait. -->
     <div class="song-header-note-slot" id="songHeaderNoteSlot"></div>
-    <div class="song-title-wrap">
-      <span class="song-title" id="songTitle">Twinkle Twinkle</span>
-    </div>
     <select class="song-select" id="songSelect" onchange="loadSong(this.value)"></select>
-    <button class="song-tempo-hint" id="songTempoHint"
-            onclick="useSuggestedTempo()"
-            title="Tap to play at the song's traditional speed">
-      <span class="sth-icon" aria-hidden="true">▸</span><!--
-      --><span class="sth-label" id="songTempoHintLabel"></span>
-    </button>
     <!-- Landscape-only slot for the Octave display (mirrors the note slot
          above; reparenting handled by syncLandscapeTopBar()). -->
     <div class="song-header-octave-slot" id="songHeaderOctaveSlot"></div>
@@ -3931,7 +3997,6 @@
          to a single row, freeing vertical space for the staff.
          Reparenting handled by syncLandscapeTopBar(). -->
     <div class="song-header-tempo-slot" id="songHeaderTempoSlot"></div>
-    <button class="song-close-btn" onclick="hideSongSheet()">✕</button>
   </div>
   <div class="note-strip-wrapper">
     <div class="ticker-bar-track"><div class="ticker-bar-fill" id="tickerBarFill"></div></div>
@@ -5072,7 +5137,6 @@ function triggerNoteByPianoKey(note, oct) {
   showNoteDisplay(id, labels.full, labels.short, color);
   trackActiveSheetNote(id, note, oct, color);
   pulseViz(color);
-  // Detect wrong / early notes for staff display before advancing
   if (currentSong && songSheetVisible && pendingChordNotes.size > 0 && !pendingChordNotes.has(note)) {
     recordWrongNote(id, note, oct, color);
   }
@@ -5087,11 +5151,8 @@ function releaseNoteByPianoKey(note, oct) {
   //
   // either way; the kid's release gesture is what we care about).
   advanceSongNoteOnRelease(note);
-  // Practice mode: record key release for duration scoring (tempo mode).
   practiceRecordRelease();
-  // Clear any wrong-note marker for this id
   clearWrongNote(id);
-  // Remove from display and sheet tracking
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
   // Enforce minimum audible duration — iOS taps can be <50ms which is inaudible
@@ -5283,7 +5344,6 @@ function handleNoteOn(letter, isSharp, isFlat) {
   showNoteDisplay(id, labels.full, labels.short, color);
   trackActiveSheetNote(id, note, octave, color);
   pulseViz(color);
-  // Detect wrong / early notes for staff display before advancing
   if (currentSong && songSheetVisible && pendingChordNotes.size > 0 && !pendingChordNotes.has(note)) {
     recordWrongNote(id, note, octave, color);
   }
@@ -5298,7 +5358,6 @@ function handleNoteOff(letter, isSharp, isFlat) {
   stopNote(id);
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
-  // Clear any wrong-note marker for this id
   clearWrongNote(id);
   highlightPianoKey(note, octave, false);
   highlightQKey(letter, false, null);
@@ -6078,10 +6137,7 @@ function renderSheetMusicSong(svg) {
     }
   }
 
-  // ── Wrong / early note overlay ──────────────────────────────────────────
-  // Notes played incorrectly or early are drawn at the current-note X slot
-  // so the player can see exactly what pitch they played. They look like
-  // ordinary notes and fade out over WRONG_NOTE_TTL ms.
+  // Wrong / early note overlay
   if (wrongNoteEntries.size > 0) {
     const now = performance.now();
     const wrongX = slotX(curIdx);
@@ -6552,8 +6608,6 @@ function practiceShowResult() {
     practiceNotesTotal = practiceCountTotal();
     currentNoteIdx = 0;
     currentRepeat = 1;
-    wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
-    wrongNoteEntries.clear();
     refreshPendingChord();
     updateRepeatBtn();
     renderNoteStrip();
@@ -6568,8 +6622,6 @@ function practiceCloseResult() {
   practiceNotesTotal = practiceCountTotal();
   currentNoteIdx = 0;
   currentRepeat = 1;
-  wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
-  wrongNoteEntries.clear();
   refreshPendingChord();
   updateRepeatBtn();
   renderNoteStrip();
@@ -6701,7 +6753,8 @@ function syncLandscapeTopBar() {
   // Song select moves into the info bar whenever the song book is open,
   // on ALL devices (not just mobile landscape). Tempo controls only move
   // on mobile landscape where vertical space is critical.
-  const wantsLandscapeInfoBar = sheetOpen;
+  const wantsLandscapeInfoBar = sheetOpen && isLandscape;
+  const wantsPortraitInfoBar  = sheetOpen && isMobilePortrait;
 
   // Core DOM references
   const infoBar       = document.querySelector('.info-bar');
@@ -6709,6 +6762,7 @@ function syncLandscapeTopBar() {
   const infobarRight  = infoBar ? infoBar.querySelector('.infobar-right') : null;
   const lsSelectSlot  = document.getElementById('infobarLandscapeSelectSlot');
   const lsTempoSlot   = document.getElementById('infobarLandscapeTempoSlot');
+  const ptTempoSlot   = document.getElementById('infobarPortraitTempoSlot');
   const songHeader    = document.querySelector('.song-header');
   const tempoBar      = document.querySelector('.tempo-bar');
 
@@ -6717,28 +6771,45 @@ function syncLandscapeTopBar() {
   const playBtn       = document.getElementById('tempoPlayBtn');
   const restartBtn    = document.getElementById('tempoRestartBtn');
   const repeatBtn     = document.getElementById('tempoRepeatBtn');
-  const tempoHintBtn  = document.getElementById('songTempoHint');
   const sliderWrap    = tempoBar ? tempoBar.querySelector('.tempo-slider-wrap') : null;
   const tempoVal      = document.getElementById('tempoVal');
   const octEl         = document.querySelector('.octave-display');
 
   if (wantsLandscapeInfoBar && lsSelectSlot && lsTempoSlot) {
-    // Show the landscape slots
+    // Show the landscape slots, hide portrait slot
     lsSelectSlot.style.display = 'flex';
     lsTempoSlot.style.display  = 'flex';
 
     // Move song select into landscape select slot
     if (selectEl && selectEl.parentElement !== lsSelectSlot) lsSelectSlot.appendChild(selectEl);
 
-    // Move tempo controls into landscape tempo slot
+    // Move tempo controls into landscape tempo slot (hint stays in info bar)
     if (playBtn     && playBtn.parentElement     !== lsTempoSlot) lsTempoSlot.appendChild(playBtn);
     if (restartBtn  && restartBtn.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(restartBtn);
     if (repeatBtn   && repeatBtn.parentElement   !== lsTempoSlot) lsTempoSlot.appendChild(repeatBtn);
-    if (tempoHintBtn && tempoHintBtn.parentElement !== lsTempoSlot) lsTempoSlot.appendChild(tempoHintBtn);
     if (sliderWrap  && sliderWrap.parentElement  !== lsTempoSlot) lsTempoSlot.appendChild(sliderWrap);
     if (tempoVal    && tempoVal.parentElement    !== lsTempoSlot) lsTempoSlot.appendChild(tempoVal);
 
     // Octave display stays in infobar-right
+    if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
+
+  } else if (wantsPortraitInfoBar && ptTempoSlot) {
+    // Portrait + songbook: tempo controls move to second info-bar row
+    if (lsSelectSlot) lsSelectSlot.style.display = 'none';
+    if (lsTempoSlot)  lsTempoSlot.style.display  = 'none';
+
+    // Select → portrait infobar slot
+    const portraitSelectSlot = document.getElementById('infobarSelectSlot');
+    if (selectEl && portraitSelectSlot && selectEl.parentElement !== portraitSelectSlot)
+      portraitSelectSlot.appendChild(selectEl);
+
+    // Tempo controls → portrait tempo slot (second row)
+    if (playBtn    && playBtn.parentElement    !== ptTempoSlot) ptTempoSlot.appendChild(playBtn);
+    if (restartBtn && restartBtn.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(restartBtn);
+    if (repeatBtn  && repeatBtn.parentElement  !== ptTempoSlot) ptTempoSlot.appendChild(repeatBtn);
+    if (sliderWrap && sliderWrap.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(sliderWrap);
+    if (tempoVal   && tempoVal.parentElement   !== ptTempoSlot) ptTempoSlot.appendChild(tempoVal);
+
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
 
   } else {
@@ -6763,18 +6834,15 @@ function syncLandscapeTopBar() {
       if (playBtn    && playBtn.parentElement    !== tempoBar) tempoBar.insertBefore(playBtn, tempoBar.firstChild);
       if (restartBtn && restartBtn.parentElement !== tempoBar) playBtn.insertAdjacentElement('afterend', restartBtn);
       if (repeatBtn  && repeatBtn.parentElement  !== tempoBar) restartBtn.insertAdjacentElement('afterend', repeatBtn);
-      if (tempoHintBtn && tempoHintBtn.parentElement !== tempoBar) repeatBtn.insertAdjacentElement('afterend', tempoHintBtn);
       if (sliderWrap && sliderWrap.parentElement !== tempoBar) tempoBar.appendChild(sliderWrap);
       if (tempoVal   && tempoVal.parentElement   !== tempoBar) tempoBar.appendChild(tempoVal);
     }
 
-    // Portrait: restore select from portrait slot if no longer needed there
+    // Portrait: restore select and tempo to original homes
     if (!isMobilePortrait || !sheetOpen) {
       const portraitSlot = document.getElementById('infobarSelectSlot');
       if (selectEl && songHeader && portraitSlot && selectEl.parentElement === portraitSlot) {
-        const th = document.getElementById('songTempoHint');
-        if (th && th.parentElement === songHeader) songHeader.insertBefore(selectEl, th);
-        else songHeader.appendChild(selectEl);
+        songHeader.insertBefore(selectEl, songHeader.querySelector('.song-header-tempo-slot') || songHeader.firstChild);
       }
     }
 
@@ -7523,15 +7591,15 @@ const SONGS = [
     id: 'this_old_man',
     title: '👴 This Old Man',
     category: 'nursery',
-    singleVerseCount: 32, // 1 verse = 32 notes; full 10 verses shown when lyrics are on
+    singleVerseCount: 30, // 1 verse = 30 notes; full 10 verses shown when lyrics are on
     notes: [
       // Verse 1: "he played one, knick-knack on my thumb"
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 2: "he played two, knick-knack on my shoe"
@@ -7539,8 +7607,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 3: "he played three, knick-knack on my knee"
@@ -7548,8 +7616,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 4: "he played four, knick-knack on my door"
@@ -7557,8 +7625,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 5: "he played five, knick-knack on my hive"
@@ -7566,8 +7634,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 6: "he played six, knick-knack on my sticks"
@@ -7575,8 +7643,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 7: "he played seven, knick-knack up in heaven"
@@ -7584,8 +7652,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 8: "he played eight, knick-knack on my gate"
@@ -7593,8 +7661,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 9: "he played nine, knick-knack on my spine"
@@ -7602,8 +7670,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
       // Verse 10: "he played ten, knick-knack once again"
@@ -7611,8 +7679,8 @@ const SONGS = [
       {n:'G',o:4,k:'G',d:1},{n:'E',o:4,k:'E',d:1},{n:'G',o:4,k:'G',d:2},
       {n:'A',o:4,k:'A',d:1},{n:'G',o:4,k:'G',d:1},{n:'F',o:4,k:'F',d:1},{n:'E',o:4,k:'E',d:1},
       {n:'D',o:4,k:'D',d:1},{n:'E',o:4,k:'E',d:1},{n:'F',o:4,k:'F',d:2},
-      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1},
-      {n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},{n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
+      {n:'G',o:4,k:'G',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:0.5},{n:'C',o:4,k:'C',d:1.5},{n:'C',o:4,k:'C',d:0.5},{n:'D',o:4,k:'D',d:0.5},
+      {n:'E',o:4,k:'E',d:0.5},{n:'F',o:4,k:'F',d:0.5},{n:'G',o:4,k:'G',d:2},
       {n:'G',o:4,k:'G',d:1},{n:'D',o:4,k:'D',d:1},{n:'D',o:4,k:'D',d:1},{n:'F',o:4,k:'F',d:1},
       {n:'E',o:4,k:'E',d:1},{n:'D',o:4,k:'D',d:1},{n:'C',o:4,k:'C',d:2},
     ]
@@ -8400,80 +8468,80 @@ const SONG_LYRICS = {
     'thumb',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 2 — two / shoe
     'This','old','man','he','played','two',
     'he','played','knick','knack','on','my',
     'shoe',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 3 — three / knee
     'This','old','man','he','played','three',
     'he','played','knick','knack','on','my',
     'knee',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 4 — four / door
     'This','old','man','he','played','four',
     'he','played','knick','knack','on','my',
     'door',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 5 — five / hive
     'This','old','man','he','played','five',
     'he','played','knick','knack','on','my',
     'hive',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 6 — six / sticks
     'This','old','man','he','played','six',
     'he','played','knick','knack','on','my',
     'sticks',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 7 — seven / heaven (both rhyme words fit across the 7 notes of phrase 2)
     'This','old','man','he','played','sev',
     'en','played','knick','knack','up','in',
     'heav',
     'en','knick','knack','pad','dy','whack',
-    'give','a',
-    'dog','a','bone','this',
-    'old','man','came','roll','ing','home',
+    'give',
+    'a','dog','a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 8 — eight / gate
     'This','old','man','he','played','eight',
     'he','played','knick','knack','on','my',
     'gate',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 9 — nine / spine
     'This','old','man','he','played','nine',
     'he','played','knick','knack','on','my',
     'spine',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home','',
+    'a','bone',
+    'this','old','man','came','roll','ing','home',
     // verse 10 — ten / once again
     'This','old','man','he','played','ten',
     'he','played','knick','knack','once','a',
     'gain',
     'knick','knack','pad','dy','whack','give',
     'a','dog',
-    'a','bone','this','old',
-    'man','came','roll','ing','home',''
+    'a','bone',
+    'this','old','man','came','roll','ing','home'
   ],
 
   // 24 notes
@@ -8998,14 +9066,7 @@ function getSongColor(songId) {
 }
 
 function applySongSelectColor(songId) {
-  const sel = document.getElementById('songSelect');
-  const title = document.getElementById('songTitle');
-  if (!sel) return;
-  const c = getSongColor(songId);
-  sel.style.background = c.bg;
-  sel.style.borderColor = c.border;
-  sel.style.color = '';  // keep select text default color
-  if (title) title.style.color = c.text;
+  // Select always stays white — no dynamic color override needed
 }
 
 function populateSongSelect() {
@@ -9066,14 +9127,12 @@ function loadSong(id) {
     currentSong = fullSong;
   }
   currentNoteIdx = 0;
-  currentRepeat = 1; // reset repeat progress for the new song
-  // Clear any wrong-note overlays from a previous song
+  currentRepeat = 1;
   wrongNoteEntries.forEach(e => { if (e.timer) clearTimeout(e.timer); });
   wrongNoteEntries.clear();
   refreshPendingChord();
   autoShiftOctaveToCurrentNote();
   practiceResetCounters();
-  document.getElementById('songTitle').textContent = currentSong.title;
   const infobarTitle = document.getElementById('infobarSongTitle');
   if (infobarTitle) infobarTitle.textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
@@ -9110,10 +9169,12 @@ function loadSong(id) {
   // don't have hover).
   const hint = document.getElementById('songTempoHint');
   const hintLbl = document.getElementById('songTempoHintLabel');
+  const hintBpm = document.getElementById('songTempoHintBpm');
   const sBPM = SUGGESTED_TEMPOS[currentSong.id];
   if (hint && hintLbl) {
     if (sBPM) {
       hintLbl.textContent = `\u2669 = ${sBPM}`;
+      if (hintBpm) hintBpm.textContent = sBPM;
       hint.classList.remove('hidden');
       // One-shot attention pulse — ride a class addition that triggers
       // the keyframes, then clear it so it can re-fire next time.
@@ -9122,6 +9183,7 @@ function loadSong(id) {
       hint.classList.add('pulse');
     } else {
       hintLbl.textContent = '';
+      if (hintBpm) hintBpm.textContent = '';
       hint.classList.add('hidden');
     }
   }
@@ -9450,14 +9512,11 @@ let pendingChordNotes = new Set();
 let armedChordNotes = new Set();
 
 // Wrong / early note tracking for sheet music display.
-// Each entry: { note, oct, color, ts } — ts is performance.now() at press.
-// Entries are removed when the key is released or after WRONG_NOTE_TTL ms.
-const WRONG_NOTE_TTL = 1800; // ms to show a wrong note on staff before it fades
-const wrongNoteEntries = new Map(); // id → { note, oct, color, ts, timer }
+const WRONG_NOTE_TTL = 1800;
+const wrongNoteEntries = new Map();
 
 function recordWrongNote(id, note, oct, color) {
   if (!currentSong || !songSheetVisible) return;
-  // Clear any existing timer for this id
   const existing = wrongNoteEntries.get(id);
   if (existing && existing.timer) clearTimeout(existing.timer);
   const timer = setTimeout(() => {
@@ -10409,6 +10468,7 @@ function unlockAndStart(e) {
 function hideSplash() {
   if (splashDone) return;
   splashDone = true;
+  document.body.classList.add('splash-done');
   const splash = document.getElementById('splash');
   if (splash) {
     splash.style.opacity = '';  // let .hidden transition take over
@@ -10423,7 +10483,10 @@ function hideSplash() {
 // Inter→Short Stack flash that would otherwise occur on first load.
 document.fonts.ready.then(() => {
   const splash = document.getElementById('splash');
-  if (splash && !splash.classList.contains('hidden')) splash.style.opacity = '1';
+  if (splash && !splash.classList.contains('hidden')) {
+    splash.style.visibility = 'visible';
+    splash.style.opacity = '1';
+  }
 });
 
 const splashBtn = document.getElementById('splashBtn');
