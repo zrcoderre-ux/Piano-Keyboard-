@@ -1256,18 +1256,22 @@
     }
 
     /* Desktop & tablet-portrait (NOT mobile landscape): when song book is open,
-       move the tempo hint button down to row 2 so it sits next to the tempo
-       slider instead of floating up next to OCT on row 1. The portrait tempo
-       slot stops being 100%-wide so it can share row 2 with the hint. */
+       move the tempo hint button down to row 2 (the slider row) and pin it to
+       the right end. We keep the tempo slot's width:100% (so row 2 stays its
+       own row) and float the hint absolutely on top — same trick the narrow
+       portrait layout uses. Reserve right-padding inside the slot so the
+       slider/Italian-buttons don't slide under the hint. */
     @media (min-width: 927px), (min-width: 431px) and (orientation: portrait) {
+      .info-bar { position: relative; }
       body.song-sheet-open #infobarPortraitTempoSlot {
-        width: auto;
-        flex: 1;
-        min-width: 0;
+        padding-right: 110px; /* enough room for the full hint button */
       }
-      body.song-sheet-open #songTempoHint {
-        order: 100;
-        margin-left: 8px;
+      body.song-sheet-open .song-tempo-hint:not(.hidden) {
+        position: absolute;
+        right: 20px;
+        bottom: 6px;
+        margin: 0;
+        order: unset;
         flex-shrink: 0;
       }
     }
