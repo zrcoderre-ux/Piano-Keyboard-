@@ -1822,7 +1822,7 @@
         right: 4px;
       }
       .infobar-right { margin-right: 4px; }
-      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; order: unset; max-width: calc(100% - 100px); }
+      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; order: unset; max-width: calc(100% - 130px); }
       #infobarSelectSlot .song-select {
         font-size: 12px;
         padding: 4px 6px;
@@ -5354,9 +5354,6 @@ function buildQwerty() {
       } else if (upper === 'ALT') {
         el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
         el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
-      } else if (upper === 'CAPS') {
-        // Caps Lock - no musical function, just ignore
-        el.style.opacity = '0.5';
       } else if (upper === 'SPACE') {
         el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(1); addRipple(el, e.touches[0] || e); }, { passive: false });
         el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(1); addRipple(el, e); } });
