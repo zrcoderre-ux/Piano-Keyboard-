@@ -65,17 +65,7 @@
     :root { --fs-zoom: 1; }
 
     html, body {
-      /* Both elements are pinned to the same dvh-based height (NOT a mix of
-         100% on html and 100dvh on body). Mixing reference systems causes a
-         one-frame wallpaper flash on iOS orientation change: the body
-         recalculates against fresh 100dvh immediately, but html's height: 100%
-         resolves against the layout viewport / initial containing block, which
-         iOS doesn't update synchronously during rotation. For one paint, body
-         is shorter than html, body is positioned inside html with no
-         alignment guarantee, and the html background shows through above the
-         header. Pinning both to the same dvh expression makes them recalc
-         together in a single layout pass. */
-      height: calc(100dvh / var(--fs-zoom, 1));
+      height: 100%;
       overflow: hidden;
       background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
       color: var(--text);
@@ -89,9 +79,11 @@
     body {
       display: flex;
       flex-direction: column;
-      /* height comes from the html, body rule above. Keeping it there (instead
-         of duplicating only on body) is the load-bearing detail: it ensures
-         html and body resolve against the same value on orientation change. */
+      /* When CSS zoom is applied to <html> in fullscreen, 100dvh refers to
+         the un-zoomed viewport. The zoomed body layout is then taller than
+         the visible area, clipping the bottom. Dividing by --fs-zoom shrinks
+         the layout height so zoom * (100dvh / zoom) = 100dvh exactly fits. */
+      height: calc(100dvh / var(--fs-zoom, 1));
     }
 
     /* Hide all direct body children except the splash until splash is dismissed,
@@ -10693,22 +10685,50 @@ document.addEventListener('touchend', e => {
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
 
-// Defense-in-depth reflow on viewport changes. The root cause of the
-// header-gap-on-rotation bug was fixed in CSS by pinning html and body to the
-// same `calc(100dvh / --fs-zoom)` expression so they recalc together as a
-// single layout pass. This function remains as a belt-and-braces nudge for
-// other moments where 100dvh can briefly go stale (entering/exiting
-// fullscreen, tab-switch on iOS, software-keyboard hide). It just toggles the
-// body height to force the value to be re-resolved.
-function fixHeaderPosition() {
+// iOS Safari visual-viewport offset bug (mobile rotation, persistent form):
+//
+// After rotating between portrait <-> landscape, iOS sometimes leaves the
+// rendered visual viewport offset down from the layout viewport by ~one
+// header's height. The layout itself is correct — body is at top:0 of html,
+// header is at top:0 of body — but iOS's compositor has shifted what's
+// painted to the screen. The visible result: the html background gradient
+// ("wallpaper") shows in a band at the top, and everything below it is
+// pushed down. Tapping anywhere in that wallpaper band fixes it because the
+// hit-test forces iOS to reconcile the visual viewport against the layout.
+//
+// This is NOT a CSS height issue (we tested unifying html/body heights — no
+// effect) and NOT a layout reflow issue (toggling body.style.height doesn't
+// help). It's a compositor-layer desync that requires explicitly nudging the
+// visual viewport back to (0, 0).
+//
+// The fix: scrollTo(0, 0) on every signal that the viewport has changed.
+// We also keep the body-height reflow as defense-in-depth for the unrelated
+// fullscreen-zoom path that uses --fs-zoom.
+function realignViewport() {
+  // Force layout to settle against the new viewport dimensions (relevant
+  // when --fs-zoom is in play; harmless otherwise).
   document.body.style.height = '';
-  void document.body.offsetHeight; // Force reflow
+  void document.body.offsetHeight;
   document.body.style.height = 'calc(100dvh / var(--fs-zoom, 1))';
+  // Snap the visual viewport to the top. Both APIs because iOS treats them
+  // as separate scroll surfaces during rotation.
+  window.scrollTo(0, 0);
+  if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
 }
 
-window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); fitSongSelectToContent(); fixHeaderPosition(); });
+// Backwards-compat alias: older call sites use fixHeaderPosition.
+const fixHeaderPosition = realignViewport;
+
+window.addEventListener('resize', () => {
+  buildPiano();
+  schedulePositionBlackKeys();
+  syncLandscapeTopBar();
+  fitSongSelectToContent();
+  realignViewport();
+});
+
 window.addEventListener('orientationchange', () => {
-  fixHeaderPosition();
+  realignViewport();
   buildPiano();
   schedulePositionBlackKeys();
   syncLandscapeTopBar();
@@ -10716,9 +10736,39 @@ window.addEventListener('orientationchange', () => {
   setTimeout(schedulePositionBlackKeys, 200);
   setTimeout(schedulePositionBlackKeys, 500);
   setTimeout(syncLandscapeTopBar, 200);
-  setTimeout(fixHeaderPosition, 200);
-  setTimeout(fixHeaderPosition, 500);
+  setTimeout(realignViewport, 200);
+  setTimeout(realignViewport, 500);
 });
+
+// VisualViewport events fire DURING the rotation animation on iOS — earlier
+// than `orientationchange` (which fires after the animation completes) and
+// earlier than `resize` (which fires inconsistently). Hooking these means we
+// realign while iOS is still animating, so the misaligned final state never
+// gets a chance to settle in. This is what eliminates the persistent gap.
+if (window.visualViewport) {
+  // Throttle with rAF: visualViewport fires many events during rotation;
+  // we only need one realign per frame.
+  let scheduled = false;
+  const onViewportChange = () => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      // Only realign if the visual viewport is actually offset. Reading
+      // these properties is cheap and avoids a needless scrollTo on every
+      // frame of legitimate user scrolling (which we don't have, since
+      // overflow is hidden, but be safe).
+      if (window.visualViewport.offsetTop !== 0 ||
+          window.visualViewport.offsetLeft !== 0 ||
+          window.visualViewport.pageTop !== 0 ||
+          window.visualViewport.pageLeft !== 0) {
+        realignViewport();
+      }
+    });
+  };
+  window.visualViewport.addEventListener('resize', onViewportChange);
+  window.visualViewport.addEventListener('scroll', onViewportChange);
+}
 
 // Register service worker.
 //
