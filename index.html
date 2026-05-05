@@ -10673,11 +10673,36 @@ document.addEventListener('touchend', e => {
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
 
-// Fix for header gap bug: force reflow to ensure header stays at top
+// Fix for header gap bug on mobile orientation change.
+//
+// Symptom: after rotating between portrait <-> landscape on iOS Safari, the
+// header sometimes appears ~one header's height below the top of the screen,
+// with the html background gradient ("wallpaper") visible above it. The whole
+// app is shifted down by that amount.
+//
+// Cause: this is the iOS visual-viewport offset bug. During an orientation
+// change, the visual viewport (the pinch-zoom layer the user actually sees)
+// can end up scrolled down relative to the layout viewport — even when
+// `html, body { overflow: hidden }` is set, because that only disables
+// *content* scrolling; it doesn't pin the visual viewport. Additionally,
+// `100dvh` is briefly stale right after rotation so the body is sized against
+// the old orientation, which is what nudges the visual viewport off origin in
+// the first place.
+//
+// Fix: force a body height reflow against the freshly-settled `100dvh`, then
+// scroll the window back to (0, 0). The scrollTo is the part that actually
+// snaps the visual viewport back to the top — without it, the reflow alone
+// can leave the gap on iOS.
 function fixHeaderPosition() {
   document.body.style.height = '';
-  void document.body.offsetHeight; // Force reflow
+  void document.body.offsetHeight; // Force reflow against fresh 100dvh
   document.body.style.height = 'calc(100dvh / var(--fs-zoom, 1))';
+  // Snap the visual viewport back to the top. Use both APIs: window.scrollTo
+  // handles the layout viewport, and on iOS visualViewport may be offset
+  // independently — we read it to know whether a correction is needed and
+  // scroll regardless to be safe.
+  window.scrollTo(0, 0);
+  if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
 }
 
 window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); fitSongSelectToContent(); fixHeaderPosition(); });
