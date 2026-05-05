@@ -10672,8 +10672,17 @@ document.addEventListener('touchend', e => {
 // Rebuild piano on resize / rotation. iOS sometimes fires resize before the
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
-window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); fitSongSelectToContent(); });
+
+// Fix for header gap bug: force reflow to ensure header stays at top
+function fixHeaderPosition() {
+  document.body.style.height = '';
+  void document.body.offsetHeight; // Force reflow
+  document.body.style.height = 'calc(100dvh / var(--fs-zoom, 1))';
+}
+
+window.addEventListener('resize', () => { buildPiano(); schedulePositionBlackKeys(); syncLandscapeTopBar(); fitSongSelectToContent(); fixHeaderPosition(); });
 window.addEventListener('orientationchange', () => {
+  fixHeaderPosition();
   buildPiano();
   schedulePositionBlackKeys();
   syncLandscapeTopBar();
@@ -10681,6 +10690,8 @@ window.addEventListener('orientationchange', () => {
   setTimeout(schedulePositionBlackKeys, 200);
   setTimeout(schedulePositionBlackKeys, 500);
   setTimeout(syncLandscapeTopBar, 200);
+  setTimeout(fixHeaderPosition, 200);
+  setTimeout(fixHeaderPosition, 500);
 });
 
 // Register service worker.
