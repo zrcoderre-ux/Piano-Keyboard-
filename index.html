@@ -10685,6 +10685,74 @@ document.addEventListener('touchend', e => {
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
 
+// ───────── ROTATION-BUG DEBUG OVERLAY (temporary) ─────────
+// On-screen log so we can see what's actually happening during the
+// orientation-change header-gap bug. Sample what every event source reports
+// during rotation, then on the corrective tap. Tap the overlay itself to
+// clear. Remove this whole IIFE once the bug is fixed.
+(function setupRotationDebug() {
+  const overlay = document.createElement('div');
+  overlay.id = 'rotDebug';
+  overlay.style.cssText = [
+    'position:fixed', 'top:0', 'right:0',
+    'z-index:99999',
+    'background:rgba(0,0,0,0.78)',
+    'color:#0f0',
+    'font:10px/1.25 ui-monospace,monospace',
+    'padding:4px 6px',
+    'max-width:230px',
+    'max-height:60vh',
+    'overflow:auto',
+    'pointer-events:auto',
+    'white-space:pre',
+    'border-bottom-left-radius:6px'
+  ].join(';');
+  overlay.textContent = 'rot debug ready\ntap overlay to clear\n';
+  // Append to <html> so it's not affected by the body-children visibility
+  // gating (so we can see it even before splash dismissal).
+  document.documentElement.appendChild(overlay);
+  overlay.addEventListener('click', (e) => {
+    e.stopPropagation();
+    overlay.textContent = 'cleared\n';
+  });
+
+  function snap(label) {
+    const vv = window.visualViewport;
+    const header = document.querySelector('header');
+    const body = document.body;
+    const html = document.documentElement;
+    const hRect = header ? header.getBoundingClientRect() : null;
+    const bRect = body.getBoundingClientRect();
+    const t = (performance.now() | 0) % 100000;
+    const parts = [
+      `[${t}] ${label}`,
+      `win:${window.innerWidth}x${window.innerHeight} sY:${window.scrollY}`,
+      vv ? `vv:${vv.width|0}x${vv.height|0} oT:${vv.offsetTop} pT:${vv.pageTop}` : 'vv:none',
+      `html.h:${html.clientHeight} body.h:${body.clientHeight}`,
+      `body.top:${bRect.top.toFixed(1)}`,
+      hRect ? `hdr.top:${hRect.top.toFixed(1)} h:${hRect.height.toFixed(1)}` : 'hdr:none',
+      ''
+    ];
+    overlay.textContent = parts.join('\n') + overlay.textContent;
+    // Keep overlay from growing without bound
+    if (overlay.textContent.length > 6000) {
+      overlay.textContent = overlay.textContent.slice(0, 6000);
+    }
+  }
+
+  window.addEventListener('orientationchange', () => snap('orient'));
+  window.addEventListener('resize', () => snap('resize'));
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => snap('vv-rs'));
+    window.visualViewport.addEventListener('scroll', () => snap('vv-sc'));
+  }
+  // Snap on the first tap so we can see "before tap" vs "after tap"
+  document.addEventListener('touchstart', () => snap('TOUCH'), { capture: true, passive: true });
+  setTimeout(() => snap('init'), 0);
+
+  window.__rotSnap = snap;
+})();
+
 // iOS Safari visual-viewport offset bug (mobile rotation, persistent form):
 //
 // After rotating between portrait <-> landscape, iOS sometimes leaves the
