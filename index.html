@@ -4055,7 +4055,7 @@
   <div class="modifier-hint" id="modHint">
     <span class="infobar-song-title" id="infobarSongTitle">⭐ Twinkle Twinkle Little Star</span>
     <div class="mod-hint-keyboard"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves" style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span> <strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></div>
-    <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Caps Lock</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
+    <div class="mod-hint-touch"><span style="white-space:nowrap"><strong style="color:#e63946">Shift</strong> → <span style="color:#e63946">sharp (♯)</span></span> <span style="white-space:nowrap"><strong style="color:#2196f3">Alt</strong> → <span style="color:#2196f3">flat (♭)</span></span> <span class="mod-hint-octaves"><span style="white-space:nowrap"><strong style="color:#4caf50">Space</strong> → <span style="color:#4caf50">oct ↑</span></span> <span style="white-space:nowrap"><strong style="color:#9c27b0">Tab</strong> → <span style="color:#9c27b0">oct ↓</span></span></span></div>
   </div>
   <!-- Landscape song-sheet mode: select and tempo controls reparented here -->
   <div id="infobarLandscapeSelectSlot" style="align-items:center;flex-shrink:0;"></div>
@@ -4902,7 +4902,7 @@ const QWERTY_ROWS = [
   ['Tab','Q','W','E','R','T','Y','U','I','O','P','[',']'],
   ['Caps','A','S','D','F','G','H','J','K','L',';',"'"],
   ['Shift','Z','X','C','V','B','N','M',',','.','/','Shift2'],
-  ['Space']
+  ['Alt','Space']
 ];
 
 // Musical notes assigned to letter keys
@@ -5280,7 +5280,7 @@ function buildQwerty() {
     row.forEach(key => {
       const el = document.createElement('div');
       const upper = key.toUpperCase().replace('SHIFT2','SHIFT');
-      const isModifier = ['TAB','CAPS','SHIFT','SHIFT2','SPACE'].includes(upper);
+      const isModifier = ['TAB','CAPS','ALT','SHIFT','SHIFT2','SPACE'].includes(upper);
       const isLetter = LETTER_KEYS.has(upper);
       const note = isLetter ? KEY_TO_NOTE[upper] : null;
 
@@ -5292,8 +5292,11 @@ function buildQwerty() {
       }
 
       if (key === 'Space') {
-        el.style.width = '120px';
+        el.style.width = '240px';
         el.innerHTML = `<span class="qkey-char" style="font-size:10px; letter-spacing:0.1em">SPACE</span>`;
+      } else if (key === 'Alt') {
+        el.style.width = '60px';
+        el.innerHTML = `<span class="qkey-char">Alt</span>`;
       } else {
         el.innerHTML = `
           <span class="qkey-char">${key === 'Shift2' ? '⇧' : key}</span>
@@ -5306,7 +5309,7 @@ function buildQwerty() {
         const getModifiers = () => ({
           isSharp: document.querySelector('[data-key="Shift"]')?.classList.contains('active') ||
                    document.querySelector('[data-key="Shift2"]')?.classList.contains('active'),
-          isFlat:  document.querySelector('[data-key="Caps"]')?.classList.contains('active')
+          isFlat:  document.querySelector('[data-key="Alt"]')?.classList.contains('active')
         });
 
         // Touch (mobile) — use touchstart/touchend to avoid double-fire with pointer events
@@ -5348,9 +5351,12 @@ function buildQwerty() {
       } else if (['SHIFT','SHIFT2'].includes(upper)) {
         el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
         el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
-      } else if (upper === 'CAPS') {
+      } else if (upper === 'ALT') {
         el.addEventListener('touchstart', e => { e.preventDefault(); el.classList.toggle('active'); }, { passive: false });
         el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); el.classList.toggle('active'); } });
+      } else if (upper === 'CAPS') {
+        // Caps Lock - no musical function, just ignore
+        el.style.opacity = '0.5';
       } else if (upper === 'SPACE') {
         el.addEventListener('touchstart', e => { e.preventDefault(); changeOctave(1); addRipple(el, e.touches[0] || e); }, { passive: false });
         el.addEventListener('pointerdown', e => { if (e.pointerType === 'mouse') { e.preventDefault(); changeOctave(1); addRipple(el, e); } });
