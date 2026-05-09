@@ -67,6 +67,14 @@
     html, body {
       height: 100%;
       overflow: hidden;
+      /* Prevent iOS from capturing rubber-band/overscroll as a scroll
+         position during orientation change. Without this, rotating between
+         portrait <-> landscape can leave window.scrollY at a negative value
+         (~one header height), which paints the body offset down from the
+         top with the html background gradient showing in the gap.
+         overscroll-behavior tells the browser not to allow the bounce
+         past the document edge. */
+      overscroll-behavior: none;
       background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
       color: var(--text);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -10685,101 +10693,32 @@ document.addEventListener('touchend', e => {
 // viewport has finished settling, so we also listen for orientationchange and
 // re-position once more after a beat.
 
-// ───────── ROTATION-BUG DEBUG OVERLAY (temporary) ─────────
-// On-screen log so we can see what's actually happening during the
-// orientation-change header-gap bug. Sample what every event source reports
-// during rotation, then on the corrective tap. Tap the overlay itself to
-// clear. Remove this whole IIFE once the bug is fixed.
-(function setupRotationDebug() {
-  const overlay = document.createElement('div');
-  overlay.id = 'rotDebug';
-  overlay.style.cssText = [
-    'position:fixed', 'top:0', 'right:0',
-    'z-index:99999',
-    'background:rgba(0,0,0,0.78)',
-    'color:#0f0',
-    'font:10px/1.25 ui-monospace,monospace',
-    'padding:4px 6px',
-    'max-width:230px',
-    'max-height:60vh',
-    'overflow:auto',
-    'pointer-events:auto',
-    'white-space:pre',
-    'border-bottom-left-radius:6px'
-  ].join(';');
-  overlay.textContent = 'rot debug ready\ntap overlay to clear\n';
-  // Append to <html> so it's not affected by the body-children visibility
-  // gating (so we can see it even before splash dismissal).
-  document.documentElement.appendChild(overlay);
-  overlay.addEventListener('click', (e) => {
-    e.stopPropagation();
-    overlay.textContent = 'cleared\n';
-  });
-
-  function snap(label) {
-    const vv = window.visualViewport;
-    const header = document.querySelector('header');
-    const body = document.body;
-    const html = document.documentElement;
-    const hRect = header ? header.getBoundingClientRect() : null;
-    const bRect = body.getBoundingClientRect();
-    const t = (performance.now() | 0) % 100000;
-    const parts = [
-      `[${t}] ${label}`,
-      `win:${window.innerWidth}x${window.innerHeight} sY:${window.scrollY}`,
-      vv ? `vv:${vv.width|0}x${vv.height|0} oT:${vv.offsetTop} pT:${vv.pageTop}` : 'vv:none',
-      `html.h:${html.clientHeight} body.h:${body.clientHeight}`,
-      `body.top:${bRect.top.toFixed(1)}`,
-      hRect ? `hdr.top:${hRect.top.toFixed(1)} h:${hRect.height.toFixed(1)}` : 'hdr:none',
-      ''
-    ];
-    overlay.textContent = parts.join('\n') + overlay.textContent;
-    // Keep overlay from growing without bound
-    if (overlay.textContent.length > 6000) {
-      overlay.textContent = overlay.textContent.slice(0, 6000);
-    }
-  }
-
-  window.addEventListener('orientationchange', () => snap('orient'));
-  window.addEventListener('resize', () => snap('resize'));
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => snap('vv-rs'));
-    window.visualViewport.addEventListener('scroll', () => snap('vv-sc'));
-  }
-  // Snap on the first tap so we can see "before tap" vs "after tap"
-  document.addEventListener('touchstart', () => snap('TOUCH'), { capture: true, passive: true });
-  setTimeout(() => snap('init'), 0);
-
-  window.__rotSnap = snap;
-})();
-
-// iOS Safari visual-viewport offset bug (mobile rotation, persistent form):
+// iOS Safari rotation rubber-band bug.
 //
-// After rotating between portrait <-> landscape, iOS sometimes leaves the
-// rendered visual viewport offset down from the layout viewport by ~one
-// header's height. The layout itself is correct — body is at top:0 of html,
-// header is at top:0 of body — but iOS's compositor has shifted what's
-// painted to the screen. The visible result: the html background gradient
-// ("wallpaper") shows in a band at the top, and everything below it is
-// pushed down. Tapping anywhere in that wallpaper band fixes it because the
-// hit-test forces iOS to reconcile the visual viewport against the layout.
+// Captured behavior (verified with on-device instrumentation):
+//   - Right after orientationchange, the resize event fires with
+//     window.scrollY = -47 and visualViewport.offsetTop = -47.
+//   - That ~47px corresponds to ~one header height.
+//   - iOS painted a frame at that offset before any JS had a chance to run,
+//     leaving the user looking at the body shifted down by one header.
 //
-// This is NOT a CSS height issue (we tested unifying html/body heights — no
-// effect) and NOT a layout reflow issue (toggling body.style.height doesn't
-// help). It's a compositor-layer desync that requires explicitly nudging the
-// visual viewport back to (0, 0).
+// Root cause: iOS Safari treats the rotation animation as a moment where
+// rubber-band overscroll can be captured. With overflow:hidden and no scroll
+// container, the negative scroll value sticks. A scrollTo(0,0) in JS corrects
+// the value but only runs after the misaligned frame already painted — hence
+// the flash.
 //
-// The fix: scrollTo(0, 0) on every signal that the viewport has changed.
-// We also keep the body-height reflow as defense-in-depth for the unrelated
-// fullscreen-zoom path that uses --fs-zoom.
+// Primary fix is CSS: `overscroll-behavior: none` on html and body tells the
+// browser not to allow that overscroll capture in the first place. This
+// function is the JS safety net — re-asserts scroll position immediately
+// in case some iOS version still sneaks past the CSS guard.
 function realignViewport() {
-  // Force layout to settle against the new viewport dimensions (relevant
-  // when --fs-zoom is in play; harmless otherwise).
+  // Body height reflow (kept for the --fs-zoom fullscreen path).
   document.body.style.height = '';
   void document.body.offsetHeight;
   document.body.style.height = 'calc(100dvh / var(--fs-zoom, 1))';
-  // Snap the visual viewport to the top. Both APIs because iOS treats them
-  // as separate scroll surfaces during rotation.
+
+  // Belt-and-braces scroll correction.
   window.scrollTo(0, 0);
   if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
 }
