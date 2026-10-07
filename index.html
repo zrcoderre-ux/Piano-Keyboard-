@@ -44,7 +44,7 @@
       /* Rainbow — used liberally for decorations & secondary accents */
       --rb-red:    #e63946;
       --rb-orange: #ff9800;
-      --rb-yellow: #ffd60a;
+      --rb-yellow: #ffeb3b;
       --rb-green:  #4caf50;
       --rb-blue:   #2196f3;
       --rb-purple: #9c27b0;
@@ -421,13 +421,24 @@
       .install-btn { display: none !important; }
     }
 
+    /* Mid-size screens (small laptops, tablets, phones in landscape):
+       Settings / Help become round icon buttons so the header fits on
+       one row. Their aria-labels keep the names for assistive tech. */
+    @media (max-width: 900px) {
+      header .settings-btn .btn-text { display: none; }
+      header .settings-btn { width: 40px; height: 40px; padding: 0; font-size: 17px; }
+    }
+    @media (max-width: 926px) and (orientation: landscape) {
+      header .settings-btn { width: 34px; height: 34px; font-size: 15px; }
+    }
+
     /* ── PHONE PORTRAIT HEADER: two rows ──
        Row 1: logo on the left, Settings / Help (icon-only) on the right.
        Row 2: the play-mode switch spanning the full width, so every mode
        gets a big, easy tap target and nothing is pushed off-screen on
        narrow phones (320–430px). .controls becomes display:contents so
        its children can be ordered directly inside the header. */
-    @media (max-width: 500px) and (orientation: portrait) {
+    @media (max-width: 700px) and (orientation: portrait) {
       header {
         flex-wrap: wrap;
         row-gap: 8px;
@@ -445,7 +456,7 @@
       header .settings-btn,
       header .install-btn { width: 40px; height: 40px; padding: 0; font-size: 17px; }
     }
-    @media (max-width: 500px) and (orientation: portrait) and (max-height: 700px) {
+    @media (max-width: 700px) and (orientation: portrait) and (max-height: 700px) {
       header { row-gap: 6px; padding: 6px 12px 8px; }
       header .mode-btn { min-height: 36px; padding: 7px 6px; }
       header .settings-btn,
@@ -466,31 +477,58 @@
 
     #settingsPanel.open { display: flex; }
 
+    /* Settings / Help dialogs: a fixed head (title + close) and foot
+       (Close / Got it) with only the body scrolling between them, so the
+       title and the ways out are always in view. */
     .settings-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 24px;
-      padding: 32px 28px;
       width: min(420px, 90vw);
       max-height: 80vh;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-head {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 26px 28px 14px;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .settings-card.is-scrolled .modal-head { border-bottom-color: var(--border); }
+    .modal-body {
+      flex: 1 1 auto;
+      min-height: 0;
       overflow-y: auto;
+      overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+      padding: 4px 28px 8px;
+    }
+    .modal-foot {
+      flex-shrink: 0;
+      padding: 14px 28px 22px;
+      border-top: 1px solid var(--border);
     }
 
-    .settings-card::-webkit-scrollbar { width: 6px; }
-    .settings-card::-webkit-scrollbar-track { background: transparent; }
-    .settings-card::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .settings-card::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    .modal-body::-webkit-scrollbar { width: 6px; }
+    .modal-body::-webkit-scrollbar-track { background: transparent; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .modal-body::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
     .settings-card h2 {
       font-size: 22px;
       font-weight: 800;
       letter-spacing: -0.01em;
       color: var(--accent);
-      margin-bottom: 24px;
       padding-bottom: 12px;
       position: relative;
     }
@@ -504,7 +542,7 @@
       height: 4px;
       border-radius: 2px;
       background: linear-gradient(to right,
-        #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f06292
+        var(--rb-red), var(--rb-orange), var(--rb-yellow), var(--rb-green), var(--rb-blue), var(--rb-purple), var(--rb-pink)
       );
     }
 
@@ -517,6 +555,9 @@
     }
 
     .setting-row:last-child { border-bottom: none; }
+    /* A label row whose controls follow in the next row (Octave Range):
+       no divider between the two halves of the same setting. */
+    .setting-row.setting-row-heading { border-bottom: none; padding-bottom: 6px; }
 
     .setting-label-icon {
       display: inline-flex;
@@ -747,7 +788,6 @@
     }
 
     .close-settings {
-      margin-top: 20px;
       width: 100%;
       padding: 14px;
       background: var(--accent);
@@ -765,24 +805,13 @@
     .close-settings:hover { background: var(--accent-deep); }
     .close-settings:active { transform: scale(0.98); }
 
-    /* X close in the top-right of Settings / Help. Sticky so it pins to
-       the top of the scrollable card as the user scrolls long settings.
-       Float-right + negative margin pulls it into the top-right corner
-       without consuming a row to itself; the heading and content flow
-       naturally around it. The sticky position uses the card itself as
-       the scroll container (.settings-card has overflow-y: auto). */
+    /* X close in the top-right of Settings / Help — part of the fixed
+       dialog head, so it never scrolls away. */
     .modal-close-x {
-      position: sticky;
-      top: 0;
-      float: right;
+      flex-shrink: 0;
       width: 36px;
       height: 36px;
-      /* Negative margins lift the button into the card's padding area
-         so it visually sits in the corner rather than indenting the
-         heading. Tuned against the card's 32px padding. */
-      margin-top: -8px;
-      margin-right: -8px;
-      margin-bottom: -28px;
+      margin-right: -6px;
       border: none;
       background: var(--surface2);
       color: var(--text-dim);
@@ -796,20 +825,12 @@
       align-items: center;
       justify-content: center;
       transition: background 0.12s, color 0.12s, transform 0.08s;
-      z-index: 5;
-      /* Subtle drop-shadow gives the button a "raised above content"
-         feel as the user scrolls — important since text scrolls UNDER
-         it. Without this the X reads as part of the content. */
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
     .modal-close-x:hover {
       background: var(--accent);
       color: #ffffff;
     }
     .modal-close-x:active { transform: scale(0.92); }
-    /* Card no longer needs position:relative — sticky positioning works
-       relative to the nearest scroll container, which is the card itself. */
-    .settings-card { position: relative; }
 
     /* Advanced Settings disclosure — a <details> block that groups the
        power-user controls (expanded keyboard, sustain, waveform, sharp-key
@@ -821,11 +842,12 @@
        has been generalized into a reusable section pattern; each section
        has its own summary header (with optional emoji icon) and reveals
        its rows on tap. */
+    /* One divider between blocks: the preceding pair/section already
+       draws a bottom rule, so sections only add their own bottom rule. */
     .settings-section {
-      margin-top: 6px;
-      border-top: 1px solid var(--border);
-      padding-top: 6px;
+      border-bottom: 1px solid var(--border);
     }
+    .settings-section:last-child { border-bottom: none; }
     .settings-section > summary {
       list-style: none;
       cursor: pointer;
@@ -835,10 +857,12 @@
       color: var(--text);
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 8px;
+      gap: 0;
       user-select: none;
     }
+    /* Title text sits left, next to its icon (like every other row); the
+       chevron is pushed to the far right. */
+    .settings-section > summary > span:not(.summary-icon) { flex: 1; text-align: left; }
     .settings-section > summary::-webkit-details-marker { display: none; }
     .settings-section > summary::after {
       content: '▾';
@@ -896,9 +920,25 @@
       text-shadow: 0 1px 4px rgba(0,0,0,0.55), 0 0 8px rgba(0,0,0,0.2);
     }
 
+    /* After the last key is released the note fades away completely
+       (it used to linger as a faint smudge). The slower transition lives
+       only on .dim, so a new note still appears instantly. */
     .big-note-display.dim {
-      opacity: 0.18;
+      opacity: 0;
       transform: scale(0.95);
+      transition: opacity 0.5s ease 0.1s, transform 0.5s ease 0.1s;
+    }
+
+    /* Before the first note: a friendly prompt instead of an empty dash. */
+    .big-note-display .idle-prompt {
+      font-size: clamp(15px, 1.8vw, 20px);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      color: var(--text-dim2);
+      text-shadow: none;
+      padding: 0 16px;
+      text-align: center;
+      line-height: 1.3;
     }
 
     .big-note-display.pulse {
@@ -1024,10 +1064,15 @@
        vertical room that the piano keyboard can use. The tradeoff
        favours a taller, more playable piano. Portrait keeps the display
        on (there's room there). */
-    @media (orientation: landscape) {
+    /* …but only on short landscape screens. Desktops and landscape
+       tablets have room for it, and without it the area between the song
+       strip and the piano is just empty. */
+    @media (orientation: landscape) and (max-height: 700px) {
       body.song-sheet-open .big-note-display {
         display: none !important;
       }
+    }
+    @media (orientation: landscape) {
 
       /* All-device rule (iPad + desktop touch users): when in Touch mode
          and either song-sheet or sheet-music is on, hide the piano keys.
@@ -1265,10 +1310,10 @@
     .octave-btn {
       width: 32px;
       height: 32px;
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: var(--ob-bg, var(--surface));
+      border: 1px solid var(--ob-border, var(--border));
       border-radius: 999px;
-      color: var(--text);
+      color: var(--ob-ink, var(--text));
       cursor: pointer;
       font-size: 18px;
       font-weight: 700;
@@ -1278,12 +1323,13 @@
       transition: all 0.1s;
     }
 
-    .octave-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .octave-btn:hover { --ob-bg: var(--ob-bg-hover); --ob-border: var(--ob-border-hover); --ob-ink: var(--ob-ink-hover); }
     .octave-btn:active { transform: scale(0.94); }
-    .octave-btn-minus { color: #e63946 !important; border-color: rgba(230,57,70,0.35) !important; background: rgba(230,57,70,0.08) !important; }
-    .octave-btn-minus:hover { color: #c92a36 !important; border-color: #e63946 !important; background: rgba(230,57,70,0.18) !important; }
-    .octave-btn-plus  { color: #4caf50 !important; border-color: rgba(76,175,80,0.35) !important; background: rgba(76,175,80,0.08) !important; }
-    .octave-btn-plus:hover  { color: #2e7d32 !important; border-color: #4caf50 !important; background: rgba(76,175,80,0.18) !important; }
+    /* − is red (down), + is green (up) */
+    .octave-btn-minus { --ob-ink: #e63946; --ob-border: rgba(230,57,70,0.35); --ob-bg: rgba(230,57,70,0.08);
+                        --ob-ink-hover: #c92a36; --ob-border-hover: #e63946; --ob-bg-hover: rgba(230,57,70,0.18); }
+    .octave-btn-plus  { --ob-ink: #43a047; --ob-border: rgba(76,175,80,0.35); --ob-bg: rgba(76,175,80,0.08);
+                        --ob-ink-hover: #2e7d32; --ob-border-hover: #4caf50; --ob-bg-hover: rgba(76,175,80,0.18); }
 
     .infobar-icon-btn {
       width: 34px;
@@ -1334,21 +1380,15 @@
     }
 
     /* Desktop & tablet-portrait (NOT mobile landscape): when song book is open,
-       move the tempo hint button down to row 2 (the slider row) and pin it to
-       the right end. We keep the tempo slot's width:100% (so row 2 stays its
-       own row) and float the hint absolutely on top — same trick the narrow
-       portrait layout uses. Reserve right-padding inside the slot so the
-       slider/Italian-buttons don't slide under the hint. */
+       the tempo hint button lives at the right end of row 2 (the slider row).
+       syncLandscapeTopBar() moves it into #infobarPortraitTempoSlot so it is
+       an ordinary flex item, vertically centred with the octave control and
+       the play buttons instead of floating absolutely below them. */
     @media (min-width: 927px), (min-width: 431px) and (orientation: portrait) {
       .info-bar { position: relative; }
-      body.song-sheet-open #infobarPortraitTempoSlot {
-        padding-right: 110px; /* enough room for the full hint button */
-      }
-      body.song-sheet-open .song-tempo-hint:not(.hidden) {
-        position: absolute;
-        right: 20px;
-        bottom: 6px;
-        margin: 0;
+      #infobarPortraitTempoSlot .song-tempo-hint:not(.hidden) {
+        position: static;
+        margin: 0 0 0 6px;
         order: unset;
         flex-shrink: 0;
       }
@@ -1372,7 +1412,7 @@
       /* Cap grows on bigger screens. iPhone overrides this in its media
          query, and viewport-height-driven clamp prevents overflow when the
          viewport is short. */
-      max-height: clamp(220px, 38vh, 320px);
+      max-height: clamp(220px, 40vh, 360px);
       gap: 0;
       padding: 10px 10px 0;
       background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
@@ -1428,7 +1468,10 @@
        below override this with flex-fill behavior so the piano spans
        the full screen on mobile. */
     .piano.single-octave .white-key {
-      flex: 0 0 130px;
+      /* Shrinkable (flex-shrink 1) so that on mid-size screens such as a
+         tablet in portrait the seven keys narrow to fit instead of the
+         last keys being cut off by the piano's edge. */
+      flex: 0 1 130px;
       min-width: 0;
       width: 130px;
       max-width: 130px;
@@ -1525,7 +1568,7 @@
     }
 
     .white-key.active-octave .key-note { color: #1a1a1a; }
-    .white-key.pressed .key-note { color: #ffffff; }
+    .white-key.pressed .key-note { color: var(--press-ink, #ffffff); }
 
     /* ── INVERTED KEYS MODE ──
        When body.keys-inverted is on, white keys show in their per-note
@@ -1556,11 +1599,11 @@
     body.keys-inverted .piano.piano-mode .white-key .key-note,
     body.keys-inverted .piano.single-octave .white-key .key-note,
     body.keys-inverted .piano.expanded:not(.piano-mode) .white-key.active-octave .key-note {
-      /* Note label needs to read against a colored background. White with
-         a soft shadow holds up across all the rainbow colors and stays
-         legible against pale and saturated alike. */
-      color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+      /* Note label reads against the key's own colour: white with a soft
+         shadow on saturated colours, dark ink on light ones (yellow,
+         amber, pale custom colours). Set per key by setKeyColorVars(). */
+      color: var(--key-rest-ink, #ffffff);
+      text-shadow: 0 1px 2px var(--key-rest-ink-shadow, rgba(0,0,0,0.35));
     }
     /* Pressed state in inverted mode: flip to white. The .pressed rule
        earlier sets background: var(--note-color, ...) inline via JS —
@@ -1580,7 +1623,7 @@
     body.keys-inverted .piano.piano-mode .white-key.pressed .key-note,
     body.keys-inverted .piano.single-octave .white-key.pressed .key-note,
     body.keys-inverted .piano.expanded:not(.piano-mode) .white-key.active-octave.pressed .key-note {
-      color: var(--key-rest-color, var(--text));
+      color: var(--key-rest-text, var(--key-rest-color, var(--text)));
       text-shadow: none;
     }
 
@@ -1760,7 +1803,7 @@
       line-height: 1;
     }
 
-    .qkey.pressed .qkey-char { color: #ffffff; }
+    .qkey.pressed .qkey-char { color: var(--press-ink, #ffffff); }
 
     .qkey .qkey-note {
       /* Note-name labels (e.g. "C", "D♯") are hidden — the QWERTY pad in
@@ -1817,16 +1860,23 @@
        Full-color (inverted) mode: the whole key background takes the
        note color (key label stays its default color for legibility). */
     body.keys-logo .qkey[data-note]:not(.pressed) .qkey-char {
+      /* Darkened where needed (yellow → gold) so it reads on the white key */
+      color: var(--note-text, var(--note-color, var(--accent)));
+    }
+    body.wallpaper-dark.keys-logo .qkey[data-note]:not(.pressed) .qkey-char {
       color: var(--note-color, var(--accent));
     }
     body.keys-inverted .qkey[data-note] {
       background: var(--note-color, var(--accent));
       border-color: var(--note-color, var(--accent));
     }
-    /* Pressed state: full-color keys go white text on press (same as piano). */
+    body.keys-inverted .qkey[data-note]:not(.pressed) .qkey-char {
+      color: var(--note-ink, #ffffff);
+    }
+    /* Pressed state: full-color keys take the press colour's ink. */
     body.keys-inverted .qkey[data-note].pressed .qkey-char,
     body.keys-inverted .qkey[data-note].pressed .qkey-note {
-      color: #ffffff;
+      color: var(--press-ink, #ffffff);
     }
     .viz-bar {
       height: 4px;
@@ -1881,10 +1931,11 @@
         font-size: 12px;
         flex-shrink: 0;
         white-space: nowrap;
-        /* Anchor to bottom-right of info-bar, on the tempo row */
+        /* Anchor to bottom-right of info-bar, on the tempo row, inside
+           the bar's 12px side gutter */
         position: absolute;
         bottom: 8px;
-        right: 4px;
+        right: 12px;
         order: unset;
         margin: 0;
       }
@@ -1899,10 +1950,10 @@
       body.song-sheet-open #infobarPortraitTempoSlot .octave-display {
         position: absolute;
         top: 5px;
-        right: 4px;
+        right: 12px;
       }
       .infobar-right { margin-right: 4px; }
-      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; order: unset; max-width: calc(100% - 130px); }
+      body.song-sheet-open #infobarSelectSlot { padding: 0 4px; flex: 1; min-width: 0; flex-shrink: 1; order: unset; max-width: calc(100% - 142px); }
       #infobarSelectSlot .song-select {
         font-size: 12px;
         padding: 4px 6px;
@@ -2006,7 +2057,10 @@
       /* Piano area — less vertical padding, shifted up slightly */
       .piano-area { padding: 4px 8px 0; }
       .piano-wrapper { padding-bottom: 10px; overflow: visible; }
-      .piano { max-height: 160px; }
+      /* Taller keys on taller phones (there used to be a big empty band
+         above a 160px piano); the flex layout still shrinks it when the
+         song sheet / staff need the room. */
+      .piano { max-height: clamp(160px, 30vh, 280px); }
 
       /* Smaller white keys so more octaves fit, but keep labels readable */
       .white-key { width: 38px; min-width: 28px; padding-bottom: 5px; }
@@ -2075,7 +2129,10 @@
       .tempo-val { font-size: 11px; min-width: 46px; }
 
       /* Settings card full-width on small screens */
-      .settings-card { width: 95vw; padding: 20px 16px; max-height: 85vh; }
+      .settings-card { width: 95vw; max-height: 85vh; }
+      .modal-head { padding: 18px 16px 12px; }
+      .modal-body { padding: 2px 16px 6px; }
+      .modal-foot { padding: 12px 16px 16px; }
     }
 
     /* ── LANDSCAPE iPhone ── */
@@ -2280,6 +2337,7 @@
 
       /* Song sheet: single-line strip, landscape-optimised. */
       #songSheet { padding: 3px 8px; }
+      .note-strip { padding: 4px 6px; }
       /* Reduce gap between song name row and lyrics strip */
       body.song-sheet-open .song-header { margin-bottom: 1px; }
       /* Smaller note keys — height freed goes to piano */
@@ -2318,7 +2376,21 @@
       .viz-bar { height: 2px; }
 
       /* Settings: full screen in landscape */
-      .settings-card { width: 90vw; max-height: 90vh; padding: 16px 14px; }
+      .settings-card { width: 90vw; max-height: 90vh; }
+      .modal-head { padding: 12px 16px 8px; }
+      .modal-body { padding: 0 16px 4px; }
+      .modal-foot { padding: 8px 16px 12px; }
+      .close-settings { padding: 10px; }
+    }
+
+    /* Tall phones in portrait have room to spare: bring back the big note
+       display in Touch mode and with the song sheet open, and give the
+       on-screen keypad bigger keys. */
+    @media (max-width: 430px) and (orientation: portrait) and (min-height: 740px) {
+      body:not(.sheet-music-on).mode-touch .big-note-display,
+      body:not(.sheet-music-on).song-sheet-open .big-note-display { display: flex; }
+      .qkey { height: 46px; }
+      .qwerty-row { margin-bottom: 4px; }
     }
 
     /* ── ROTATE-TO-PORTRAIT OVERLAY ── */
@@ -2428,16 +2500,31 @@
       margin-bottom: 8px;
     }
 
+    /* Two aligned columns: the key/feature chip, then its description.
+       A fixed first column keeps every description starting at the same
+       x, however wide its chip is. */
     .help-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 5px;
+      display: grid;
+      grid-template-columns: 8rem 1fr;
+      column-gap: 12px;
+      align-items: start;
+      margin-bottom: 7px;
       font-size: 13px;
+      line-height: 1.45;
       color: var(--text-dim);
     }
+    .help-row > .help-chip { justify-self: start; max-width: 100%; }
 
+    .chip-icon {
+      width: 16px;
+      height: 12px;
+      vertical-align: -1px;
+      margin-right: 5px;
+      flex-shrink: 0;
+    }
     .help-chip {
+      display: inline-flex;
+      align-items: center;
       flex-shrink: 0;
       background: var(--surface2);
       border: 1px solid var(--border);
@@ -2536,16 +2623,46 @@
       font-family: 'Short Stack', cursive;
     }
 
-    #splash .splash-logo-icon {
-      width: 56px;
-      height: 42px;
-      flex-shrink: 0;
+    /* Splash wordmark: "Arthur's" in crayon red, "Piano" above the logo. */
+    #splash .splash-arthurs {
+      color: var(--rb-red);
+      font-family: 'Short Stack', cursive;
+      font-size: 1.6em;
+      letter-spacing: 0.04em;
+      display: inline-block;
+      transform: rotate(-2deg);
+      margin-right: 10px;
+      align-self: flex-end;
+      margin-bottom: 18px;
+    }
+    #splash .splash-piano-block {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      vertical-align: middle;
+      width: 88px;
+      padding-top: 56px;
+    }
+    #splash .splash-piano-word {
+      display: block;
+      width: 100%;
+      text-align: center;
+      color: var(--text-dim);
+      font-weight: 700;
+      font-family: 'Playfair Display', Georgia, serif;
+      line-height: 1;
+      font-size: 0.82em;
+    }
+    #splash .splash-logo-svg {
+      width: 88px;
+      height: 66px;
+      margin-top: 2px;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
     }
 
     @media (max-width: 430px) {
       #splash .splash-title { font-size: 28px; gap: 10px; }
-      #splash .splash-logo-icon { width: 44px; height: 33px; }
     }
 
     #splash .splash-sub {
@@ -2611,13 +2728,13 @@
       right: 0;
       height: 8px;
     }
-    #splash .splash-keys .splash-key:nth-child(1)::before { background: #e63946; }
-    #splash .splash-keys .splash-key:nth-child(2)::before { background: #ff9800; }
-    #splash .splash-keys .splash-key:nth-child(3)::before { background: #ffeb3b; }
-    #splash .splash-keys .splash-key:nth-child(4)::before { background: #4caf50; }
-    #splash .splash-keys .splash-key:nth-child(5)::before { background: #2196f3; }
-    #splash .splash-keys .splash-key:nth-child(6)::before { background: #9c27b0; }
-    #splash .splash-keys .splash-key:nth-child(7)::before { background: #f06292; }
+    #splash .splash-keys .splash-key:nth-child(1)::before { background: var(--rb-red); }
+    #splash .splash-keys .splash-key:nth-child(2)::before { background: var(--rb-orange); }
+    #splash .splash-keys .splash-key:nth-child(3)::before { background: var(--rb-yellow); }
+    #splash .splash-keys .splash-key:nth-child(4)::before { background: var(--rb-green); }
+    #splash .splash-keys .splash-key:nth-child(5)::before { background: var(--rb-blue); }
+    #splash .splash-keys .splash-key:nth-child(6)::before { background: var(--rb-purple); }
+    #splash .splash-keys .splash-key:nth-child(7)::before { background: var(--rb-pink); }
 
     #splash.hidden {
       opacity: 0;
@@ -2637,11 +2754,11 @@
       transition: transform 0.1s;
     }
 
-    #splash .splash-key-space {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      width: 10px !important;
+    #splash .splash-keys .splash-key.splash-key-space {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+      width: 10px;
     }
     #splash .splash-key-space::before { display: none; }
 
@@ -2656,17 +2773,11 @@
       #splash .splash-title {
         font-size: 26px;
       }
-      /* Scale the inline piano SVG and its container */
-      #splash .splash-title > span:last-child {
-        width: 70px !important;
-        padding-top: 44px !important;
-      }
-      #splash .splash-title > span:last-child svg {
-        width: 70px !important;
-        height: 53px !important;
-      }
+      /* Scale the piano logo and its container */
+      #splash .splash-piano-block { width: 70px; padding-top: 44px; }
+      #splash .splash-logo-svg { width: 70px; height: 53px; }
       #splash .splash-tap-keys {
-        margin-top: 24px !important;
+        margin-top: 24px;
         gap: 3px;
       }
       #splash .splash-tap-keys .splash-key {
@@ -2674,9 +2785,7 @@
         height: 40px;
         font-size: 11px;
       }
-      #splash .splash-key-space {
-        width: 6px !important;
-      }
+      #splash .splash-keys .splash-key.splash-key-space { width: 6px; }
     }
 
     /* Extra-small phones (iPhone SE etc.) */
@@ -2690,46 +2799,43 @@
       #splash .splash-title {
         font-size: 22px;
       }
-      #splash .splash-title > span:last-child {
-        width: 58px !important;
-        padding-top: 36px !important;
-      }
-      #splash .splash-title > span:last-child svg {
-        width: 58px !important;
-        height: 44px !important;
-      }
+      #splash .splash-piano-block { width: 58px; padding-top: 36px; }
+      #splash .splash-logo-svg { width: 58px; height: 44px; }
       #splash .splash-tap-keys .splash-key {
         width: 19px;
         height: 34px;
         font-size: 10px;
       }
-      #splash .splash-key-space {
-        width: 5px !important;
-      }
+      #splash .splash-keys .splash-key.splash-key-space { width: 5px; }
     }
 
     #splash .splash-tap-keys:hover .splash-key { transform: translateY(-3px); }
     #splash .splash-tap-keys:active .splash-key { transform: translateY(2px); }
 
     /* Rainbow colors cycling across all 9 letter keys (nth-child skips spaces) */
-    #splash .splash-tap-keys .splash-key:nth-child(1)::before  { background: #e63946; }
-    #splash .splash-tap-keys .splash-key:nth-child(2)::before  { background: #ff9800; }
-    #splash .splash-tap-keys .splash-key:nth-child(3)::before  { background: #ffeb3b; }
-    #splash .splash-tap-keys .splash-key:nth-child(5)::before  { background: #4caf50; }
-    #splash .splash-tap-keys .splash-key:nth-child(6)::before  { background: #2196f3; }
-    #splash .splash-tap-keys .splash-key:nth-child(8)::before  { background: #9c27b0; }
-    #splash .splash-tap-keys .splash-key:nth-child(9)::before  { background: #f06292; }
-    #splash .splash-tap-keys .splash-key:nth-child(10)::before { background: #e63946; }
-    #splash .splash-tap-keys .splash-key:nth-child(11)::before { background: #ff9800; }
+    #splash .splash-tap-keys .splash-key:nth-child(1)::before  { background: var(--rb-red); }
+    #splash .splash-tap-keys .splash-key:nth-child(2)::before  { background: var(--rb-orange); }
+    #splash .splash-tap-keys .splash-key:nth-child(3)::before  { background: var(--rb-yellow); }
+    #splash .splash-tap-keys .splash-key:nth-child(5)::before  { background: var(--rb-green); }
+    #splash .splash-tap-keys .splash-key:nth-child(6)::before  { background: var(--rb-blue); }
+    #splash .splash-tap-keys .splash-key:nth-child(8)::before  { background: var(--rb-purple); }
+    #splash .splash-tap-keys .splash-key:nth-child(9)::before  { background: var(--rb-pink); }
+    #splash .splash-tap-keys .splash-key:nth-child(10)::before { background: var(--rb-red); }
+    #splash .splash-tap-keys .splash-key:nth-child(11)::before { background: var(--rb-orange); }
 
 
     /* ── COLOR SETTINGS ── */
+    /* Laid out like a keyboard: a row of sharps sitting between the
+       naturals below them (14 half-columns; every swatch spans two). */
     .color-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(14, 1fr);
+      row-gap: 6px;
+      column-gap: 0;
+      width: 100%;
       margin-top: 4px;
     }
+    .color-grid .color-swatch-row { grid-column-end: span 2; }
 
     /* ── WALLPAPER PICKER ──
        Same visual rhythm as the note-color grid but renders a row of
@@ -2737,8 +2843,8 @@
        one gets a thick accent ring around it. */
     .wallpaper-grid {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
       margin-top: 4px;
       width: 100%;
     }
@@ -2758,19 +2864,36 @@
       border-width: 3px;
       box-shadow: 0 2px 8px var(--glow);
     }
+    /* Selected badge: a small white disc with a red tick, readable on
+       every swatch (a bare white tick vanished on the light ones). */
     .wallpaper-swatch.active::after {
       content: '✓';
       position: absolute;
-      inset: 0;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin: -10px 0 0 -10px;
+      border-radius: 50%;
+      background: #ffffff;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--accent);
       font-weight: 800;
-      font-size: 16px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      font-size: 12px;
+      line-height: 1;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       pointer-events: none;
     }
+    /* Current value shown beside a setting's name (e.g. the wallpaper) */
+    .setting-value {
+      margin-left: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+    }
+    .setting-value:not(:empty)::before { content: '· '; color: var(--text-dim2); }
 
     .color-swatch-row {
       display: flex;
@@ -2788,8 +2911,8 @@
     }
 
     .color-swatch-row input[type="color"] {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border: 2px solid var(--border);
       border-radius: 999px;
       background: none;
@@ -2818,6 +2941,9 @@
     /* ── OCTAVE GROUPS ── */
     .octave-group {
       flex: 1;
+      /* min-width:0 lets the keys inside shrink to fit narrow screens
+         (otherwise the group's automatic minimum keeps 7×130px keys). */
+      min-width: 0;
       display: flex;
       flex-direction: column;
       height: 100%;
@@ -2843,8 +2969,10 @@
     .octave-label {
       text-align: center;
       font-family: 'Inter', sans-serif;
-      font-size: 9px;
-      padding: 2px 0 0;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.2;
+      padding: 2px 0 1px;
       letter-spacing: 0.05em;
       flex-shrink: 0;
     }
@@ -2901,7 +3029,7 @@
     .octave-range-display {
       font-family: 'Inter', sans-serif;
       font-size: 12px;
-      color: var(--accent);
+      color: var(--text-dim);
       text-align: center;
     }
 
@@ -2929,7 +3057,7 @@
       font-family: 'Inter', sans-serif;
       font-size: 13px;
       font-weight: 700;
-      color: var(--accent);
+      color: var(--text);
       width: 20px;
       text-align: right;
       flex-shrink: 0;
@@ -2937,8 +3065,57 @@
 
     input.oct-range[type="range"] {
       flex: 1;
-      accent-color: var(--accent);
       cursor: pointer;
+    }
+
+    /* ── SETTINGS SLIDERS ──
+       Volume / Octaves Shown / Octave Range share one look that matches
+       the tempo slider: a rounded track filled in brand red up to the
+       value (--fill, kept in sync by syncRangeFill) and a white thumb
+       with a dark ring. */
+    input.ui-range {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 24px;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      cursor: pointer;
+      --fill: 50%;
+    }
+    input.ui-range::-webkit-slider-runnable-track {
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, var(--accent) 0 var(--fill), var(--border2) var(--fill) 100%);
+    }
+    input.ui-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      margin-top: -6px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    input.ui-range::-moz-range-track {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--border2);
+    }
+    input.ui-range::-moz-range-progress {
+      height: 8px;
+      border-radius: 4px;
+      background: var(--accent);
+    }
+    input.ui-range::-moz-range-thumb {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2.5px solid var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
     }
 
     /* ── TOUCH RIPPLE ── */
@@ -3122,6 +3299,9 @@
     .note-strip {
       display: flex;
       gap: 6px;
+      /* Breathing room so the current chip's lift + ring is never clipped
+         by the wrapper's overflow, even at the very left edge. */
+      padding: 6px 8px 10px;
       transition: transform 0.3s ease;
       will-change: transform;
     }
@@ -3135,23 +3315,35 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      border: 2px solid transparent;
-      transition: all 0.15s;
+      /* Upcoming notes: a soft tint of the note colour with a solid
+         note-colour outline and full-strength text — clearly "to come",
+         not greyed-out. Colours are set per chip by renderNoteStrip():
+         --strip-color (note), --strip-bg (tint), --strip-bg-solid (full
+         colour), --strip-ink (text on the full colour). */
+      background: var(--strip-bg, var(--surface2));
+      border: 2px solid var(--strip-color, transparent);
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s, background 0.15s;
       position: relative;
-      opacity: 0.55;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10);
     }
 
+    /* The note to play now: solid colour, white keyline + colour ring,
+       lifted off the strip. */
     .strip-note.current {
-      opacity: 1;
-      border-color: var(--accent);
-      box-shadow: 0 4px 16px var(--glow);
-      transform: scale(1.08);
+      background: var(--strip-bg-solid, var(--strip-bg, var(--accent)));
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2.5px var(--strip-color, var(--accent)), 0 3px 6px rgba(0,0,0,0.18);
+      transform: translateY(-2px) scale(1.06);
+      z-index: 1;
     }
+    .strip-note.current .sn-note,
+    .strip-note.current .sn-cn { color: var(--strip-ink, rgba(0,0,0,0.8)); }
+    .strip-note.current .sn-oct,
+    .strip-note.current .sn-plus { color: var(--strip-ink-soft, rgba(0,0,0,0.55)); }
 
     .strip-note.played {
-      opacity: 0.4;
+      opacity: 0.38;
     }
 
     .strip-note.rest {
@@ -3184,9 +3376,14 @@
 
     .strip-note .sn-oct {
       font-family: 'Inter', sans-serif;
-      font-size: 8px;
-      color: rgba(0,0,0,0.45);
+      font-size: 9px;
+      font-weight: 600;
+      color: rgba(0,0,0,0.6);
     }
+    body.wallpaper-dark .strip-note:not(.current):not(.rest) .sn-note,
+    body.wallpaper-dark .strip-note:not(.current):not(.rest) .sn-cn { color: rgba(255,255,255,0.92); }
+    body.wallpaper-dark .strip-note:not(.current):not(.rest) .sn-oct,
+    body.wallpaper-dark .strip-note:not(.current):not(.rest) .sn-plus { color: rgba(255,255,255,0.6); }
 
     /* Lyric word shown above the note chip when Lyrics mode is on.
        Sits outside the chip itself as an absolutely-positioned label
@@ -3216,21 +3413,25 @@
     .strip-note.played .sn-lyric {
       opacity: 0.4;
     }
+    /* Lyric words take their note's colour — darkened where needed
+       (--strip-text, e.g. yellow → gold) so they stay readable on the
+       light song sheet. The dark wallpaper uses the bright colour as is. */
     body.lyrics-colored .strip-note .sn-lyric {
-      color: var(--strip-color, var(--accent)) !important;
+      color: var(--strip-text, var(--strip-color, var(--accent))) !important;
       opacity: 0.9;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
+      text-shadow: none;
     }
     body.lyrics-colored .strip-note.current .sn-lyric {
-      color: var(--strip-color, var(--accent)) !important;
+      color: var(--strip-text, var(--strip-color, var(--accent))) !important;
       opacity: 1;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
+      text-shadow: none;
     }
     body.lyrics-colored .strip-note.played .sn-lyric {
-      color: var(--strip-color, var(--accent)) !important;
+      color: var(--strip-text, var(--strip-color, var(--accent))) !important;
       opacity: 0.35;
-      text-shadow: 0 1px 4px rgba(0,0,0,0.45), 0 0 8px rgba(0,0,0,0.15);
+      text-shadow: none;
     }
+    body.wallpaper-dark.lyrics-colored .strip-note .sn-lyric { color: var(--strip-color, var(--accent)) !important; }
 
     /* ── CRAYON MODE ──
        When body.lyrics-crayon is active, all red/accent text uses the
@@ -3288,7 +3489,7 @@
     body.lyrics-crayon .strip-note:nth-child(3n+2) .sn-lyric { color: var(--rb-green);  transform: translateX(-50%) rotate(-2deg); }
     body.lyrics-crayon .strip-note:nth-child(3n)   .sn-lyric { color: var(--rb-purple); transform: translateX(-50%) rotate(0.5deg); }
     body.lyrics-crayon .strip-note.current .sn-lyric {
-      color: var(--rb-red) !important;
+      color: var(--strip-text, var(--rb-red)) !important;
       opacity: 1;
       font-size: 15px;
       transform: translateX(-50%) rotate(-1deg) scale(1.08);
@@ -3393,7 +3594,7 @@
       animation: celebrate 0.5s ease 3;
       display: none;
       background: linear-gradient(to right,
-        #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0, #f06292, #e63946
+        var(--rb-red), var(--rb-orange), var(--rb-yellow), var(--rb-green), var(--rb-blue), var(--rb-purple), var(--rb-pink), var(--rb-red)
       );
       background-size: 200% 100%;
       -webkit-background-clip: text;
@@ -3456,7 +3657,7 @@
       font-size: 48px;
       font-weight: 800;
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #e63946, #ff9800, #ffeb3b, #4caf50, #2196f3, #9c27b0);
+      background: linear-gradient(135deg, var(--rb-red), var(--rb-orange), var(--rb-yellow), var(--rb-green), var(--rb-blue), var(--rb-purple));
       background-size: 300% 300%;
       -webkit-background-clip: text;
       background-clip: text;
@@ -3633,16 +3834,16 @@
 
     /* ── TEMPO SLIDER — 4-SEGMENT COLORED TRACK ──
        The slider itself is fully draggable for fine control. Its track is
-       painted in four colored segments (green/red/orange/yellow) corresponding
-       to the four tempo ranges. The four <button>s below the slider sit
+       painted in four colored segments that warm up as the music speeds up
+       (green → yellow → orange → red) corresponding to the four tempo ranges. The four <button>s below the slider sit
        directly under their segment and act as quick-jump labels — clicking
        a label snaps to the middle BPM of that range.
 
        Segment boundaries (equal quarters of the 20-160 BPM range):
          Adagio   (slow)      20-55  → green   #4caf50 → mid 40
-         Moderato (medium)    55-90  → red     #e63946 → mid 70
+         Moderato (medium)    55-90  → yellow  #ffd600 → mid 70
          Allegro  (fast)      90-125 → orange  #ff9800 → mid 110
-         Presto   (very fast) 125-160→ yellow  #ffeb3b → mid 145
+         Presto   (very fast) 125-160→ red     #e63946 → mid 145
 
        Cross-browser slider styling: Chrome/Safari use ::-webkit-slider-*,
        Firefox uses ::-moz-range-*. Both pseudo-element trees get the same
@@ -3652,10 +3853,10 @@
        below. CSS custom property keeps it DRY and lets us re-use anywhere. */
     :root {
       --tempo-track-gradient: linear-gradient(to right,
-        #4caf50 0%, #4caf50 25%,
-        #e63946 25%, #e63946 50%,
-        #ff9800 50%, #ff9800 75%,
-        #ffeb3b 75%, #ffeb3b 100%);
+        var(--rb-green) 0%, var(--rb-green) 25%,
+        #ffd600 25%, #ffd600 50%,
+        var(--rb-orange) 50%, var(--rb-orange) 75%,
+        var(--rb-red) 75%, var(--rb-red) 100%);
     }
 
     input#tempoSlider.tempo-slider-segmented {
@@ -3786,9 +3987,9 @@
       --tr-border:#a5d6a7; /* mid green border for definition */
     }
     .tempo-range-btn[data-range="moderato"] {
-      --tr-color: #e63946;
-      --tr-tint:  #fde9eb; /* very soft red */
-      --tr-border:#f4a8ad;
+      --tr-color: #ffd600; /* slightly deeper than the brand yellow for legibility */
+      --tr-tint:  #fffae0; /* very soft yellow */
+      --tr-border:#fff176;
     }
     .tempo-range-btn[data-range="allegro"] {
       --tr-color: #ff9800;
@@ -3796,9 +3997,9 @@
       --tr-border:#ffcc80;
     }
     .tempo-range-btn[data-range="presto"] {
-      --tr-color: #ffd600; /* slightly deeper than the bar yellow for legibility */
-      --tr-tint:  #fffae0; /* very soft yellow */
-      --tr-border:#fff176;
+      --tr-color: #e63946;
+      --tr-tint:  #fde9eb; /* very soft red */
+      --tr-border:#f4a8ad;
     }
 
     .tempo-range-btn .tr-name {
@@ -3809,7 +4010,7 @@
       color: var(--tr-color);
     }
 
-    .tempo-range-btn[data-range="presto"] .tr-name { color: #78610a; }
+    .tempo-range-btn[data-range="moderato"] .tr-name { color: #78610a; }
 
     .tempo-range-btn .tr-hint {
       font-size: 9px;
@@ -3828,9 +4029,9 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.5);
     }
     .tempo-range-btn[data-range="adagio"]:hover   { background: #c5e8c7; }
-    .tempo-range-btn[data-range="moderato"]:hover { background: #f8c6cb; }
+    .tempo-range-btn[data-range="moderato"]:hover { background: #fff3a0; }
     .tempo-range-btn[data-range="allegro"]:hover  { background: #ffe0b3; }
-    .tempo-range-btn[data-range="presto"]:hover   { background: #fff3a0; }
+    .tempo-range-btn[data-range="presto"]:hover   { background: #f8c6cb; }
     @supports (background: color-mix(in srgb, red, blue)) {
       .tempo-range-btn:hover {
         background: color-mix(in srgb, var(--tr-color) 22%, white);
@@ -3867,8 +4068,8 @@
       text-shadow: 0 1px 1px rgba(0,0,0,0.18);
     }
     /* Yellow needs dark text — white on yellow is illegible. */
-    .tempo-range-btn.active[data-range="presto"] .tr-name,
-    .tempo-range-btn.active[data-range="presto"] .tr-hint {
+    .tempo-range-btn.active[data-range="moderato"] .tr-name,
+    .tempo-range-btn.active[data-range="moderato"] .tr-hint {
       color: #4a3500;
       text-shadow: 0 1px 0 rgba(255,255,255,0.3);
     }
@@ -3945,7 +4146,7 @@
       }
       body.wallpaper-dark .tempo-range-btn.active { background: var(--tr-color); border-color: var(--tr-color); }
     }
-    body.wallpaper-dark .tempo-range-btn[data-range] .tr-name { filter: brightness(1.25); }
+    body.wallpaper-dark .tempo-range-btn:not(.active) .tr-name { color: var(--tr-color); }
   </style>
 </head>
 <body class="mode-keyboard lyrics-crayon lyrics-colored keys-logo">
@@ -3970,6 +4171,12 @@
       <!-- Clip to original shape so texture doesn't spill outside letters -->
       <feComposite in="blended" in2="SourceGraphic" operator="in"/>
     </filter>
+    <!-- Play-mode icons, drawn in the same style as the piano logo (dark
+         body, red top bar, rainbow accents) so the three modes read as a
+         set on every device — emoji render differently per platform. -->
+    <symbol id="icon-piano" viewBox="0 0 32 24"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#fff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></symbol>
+    <symbol id="icon-laptop" viewBox="0 0 32 24"><rect x="4.5" y="1" width="23" height="16" rx="2.2" fill="#4a3a3a"/><rect x="6.5" y="3" width="19" height="12" rx="1" fill="#fff"/><rect x="6.5" y="3" width="19" height="2.4" fill="#e63946"/><g><rect x="8.2" y="7.4" width="3.2" height="3.2" rx="0.7" fill="#e63946"/><rect x="12.1" y="7.4" width="3.2" height="3.2" rx="0.7" fill="#ff9800"/><rect x="16.0" y="7.4" width="3.2" height="3.2" rx="0.7" fill="#4caf50"/><rect x="19.9" y="7.4" width="3.2" height="3.2" rx="0.7" fill="#2196f3"/><rect x="10.1" y="11.2" width="11.8" height="1.8" rx="0.9" fill="#d9d2c8"/></g><path d="M1 18.2h30l-1.8 3.6a2 2 0 0 1-1.8 1.2H4.6a2 2 0 0 1-1.8-1.2z" fill="#4a3a3a"/><rect x="12.5" y="18.2" width="7" height="1.4" rx="0.7" fill="#2a1a1a"/></symbol>
+    <symbol id="icon-touch" viewBox="0 0 32 24"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/><rect x="3" y="5" width="26" height="16" rx="1.5" fill="#fff"/><g><rect x="4.5" y="6.6" width="3.6" height="3.6" rx="0.8" fill="#e9e3da"/><rect x="9.2" y="6.6" width="3.6" height="3.6" rx="0.8" fill="#ffeb3b"/><rect x="13.9" y="6.6" width="3.6" height="3.6" rx="0.8" fill="#e9e3da"/><rect x="18.6" y="6.6" width="3.6" height="3.6" rx="0.8" fill="#e9e3da"/><rect x="23.3" y="6.6" width="3.6" height="3.6" rx="0.8" fill="#e9e3da"/><rect x="6.0" y="11.2" width="3.6" height="3.6" rx="0.8" fill="#9c27b0"/><rect x="10.7" y="11.2" width="3.6" height="3.6" rx="0.8" fill="#ff9800"/><rect x="15.4" y="11.2" width="3.6" height="3.6" rx="0.8" fill="#4caf50"/><rect x="20.1" y="11.2" width="3.6" height="3.6" rx="0.8" fill="#2196f3"/><rect x="9.2" y="15.8" width="13.6" height="3.4" rx="0.9" fill="#e9e3da"/></g></symbol>
   </defs>
 </svg>
 
@@ -4019,7 +4226,7 @@
 <div id="splash">
   <div class="splash-inner">
   <div class="splash-title">
-    <span style="color:#e63946;font-family:'Short Stack',cursive;font-size:1.6em;letter-spacing:0.04em;display:inline-block;transform:rotate(-2deg);margin-right:10px;align-self:flex-end;margin-bottom:18px">Arthur's</span><span style="display:inline-flex;flex-direction:column;align-items:center;gap:0;vertical-align:middle;width:88px;padding-top:56px"><span style="color:var(--text-dim);font-weight:700;font-family:'Playfair Display',Georgia,serif;line-height:1;font-size:0.82em;width:100%;text-align:center;display:block">Piano</span><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:88px;height:66px;margin-top:2px;filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3))">
+    <span class="splash-arthurs">Arthur's</span><span class="splash-piano-block"><span class="splash-piano-word">Piano</span><svg class="splash-logo-svg" viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/>
         <rect x="2.5"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
         <rect x="6.4"  y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/>
@@ -4094,9 +4301,9 @@
   <div class="header-compact-slot" id="headerCompactSlot"></div>
   <div class="controls">
     <div class="mode-toggle" role="group" aria-label="Play mode">
-      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')" aria-pressed="false"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></svg></span><span class="btn-label">Piano</span></button>
-      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')" aria-pressed="true"><span class="mode-icon" aria-hidden="true">💻</span><span class="btn-label">Keyboard</span></button>
-      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')" aria-pressed="false"><span class="mode-icon" aria-hidden="true">⌨️</span><span class="btn-label">Touch</span></button>
+      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')" aria-pressed="false"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 32 24"><use href="#icon-piano"/></svg></span><span class="btn-label">Piano</span></button>
+      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')" aria-pressed="true"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 32 24"><use href="#icon-laptop"/></svg></span><span class="btn-label">Keyboard</span></button>
+      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')" aria-pressed="false"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 32 24"><use href="#icon-touch"/></svg></span><span class="btn-label">Touch</span></button>
     </div>
     <button class="settings-btn settings-btn-settings" onclick="openSettings()" aria-label="Settings"><span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-text">Settings</span></button>
     <button class="settings-btn settings-btn-help" onclick="openHelp()" aria-label="Help"><span class="btn-icon" aria-hidden="true">?</span><span class="btn-text">Help</span></button>
@@ -4217,7 +4424,7 @@
 <div class="piano-area">
   <!-- Big note letter display (default). Replaced by the sheet-music-display
        below when the user enables the Sheet Music setting. -->
-  <div class="big-note-display dim" id="bigNoteDisplay">—</div>
+  <div class="big-note-display idle" id="bigNoteDisplay"><span class="idle-prompt" id="idlePrompt">Press A – G to play!</span></div>
   <!-- Sheet music staff — hidden unless body.sheet-music-on is set. The SVG
        contents are rendered by renderSheetMusic() whenever active notes
        change. -->
@@ -4239,9 +4446,12 @@
 
 <!-- SETTINGS PANEL -->
 <div id="settingsPanel">
-  <div class="settings-card">
-    <button class="modal-close-x" onclick="closeSettings()" aria-label="Close settings">✕</button>
-    <h2>⚙ Settings</h2>
+  <div class="settings-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-head">
+      <h2 id="settingsTitle">⚙ Settings</h2>
+      <button class="modal-close-x" onclick="closeSettings()" aria-label="Close settings">✕</button>
+    </div>
+    <div class="modal-body">
 
     <!-- TOP-LEVEL TOGGLES — the most-frequently-used settings sit
          above any disclosure. Song Sheet and Self-Tempo are paired:
@@ -4399,7 +4609,7 @@
   
           </div>
           <div class="octave-slider-row">
-            <input class="oct-range" type="range" id="octavesShownSlider"
+            <input class="oct-range ui-range" type="range" id="octavesShownSlider" aria-label="Octaves shown"
               min="1" max="7" value="2" step="1"
               oninput="updateOctavesShown()" />
             <span class="octave-slider-val" id="octavesShownVal">2</span>
@@ -4424,6 +4634,7 @@
         <div class="setting-label">
           <span class="setting-label-icon icon-wallpaper">🖼️</span>
           Wallpaper
+          <span class="setting-value" id="wallpaperName"></span>
 
         </div>
         <div class="wallpaper-grid" id="wallpaperGrid"></div>
@@ -4474,6 +4685,12 @@
         </span>
       </summary>
 
+      <!-- Crayon Mode toggle hidden (crayon is now default); JS architecture kept via toggleLyricsCrayon() -->
+      <input type="checkbox" id="lyricsCrayonMode" onchange="toggleLyricsCrayon()" checked style="display:none" />
+      <!-- Colored Lyrics toggle hidden (colored is now default); JS architecture kept via toggleLyricsColor() -->
+      <div id="lyricsColorRow" style="display:none">
+        <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" checked />
+      </div>
       <div class="setting-row">
         <div class="setting-label">
           <span class="setting-label-icon icon-volume">🔊</span>
@@ -4481,7 +4698,7 @@
 
         </div>
         <input type="range" min="0" max="100" value="70" id="volumeSlider"
-          style="accent-color: var(--accent); width:100px"
+          class="ui-range" style="width:130px" aria-label="Volume"
           oninput="setVolume(this.value)" />
       </div>
 
@@ -4517,7 +4734,7 @@
            the piano to notes that sound good on the device's speakers
            (very high or very low octaves can be inaudible or distorted
            on small phone speakers). Set once per device and forget. -->
-      <div class="setting-row">
+      <div class="setting-row setting-row-heading">
         <div class="setting-label" style="width:100%">
           <span class="setting-label-icon icon-octaverange">🎼</span>
           Octave Range
@@ -4528,14 +4745,14 @@
         <div class="octave-dual-sliders">
           <div class="octave-slider-row">
             <span class="octave-slider-label">Min</span>
-            <input class="oct-range" type="range" id="minOctSlider"
+            <input class="oct-range ui-range" type="range" id="minOctSlider" aria-label="Lowest octave"
               min="1" max="7" value="2"
               oninput="updateOctaveRange()" />
             <span class="octave-slider-val" id="minOctVal">2</span>
           </div>
           <div class="octave-slider-row">
             <span class="octave-slider-label">Max</span>
-            <input class="oct-range" type="range" id="maxOctSlider"
+            <input class="oct-range ui-range" type="range" id="maxOctSlider" aria-label="Highest octave"
               min="1" max="7" value="6"
               oninput="updateOctaveRange()" />
             <span class="octave-slider-val" id="maxOctVal">6</span>
@@ -4543,43 +4760,43 @@
           <div class="octave-range-display" id="octaveRangeDisplay">Showing octaves 2 – 6</div>
         </div>
       </div>
-      <!-- Crayon Mode toggle hidden (crayon is now default); JS architecture kept via toggleLyricsCrayon() -->
-      <input type="checkbox" id="lyricsCrayonMode" onchange="toggleLyricsCrayon()" checked style="display:none" />
-      <!-- Colored Lyrics toggle hidden (colored is now default); JS architecture kept via toggleLyricsColor() -->
-      <div id="lyricsColorRow" style="display:none">
-        <input type="checkbox" id="lyricsColorMode" onchange="toggleLyricsColor()" checked />
-      </div>
     </details>
 
-    <button class="close-settings" onclick="closeSettings()">Close</button>
+    </div>
+    <div class="modal-foot">
+      <button class="close-settings" onclick="closeSettings()">Close</button>
+    </div>
   </div>
 </div>
 
 <!-- HELP MODAL -->
 <div id="helpPanel">
-  <div class="settings-card help-card">
-    <button class="modal-close-x" onclick="closeHelp()" aria-label="Close help">✕</button>
-    <h2>? How to Play</h2>
+  <div class="settings-card help-card" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-head">
+      <h2 id="helpTitle">? How to Play</h2>
+      <button class="modal-close-x" onclick="closeHelp()" aria-label="Close help">✕</button>
+    </div>
+    <div class="modal-body">
 
     <div class="help-section">
       <div class="help-section-title" style="color:#e63946">🎹 Three Play Modes</div>
       <p>Switch between modes using the buttons in the top bar.</p>
       <div class="help-row">
-        <div class="help-chip">💻 Keyboard</div>
+        <div class="help-chip"><svg class="chip-icon" viewBox="0 0 32 24" aria-hidden="true"><use href="#icon-laptop"/></svg>Keyboard</div>
         <span>Use your computer keyboard — A B C D E F G play notes. Best for laptops &amp; desktops</span>
       </div>
       <div class="help-row">
-        <div class="help-chip">⌨️ Touch</div>
+        <div class="help-chip"><svg class="chip-icon" viewBox="0 0 32 24" aria-hidden="true"><use href="#icon-touch"/></svg>Touch</div>
         <span>On-screen QWERTY pad for touchscreens — best for phones &amp; tablets</span>
       </div>
       <div class="help-row">
-        <div class="help-chip">🎹 Piano</div>
+        <div class="help-chip"><svg class="chip-icon" viewBox="0 0 32 24" aria-hidden="true"><use href="#icon-piano"/></svg>Piano</div>
         <span>Tap or click the piano keys directly — no keyboard needed. Best for tablets used as a piano</span>
       </div>
     </div>
 
     <div class="help-section">
-      <div class="help-section-title" style="color:#ff9800">⌨️ Keyboard Mode</div>
+      <div class="help-section-title" style="color:#ff9800"><svg class="chip-icon" viewBox="0 0 32 24" aria-hidden="true"><use href="#icon-laptop"/></svg> Keyboard Mode</div>
       <p>The keys <strong>A B C D E F G</strong> play the notes of the same name in the current octave.</p>
       <!-- Built from the live note colours by buildHelpNoteTable(), so it
            always matches the keys (including any custom colours). -->
@@ -4638,7 +4855,10 @@
       <p>On iPhone, rotate to <strong>landscape</strong> for a wider keyboard and more comfortable playing. Portrait mode works well for quick practice. Make sure your <strong>ringer switch</strong> is not muted — it silences Web Audio on iOS.</p>
     </div>
 
-    <button class="close-settings" onclick="closeHelp()">Got it</button>
+    </div>
+    <div class="modal-foot">
+      <button class="close-settings" onclick="closeHelp()">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -4728,9 +4948,9 @@ const DEFAULT_NOTE_COLORS = {
   'D#': '#ffc107', // amber (between D orange and E yellow)
   'E':  '#ffeb3b', // yellow
   'F':  '#4caf50', // green
-  'F#': '#009688', // teal (between F green and G teal)
-  'G':  '#00897b', // teal
-  'G#': '#2196f3', // blue (A flat = blue)
+  'F#': '#009688', // teal (between F green and G blue)
+  'G':  '#2196f3', // blue — same blue as the logo / splash / app icon
+  'G#': '#3f51b5', // indigo (between G blue and A purple)
   'A':  '#9c27b0', // purple
   'A#': '#e91e63', // pink (between A purple and B pink)
   'B':  '#f06292', // pink
@@ -4738,21 +4958,24 @@ const DEFAULT_NOTE_COLORS = {
 
 let noteColors = { ...DEFAULT_NOTE_COLORS };
 
-// Returns a darker shade of a hex color suitable for text on a light background.
-// Halves each RGB channel's distance from 0 — enough to make yellows/ambers
-// legible without changing the hue. Only applies to colors with high luminance.
+// Returns the note colour, darkened only as much as needed for text on a
+// light background: each channel is scaled down in small steps until the
+// WCAG contrast against white reaches 3:1. Saturated colours (red,
+// green, blue, purple) pass unchanged; orange becomes a deeper orange and
+// yellow a gold, so every note keeps its rainbow identity.
+function relLuminance(r, g, b) {
+  const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
 function readableColor(hex) {
-  const r = parseInt(hex.slice(1,3), 16);
-  const g = parseInt(hex.slice(3,5), 16);
-  const b = parseInt(hex.slice(5,7), 16);
-  // Perceived luminance (0–1). Threshold 0.55 catches yellow/amber.
-  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
-  if (lum < 0.55) return hex; // dark enough already
-  // Darken by multiplying each channel by 0.55
-  const dr = Math.round(r * 0.55);
-  const dg = Math.round(g * 0.55);
-  const db = Math.round(b * 0.55);
-  return '#' + [dr,dg,db].map(v => v.toString(16).padStart(2,'0')).join('');
+  let r = parseInt(hex.slice(1,3), 16);
+  let g = parseInt(hex.slice(3,5), 16);
+  let b = parseInt(hex.slice(5,7), 16);
+  if (![r, g, b].every(Number.isFinite)) return hex;
+  let k = 1;
+  while (k > 0.3 && 1.05 / (relLuminance(r * k, g * k, b * k) + 0.05) < 3) k -= 0.02;
+  if (k === 1) return hex;
+  return '#' + [r, g, b].map(v => Math.round(v * k).toString(16).padStart(2, '0')).join('');
 }
 
 // Ink colour for text drawn ON a note-coloured fill: dark ink on light
@@ -4764,6 +4987,15 @@ function inkOnColor(hex) {
   const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
   return lum > 0.62 ? '#2a1a00' : '#ffffff';
 }
+
+// Blend two #rrggbb colours: `amount` of `hex` over `base` (0..1).
+function mixHex(hex, base, amount) {
+  const p = (h, i) => parseInt(h.slice(i, i + 2), 16);
+  const ch = i => Math.round(p(hex, i) * amount + p(base, i) * (1 - amount));
+  return '#' + [1, 3, 5].map(i => ch(i).toString(16).padStart(2, '0')).join('');
+}
+// How strongly upcoming song-strip chips show their note colour.
+const STRIP_TINT = 0.4;
 
 function loadColors() {
   try {
@@ -4789,9 +5021,29 @@ function resetColors() {
   refreshKeyRestColors();
 }
 
+// Per-key colour variables for the note-coloured key styles:
+//   --key-rest-color / --note-color   the note colour itself
+//   --key-rest-text  / --note-text    that colour darkened for text on white
+//   --key-rest-ink   / --note-ink     text colour ON the note colour
+function setKeyColorVars(el, note, isQwerty) {
+  const c = noteColors[note] || '#e63946';
+  const ink = inkOnColor(c);
+  if (isQwerty) {
+    el.style.setProperty('--note-color', c);
+    el.style.setProperty('--note-text', readableColor(c));
+    el.style.setProperty('--note-ink', ink === '#ffffff' ? '#ffffff' : 'rgba(0,0,0,0.78)');
+  } else {
+    el.style.setProperty('--key-rest-color', c);
+    el.style.setProperty('--key-rest-text', readableColor(c));
+    el.style.setProperty('--key-rest-ink', ink === '#ffffff' ? '#ffffff' : 'rgba(0,0,0,0.72)');
+    el.style.setProperty('--key-rest-ink-shadow', ink === '#ffffff' ? 'rgba(0,0,0,0.35)' : 'transparent');
+  }
+}
+
 function applyNoteColor(el, note) {
   const color = noteColors[note] || '#e63946';
   el.style.background = color;
+  el.style.setProperty('--press-ink', inkOnColor(color) === '#ffffff' ? '#ffffff' : 'rgba(0,0,0,0.75)');
   // In logo mode the white-key border deliberately STAYS black on press
   // (so the key's silhouette doesn't visibly grow when the colored fill
   // arrives). The CSS rule for body.keys-logo .white-key.pressed enforces
@@ -4808,6 +5060,7 @@ function applyNoteColor(el, note) {
 
 function clearNoteColor(el) {
   el.style.background = '';
+  el.style.removeProperty('--press-ink');
   el.style.borderColor = '';
   el.style.boxShadow = '';
 }
@@ -4818,13 +5071,23 @@ function clearNoteColor(el) {
 function refreshKeyRestColors() {
   document.querySelectorAll('.white-key').forEach(el => {
     const note = el.dataset.note;
-    if (note) el.style.setProperty('--key-rest-color', noteColors[note] || '#e63946');
+    if (note) setKeyColorVars(el, note, false);
   });
   document.querySelectorAll('.qkey[data-note]').forEach(el => {
     const note = el.dataset.note;
-    if (note) el.style.setProperty('--note-color', noteColors[note] || '#e63946');
+    if (note) setKeyColorVars(el, note, true);
   });
+  // Song strip chips and the Help table follow the note colours too.
+  if (currentSong) renderNoteStrip();
 }
+
+// Grid placement for the keyboard-style note colour picker: naturals on
+// row 2, sharps on row 1 sitting between their neighbours.
+const COLOR_GRID_POS = {
+  'C': [2, 1], 'C#': [1, 2], 'D': [2, 3], 'D#': [1, 4], 'E': [2, 5],
+  'F': [2, 7], 'F#': [1, 8], 'G': [2, 9], 'G#': [1, 10], 'A': [2, 11],
+  'A#': [1, 12], 'B': [2, 13],
+};
 
 function buildColorGrid() {
   const grid = document.getElementById('colorGrid');
@@ -4833,17 +5096,22 @@ function buildColorGrid() {
   Object.keys(DEFAULT_NOTE_COLORS).forEach(note => {
     const row = document.createElement('div');
     row.className = 'color-swatch-row';
+    const [gr, gc] = COLOR_GRID_POS[note];
+    row.style.gridRow = gr;
+    row.style.gridColumnStart = gc;
     const input = document.createElement('input');
     input.type = 'color';
     input.value = noteColors[note] || DEFAULT_NOTE_COLORS[note];
-    input.title = note;
+    const pretty = note.replace('#', '♯');
+    input.title = pretty;
+    input.setAttribute('aria-label', `${pretty} colour`);
     input.addEventListener('input', (e) => {
       noteColors[note] = e.target.value;
       saveColors();
       refreshKeyRestColors();
     });
     const lbl = document.createElement('label');
-    lbl.textContent = note;
+    lbl.textContent = pretty;
     row.appendChild(input);
     row.appendChild(lbl);
     grid.appendChild(row);
@@ -4931,6 +5199,8 @@ function loadWallpaper() {
 
 function setWallpaper(id) {
   applyWallpaper(id);
+  // Song-strip chip tints are mixed toward the wallpaper's surface colour.
+  if (currentSong) renderNoteStrip();
   try { localStorage.setItem('pianoWallpaper', id); } catch(e) {}
   buildWallpaperGrid(); // re-render to update active-state ring
 }
@@ -4943,6 +5213,8 @@ function buildWallpaperGrid() {
     const btn = document.createElement('button');
     btn.className = 'wallpaper-swatch' + (w.id === currentWallpaper ? ' active' : '');
     btn.title = w.label;
+    btn.setAttribute('aria-label', `${w.label} wallpaper`);
+    btn.setAttribute('aria-pressed', w.id === currentWallpaper ? 'true' : 'false');
     if (w.id === 'rainbow') {
       btn.style.background = 'conic-gradient(from 0deg, #e63946, #ff9800, #ffd60a, #4caf50, #2196f3, #9c27b0, #e63946)';
     } else {
@@ -4951,6 +5223,9 @@ function buildWallpaperGrid() {
     btn.addEventListener('click', () => setWallpaper(w.id));
     grid.appendChild(btn);
   });
+  const name = document.getElementById('wallpaperName');
+  const cur = WALLPAPERS.find(x => x.id === currentWallpaper);
+  if (name && cur) name.textContent = cur.label;
 }
 
 loadWallpaper();
@@ -5089,7 +5364,7 @@ function buildPiano() {
       // where white keys show in their note color at rest. Read by the
       // body.keys-inverted CSS rule. Cheap to set on every key — only
       // takes effect when that body class is on.
-      el.style.setProperty('--key-rest-color', noteColors[k.note] || '#e63946');
+      setKeyColorVars(el, k.note, false);
 
       el.innerHTML = `<span class="key-note show-note">${k.note}</span>`;
       // Note: input handling (touch/mouse) is delegated at the piano level
@@ -5127,8 +5402,8 @@ function buildPiano() {
     const isActive = oct === octave;
     lbl.className = 'octave-label' + (isActive ? ' active-oct-label' : '');
     lbl.textContent = oct;
-    lbl.style.color = OCTAVE_COLORS[oct] || '#ff9800';
-    lbl.style.opacity = isActive ? '1' : '0.45';
+    lbl.style.color = OCTAVE_LABEL_COLORS[oct] || '#ffb74d';
+    lbl.style.opacity = isActive ? '1' : '0.6';
     group.appendChild(lbl);
   }
 
@@ -5279,8 +5554,8 @@ function updateActiveOctave() {
     const oct = parseInt(l.textContent);
     const isActive = oct === octave;
     l.classList.toggle('active-oct-label', isActive);
-    l.style.color = OCTAVE_COLORS[oct] || '#ff9800';
-    l.style.opacity = isActive ? '1' : '0.45';
+    l.style.color = OCTAVE_LABEL_COLORS[oct] || '#ffb74d';
+    l.style.opacity = isActive ? '1' : '0.6';
   });
 }
 
@@ -5379,7 +5654,7 @@ function buildQwerty() {
       el.dataset.key = key;
       if (note) {
         el.dataset.note = note;
-        el.style.setProperty('--note-color', noteColors[note] || '#e63946');
+        setKeyColorVars(el, note, true);
       }
 
       if (key === 'Space') {
@@ -5663,7 +5938,8 @@ function renderNoteDisplay() {
   const big = document.getElementById('bigNoteDisplay');
 
   if (activeDisplayNotes.size === 0) {
-    if (big) big.classList.add('dim');
+    // Keep the first-run prompt visible until something is played.
+    if (big && !big.classList.contains('idle')) big.classList.add('dim');
     return;
   }
 
@@ -5685,7 +5961,7 @@ function renderNoteDisplay() {
   if (big) {
     big.innerHTML = html;
     big.style.color = fallbackColor;
-    big.classList.remove('dim');
+    big.classList.remove('dim', 'idle');
     big.classList.remove('pulse');
     void big.offsetWidth;
     big.classList.add('pulse');
@@ -6369,6 +6645,13 @@ function updateLabels() {
   document.querySelectorAll('.show-note').forEach(el => el.style.display = showNote ? '' : 'none');
 }
 
+// Lighter versions of OCTAVE_COLORS for the octave numbers printed on the
+// piano's dark frame (the originals are tuned for light backgrounds).
+const OCTAVE_LABEL_COLORS = {
+  1: '#ce93d8', 2: '#64b5f6', 3: '#81c784', 4: '#ffb74d',
+  5: '#ff8a94', 6: '#f8a5c2', 7: '#ffd54f',
+};
+
 const OCTAVE_COLORS = {
   1: '#9c27b0', // purple
   2: '#2196f3', // blue
@@ -6982,11 +7265,38 @@ function syncLandscapeTopBar() {
     // Landscape or songbook closed: octave stays in infobar-right
     if (octEl && infobarRight && octEl.parentElement !== infobarRight) infobarRight.appendChild(octEl);
   }
+
+  // Suggested-tempo chip: on desktop / tablet it joins row 2 (after the
+  // octave control) so it lines up with the rest of the tempo row. Phones
+  // keep it in the bar itself, where CSS pins it (portrait) or places it
+  // in the single landscape row.
+  const hint = document.getElementById('songTempoHint');
+  const infoBar = document.querySelector('.info-bar');
+  if (hint && ptTempoSlot && infoBar) {
+    const hintInRow2 = sheetOpen && !isLandscape && window.innerWidth > 430;
+    if (hintInRow2) {
+      if (hint.parentElement !== ptTempoSlot) ptTempoSlot.appendChild(hint);
+    } else if (hint.parentElement !== infoBar) {
+      infoBar.insertBefore(hint, ptTempoSlot);
+    }
+  }
   // Resize the select to fit the current song title in whichever slot is active
   requestAnimationFrame(fitSongSelectToContent);
   requestAnimationFrame(syncDecorationsTop);
 }
 
+
+// First-run prompt in the note display, worded for the current mode and
+// device (piano keys are tappable in every mode, so touch screens in
+// Keyboard mode are told to tap rather than type).
+function updateIdlePrompt() {
+  const el = document.getElementById('idlePrompt');
+  if (!el) return;
+  const hasKeyboard = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  el.textContent = mode === 'touch' ? 'Tap a colored letter to play!'
+                 : mode === 'piano' || !hasKeyboard ? 'Tap a piano key to play!'
+                 : 'Press A – G to play!';
+}
 
 function setMode(m) {
   // If the song's actively running, switching modes pauses it. The user can
@@ -7003,6 +7313,7 @@ function setMode(m) {
   document.getElementById('btnPiano').classList.toggle('active', m === 'piano');
   // QWERTY pad: only show in touch mode
   document.getElementById('qwertyArea').style.display = m === 'touch' ? 'block' : 'none';
+  updateIdlePrompt();
   // Modifier hint: visibility is now governed by CSS via the body's
   // mode-* class. Setting inline display here would override media-query
   // rules (e.g. landscape hides it for room).
@@ -7051,12 +7362,35 @@ function setMode(m) {
   syncLandscapeTopBar();
 }
 
+// Paint the filled part of a settings slider's track up to its value.
+function syncRangeFill(el) {
+  const min = parseFloat(el.min) || 0;
+  const max = parseFloat(el.max) || 100;
+  const pct = max > min ? ((parseFloat(el.value) - min) / (max - min)) * 100 : 0;
+  el.style.setProperty('--fill', Math.max(0, Math.min(100, pct)) + '%');
+}
+function syncAllRangeFills() {
+  document.querySelectorAll('input.ui-range').forEach(syncRangeFill);
+}
+// One slider can move another (Octave Range min/max push each other), so
+// any input in the panel re-syncs them all — cheap, there are four.
+document.getElementById('settingsPanel').addEventListener('input', e => {
+  if (e.target.matches('input.ui-range')) syncAllRangeFills();
+});
+// Dialog heads get a hairline once the body has scrolled under them.
+document.querySelectorAll('.settings-card .modal-body').forEach(body => {
+  body.addEventListener('scroll', () => {
+    body.closest('.settings-card').classList.toggle('is-scrolled', body.scrollTop > 2);
+  }, { passive: true });
+});
+
 function openSettings() {
   // Opening settings pauses the song so the user doesn't lose tempo
   // tracking while they're configuring something.
   if (tempoPlaying) stopTempo();
   buildColorGrid();
   buildWallpaperGrid();
+  syncAllRangeFills();
   document.getElementById('settingsPanel').classList.add('open');
 }
 function closeSettings() {
@@ -9610,6 +9944,8 @@ function renderNoteStrip() {
 
   // Max duration is used to scale the rhythm bar fill, so compute once.
   const maxDur = Math.max(...currentSong.notes.map(x => x.d || 1));
+  // Upcoming chips are tinted toward the sheet's surface colour.
+  const stripTintBase = document.body.classList.contains('wallpaper-dark') ? '#2a2738' : '#ffffff';
 
   currentSong.notes.forEach((n, i) => {
     const el = document.createElement('div');
@@ -9629,29 +9965,32 @@ function renderNoteStrip() {
     el.style.width = (baseW * Math.max(dur, 0.5) + chordPad) + 'px';
 
     if (!rest) {
+      // Colour variables read by the .strip-note CSS: upcoming chips use a
+      // soft tint (--strip-bg), the current chip the full colour
+      // (--strip-bg-solid) with matching ink (--strip-ink).
+      const primary = noteColors[entries[0].n] || '#e63946';
       if (isChord) {
         // Vertical gradient through each chord note's color so the chip
         // visually reads as a stack of notes (top→bottom = bottom→top of
         // the chord, since chord arrays are typically written low-pitch
         // first and we want low pitch on the bottom).
-        const stops = entries.slice().reverse().map((e, k) => {
+        const stops = (tint) => entries.slice().reverse().map((e, k) => {
           const c = noteColors[e.n] || '#e63946';
           const pct = (k * 100) / Math.max(1, entries.length - 1);
-          return `${c} ${pct}%`;
+          return `${tint ? mixHex(c, stripTintBase, STRIP_TINT) : c} ${pct}%`;
         }).join(', ');
-        el.style.background = `linear-gradient(to bottom, ${stops})`;
-        if (i === currentNoteIdx) {
-          const c = noteColors[entries[0].n] || '#e63946';
-          el.style.boxShadow = `0 0 16px ${c}88`;
-        }
-        // Use first note's color for lyrics coloring
-        el.style.setProperty('--strip-color', noteColors[entries[0].n] || '#e63946');
+        el.style.setProperty('--strip-bg', `linear-gradient(to bottom, ${stops(true)})`);
+        el.style.setProperty('--strip-bg-solid', `linear-gradient(to bottom, ${stops(false)})`);
       } else {
-        const color = noteColors[entries[0].n] || '#e63946';
-        el.style.background = color;
-        el.style.boxShadow = i === currentNoteIdx ? `0 0 16px ${color}88` : 'none';
-        el.style.setProperty('--strip-color', color);
+        el.style.setProperty('--strip-bg', mixHex(primary, stripTintBase, STRIP_TINT));
+        el.style.setProperty('--strip-bg-solid', primary);
       }
+      // First note's colour drives the outline, ring and lyric colour.
+      const darkInk = inkOnColor(primary) !== '#ffffff';
+      el.style.setProperty('--strip-color', primary);
+      el.style.setProperty('--strip-text', readableColor(primary));
+      el.style.setProperty('--strip-ink', darkInk ? 'rgba(0,0,0,0.8)' : '#ffffff');
+      el.style.setProperty('--strip-ink-soft', darkInk ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.8)');
     }
 
     const rhythmPct = (dur / maxDur) * 100;
@@ -10039,9 +10378,9 @@ function finalizeAdvance() {
 // end, with Presto's high boundary inclusive):
 const TEMPO_RANGES = [
   { id: 'adagio',   label: 'Adagio',   min: 20,  max: 55,  mid: 40,  color: '#4caf50' },
-  { id: 'moderato', label: 'Moderato', min: 55,  max: 90,  mid: 70,  color: '#e63946' },
+  { id: 'moderato', label: 'Moderato', min: 55,  max: 90,  mid: 70,  color: '#ffd600' },
   { id: 'allegro',  label: 'Allegro',  min: 90,  max: 125, mid: 110, color: '#ff9800' },
-  { id: 'presto',   label: 'Presto',   min: 125, max: 160, mid: 145, color: '#ffeb3b' },
+  { id: 'presto',   label: 'Presto',   min: 125, max: 160, mid: 145, color: '#e63946' },
 ];
 
 // Traditional / typical performance tempos for each song. Shown as a small
@@ -10519,6 +10858,7 @@ function scheduleNextNote(immediate) {
 }
 
 populateSongSelect();
+updateIdlePrompt();
 
 // Restore Octaves Shown preference BEFORE the initial buildPiano so the
 // expanded keyboard renders with the correct number of octaves on first
