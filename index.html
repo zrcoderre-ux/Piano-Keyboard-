@@ -60,6 +60,17 @@
       --text-dim2: #7a7a7a;
       --key-radius: 14px;
       --glow: rgba(230, 57, 70, 0.4);
+      /* Hairline rules, button tracks and ghost buttons. Soft enough to
+         sit quietly on every wallpaper; the dark wallpaper overrides
+         them on body.wallpaper-dark below. */
+      --rule: rgba(26, 26, 26, 0.14);
+      --track-bg: rgba(255, 255, 255, 0.55);
+      --ghost-bg: rgba(255, 255, 255, 0.6);
+    }
+    body.wallpaper-dark {
+      --rule: rgba(255, 255, 255, 0.14);
+      --track-bg: rgba(255, 255, 255, 0.06);
+      --ghost-bg: rgba(255, 255, 255, 0.07);
     }
 
     :root { --fs-zoom: 1; }
@@ -119,6 +130,10 @@
     .bg-decorations {
       position: fixed;
       inset: 0;
+      /* Start below the header / info bar / song sheet (measured by
+         syncDecorationsTop) plus a little headroom for the float
+         animation, so no note ever peeks out from under a bar edge. */
+      top: calc(var(--deco-top, 0px) + 14px);
       pointer-events: none;
       z-index: 0;
       overflow: hidden;
@@ -198,7 +213,7 @@
       align-items: center;
       justify-content: space-between;
       padding: 12px 20px 10px;
-      border-bottom: 1.5px solid #000000;
+      border-bottom: 1px solid var(--rule);
       background: var(--header-bg, linear-gradient(to right, #faf6ed, #f5efe0));
       flex-shrink: 0;
       position: relative;
@@ -253,141 +268,145 @@
       gap: 8px;
     }
 
+    /* ── PLAY-MODE SWITCH ──
+       The three play modes are one choice, so they live together in a
+       single segmented track. Each mode keeps its own rainbow colour:
+       coloured ink at rest, a filled "sticker" when selected. The
+       utility buttons (Settings / Help / Fullscreen / Install) sit
+       outside the track in a quieter ghost style so the two kinds of
+       control read differently. Per-mode colours are tokens so the dark
+       wallpaper can swap them in one place. */
     .mode-toggle {
       display: flex;
-      background: transparent;
-      border: none;
+      align-items: center;
+      gap: 3px;
+      padding: 3px;
       border-radius: 999px;
-      padding: 4px;
-      gap: 2px;
+      background: var(--track-bg);
+      border: 1px solid var(--rule);
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
     }
 
     .mode-btn {
-      padding: 9px 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 7px 16px;
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.01em;
-      background: none;
-      border: none;
+      line-height: 1.1;
+      white-space: nowrap;
+      background: transparent;
+      border: 1.5px solid transparent;
       border-radius: 999px;
-      color: var(--text);
+      color: var(--mode-ink);
       cursor: pointer;
-      transition: all 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.15s;
     }
-
+    .mode-btn:hover { background: var(--mode-tint); }
     .mode-btn.active {
-      background: var(--accent);
-      color: #ffffff;
-      box-shadow: 0 2px 6px var(--glow);
+      background: var(--mode-fill);
+      border-color: var(--mode-border);
+      color: var(--mode-ink-strong);
+      box-shadow: 0 2px 8px var(--mode-glow);
     }
 
-    /* Rainbow colors per button — Piano=red, Keyboard=orange, Touch=yellow */
-    #btnPiano           { color: #c9252d; background: rgba(230,57,70,0.18);   border: 1.5px solid rgba(230,57,70,0.45); }
-    #btnPiano.active    { color: #7a0e14; background: rgba(230,57,70,0.52);   border: 1.5px solid rgba(230,57,70,0.9); box-shadow: 0 2px 10px rgba(230,57,70,0.45); }
-    #btnKeyboard        { color: #c97000; background: rgba(255,152,0,0.18);   border: 1.5px solid rgba(255,152,0,0.45); }
-    #btnKeyboard.active { color: #7a4000; background: rgba(255,152,0,0.52);   border: 1.5px solid rgba(255,152,0,0.9); box-shadow: 0 2px 10px rgba(255,152,0,0.45); }
-    #btnTouch           { color: #78610a; background: rgba(255,214,0,0.35);   border: 1.5px solid rgba(255,214,0,0.8); }
-    #btnTouch.active    { color: #3d3005; background: rgba(255,214,0,0.75);   border: 1.5px solid rgba(255,214,0,1.0); box-shadow: 0 2px 10px rgba(255,214,0,0.55); }
-    .mode-btn.active    { color: inherit; }
+    #btnPiano    { --mode-ink: #c9252d; --mode-ink-strong: #7a0e14; --mode-tint: rgba(230,57,70,0.12); --mode-fill: rgba(230,57,70,0.42); --mode-border: rgba(230,57,70,0.9);  --mode-glow: rgba(230,57,70,0.35); }
+    #btnKeyboard { --mode-ink: #b86600; --mode-ink-strong: #6b3a00; --mode-tint: rgba(255,152,0,0.14); --mode-fill: rgba(255,152,0,0.48); --mode-border: rgba(255,152,0,0.95); --mode-glow: rgba(255,152,0,0.35); }
+    #btnTouch    { --mode-ink: #7a6000; --mode-ink-strong: #3d3005; --mode-tint: rgba(255,214,0,0.22); --mode-fill: rgba(255,214,0,0.72); --mode-border: #f2c400;              --mode-glow: rgba(255,214,0,0.45); }
 
-    /* Piano and Touch: label above icon — desktop default is inline */
-    #btnPiano .btn-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
+    body.wallpaper-dark #btnPiano    { --mode-ink: #ff8f99; --mode-ink-strong: #ffffff; --mode-fill: rgba(230,57,70,0.55); }
+    body.wallpaper-dark #btnKeyboard { --mode-ink: #ffb74d; --mode-ink-strong: #ffffff; --mode-fill: rgba(255,152,0,0.55); }
+    body.wallpaper-dark #btnTouch    { --mode-ink: #ffe066; --mode-ink-strong: #2b2200; --mode-fill: rgba(255,214,0,0.85); }
+
+    /* Icon slot — same size for all three modes so labels line up. */
+    .mode-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 20px;
+      height: 16px;
+      font-size: 15px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .mode-icon svg {
+      width: 20px;
+      height: 15px;
+      display: block;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
     }
 
-    /* Mobile portrait: Piano button — column layout, pushed to the bottom
-       of the button so the icon sits at the same height as the text in
-       the Keyboard/Touch buttons. "Piano" text stays black and never
-       gets crayon font. */
-    @media (max-width: 430px) and (orientation: portrait) {
-      #btnPiano {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-end;
-      }
-      #btnPiano .btn-label {
-        color: #1a1a1a !important;
-        font-family: 'Inter', sans-serif !important;
-      }
-      body.lyrics-crayon #btnPiano .btn-label {
-        font-family: 'Inter', sans-serif !important;
-        color: #1a1a1a !important;
-      }
-    }
-
-    /* per-button colors set after base .settings-btn rule below */
-
-    /* Crayon font on mode buttons and settings/help when crayon mode is on */
-    body.lyrics-crayon #btnKeyboard,
-    body.lyrics-crayon #btnTouch,
-    body.lyrics-crayon #btnPiano,
+    /* Crayon font on the header controls when crayon mode is on. Only the
+       selected mode gets the playful sticker tilt — tilting all three
+       inside one track would look broken. The utility buttons keep their
+       individual tilts. */
+    body.lyrics-crayon .mode-btn,
     body.lyrics-crayon .settings-btn,
-    body.lyrics-crayon .fullscreen-btn {
-      font-family: 'Short Stack', cursive !important;
+    body.lyrics-crayon .fullscreen-btn,
+    body.lyrics-crayon .install-btn {
+      font-family: 'Short Stack', cursive;
     }
-    body.lyrics-crayon #btnKeyboard           { transform: rotate(-1.5deg); }
-    body.lyrics-crayon #btnTouch              { transform: rotate(1deg); }
-    body.lyrics-crayon #btnPiano              { transform: rotate(-0.8deg); }
+    body.lyrics-crayon .mode-btn.active       { transform: rotate(-1.5deg); }
     body.lyrics-crayon .settings-btn-settings { transform: rotate(1.2deg); }
     body.lyrics-crayon .settings-btn-help     { transform: rotate(-1deg); }
     body.lyrics-crayon .fullscreen-btn        { transform: rotate(0.8deg); }
 
-    .settings-btn {
-      padding: 10px 18px;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      background: rgba(255,255,255,0.6);
-      border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 999px;
-      color: var(--text);
-      cursor: pointer;
-      letter-spacing: 0.01em;
-      transition: all 0.15s;
-    }
-
-    .settings-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-
-    /* ── FULLSCREEN BUTTON (desktop only) ── */
-    .fullscreen-btn {
-      display: none;
+    /* ── UTILITY BUTTONS (Settings / Help / Fullscreen / Install) ──
+       Quiet ghost pills: neutral fill, hairline border, each tinted only
+       by its own accent ink. Hover adds a soft wash of that accent. */
+    .settings-btn,
+    .fullscreen-btn,
+    .install-btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 10px 14px;
+      gap: 6px;
+      padding: 9px 16px;
       font-family: 'Inter', sans-serif;
       font-size: 14px;
       font-weight: 700;
-      background: rgba(255,255,255,0.6);
-      border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 999px;
-      color: var(--text);
-      cursor: pointer;
       letter-spacing: 0.01em;
-      transition: all 0.15s;
-      gap: 6px;
+      line-height: 1.1;
+      white-space: nowrap;
+      background: var(--ghost-bg);
+      border: 1px solid var(--rule);
+      border-radius: 999px;
+      color: var(--btn-ink);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.15s;
     }
-    .fullscreen-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .settings-btn:hover,
+    .fullscreen-btn:hover,
+    .install-btn:hover {
+      background: var(--btn-tint);
+      border-color: var(--btn-border);
+    }
+    .settings-btn:active,
+    .fullscreen-btn:active,
+    .install-btn:active { transform: scale(0.97); }
+
+    .settings-btn-settings { --btn-ink: #2e7d32; --btn-tint: rgba(76,175,80,0.16);  --btn-border: rgba(76,175,80,0.6); }
+    .settings-btn-help     { --btn-ink: #1565c0; --btn-tint: rgba(33,150,243,0.16); --btn-border: rgba(33,150,243,0.6); }
+    .fullscreen-btn        { --btn-ink: #6a1b9a; --btn-tint: rgba(156,39,176,0.14); --btn-border: rgba(156,39,176,0.55); }
+    .install-btn           { --btn-ink: #1565c0; --btn-tint: rgba(33,150,243,0.16); --btn-border: rgba(33,150,243,0.6); }
+    body.wallpaper-dark .settings-btn-settings { --btn-ink: #81c784; }
+    body.wallpaper-dark .settings-btn-help,
+    body.wallpaper-dark .install-btn           { --btn-ink: #64b5f6; }
+    body.wallpaper-dark .fullscreen-btn        { --btn-ink: #ce93d8; }
+
+    .btn-icon { line-height: 1; }
+    .settings-btn-help .btn-icon { font-weight: 800; }
+
+    /* ── FULLSCREEN BUTTON (desktop only) ── */
+    .fullscreen-btn { display: none; padding: 9px 14px; }
     .fullscreen-btn svg { width: 16px; height: 16px; flex-shrink: 0; }
     @media (hover: hover) and (pointer: fine) {
-      .fullscreen-btn { display: flex; }
+      .fullscreen-btn { display: inline-flex; }
     }
-
-    /* Per-button rainbow colors — declared after base rules so they win */
-    .settings-btn-settings, .settings-btn-settings > span { color: #2e7d32 !important; }
-    .settings-btn-settings { background: rgba(76,175,80,0.18) !important; border: 1px solid rgba(76,175,80,0.45) !important; }
-    .settings-btn-settings:hover { background: rgba(76,175,80,0.30) !important; border-color: rgba(76,175,80,0.7) !important; }
-
-    .settings-btn-help, .settings-btn-help > span { color: #1565c0 !important; }
-    .settings-btn-help { background: rgba(33,150,243,0.18) !important; border: 1px solid rgba(33,150,243,0.45) !important; }
-    .settings-btn-help:hover { background: rgba(33,150,243,0.30) !important; border-color: rgba(33,150,243,0.7) !important; }
-
-    .fullscreen-btn, .fullscreen-btn > span { color: #6a1b9a !important; }
-    .fullscreen-btn { background: rgba(156,39,176,0.18) !important; border: 1px solid rgba(156,39,176,0.45) !important; }
-    .fullscreen-btn:hover { background: rgba(156,39,176,0.30) !important; border-color: rgba(156,39,176,0.7) !important; }
 
     /* ── INSTALL PWA BUTTON ──
        Only shown on touch/mobile devices (where hover:hover doesn't apply)
@@ -395,27 +414,42 @@
        running as a standalone PWA (no URL bar = already installed). */
     .install-btn {
       display: none; /* shown by JS when prompt is available */
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 10px 14px;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 700;
-      background: rgba(33,150,243,0.18);
-      border: 1px solid rgba(33,150,243,0.45);
-      border-radius: 999px;
-      color: #1565c0;
-      cursor: pointer;
-      letter-spacing: 0.01em;
-      transition: all 0.15s;
-      white-space: nowrap;
+      padding: 9px 14px;
     }
-    .install-btn:hover { background: rgba(33,150,243,0.30); border-color: rgba(33,150,243,0.7); }
-    .install-btn:active { transform: scale(0.97); }
     /* Never show if already running standalone */
     @media (display-mode: standalone) {
       .install-btn { display: none !important; }
+    }
+
+    /* ── PHONE PORTRAIT HEADER: two rows ──
+       Row 1: logo on the left, Settings / Help (icon-only) on the right.
+       Row 2: the play-mode switch spanning the full width, so every mode
+       gets a big, easy tap target and nothing is pushed off-screen on
+       narrow phones (320–430px). .controls becomes display:contents so
+       its children can be ordered directly inside the header. */
+    @media (max-width: 500px) and (orientation: portrait) {
+      header {
+        flex-wrap: wrap;
+        row-gap: 8px;
+        column-gap: 6px;
+        padding: 8px 12px 10px;
+      }
+      header .controls { display: contents; }
+      header .logo { order: 0; margin-right: auto; }
+      header .settings-btn,
+      header .install-btn { order: 1; }
+      header .mode-toggle { order: 2; flex: 1 0 100%; }
+      header .mode-btn { flex: 1 1 0; min-width: 0; padding: 9px 6px; font-size: 13px; min-height: 40px; }
+      header .settings-btn .btn-text,
+      header .install-btn span { display: none; }
+      header .settings-btn,
+      header .install-btn { width: 40px; height: 40px; padding: 0; font-size: 17px; }
+    }
+    @media (max-width: 500px) and (orientation: portrait) and (max-height: 700px) {
+      header { row-gap: 6px; padding: 6px 12px 8px; }
+      header .mode-btn { min-height: 36px; padding: 7px 6px; }
+      header .settings-btn,
+      header .install-btn { width: 36px; height: 36px; }
     }
 
     /* ── SETTINGS PANEL ── */
@@ -627,6 +661,7 @@
       width: 11px;
       height: 11px;
     }
+    /* When a pair's substep is visible, the parent row trims its
        bottom padding so it visually connects to the child below
        rather than floating on its own. The has-substep class is
        toggled by syncSelfTempoVisibility() in lockstep with the
@@ -921,6 +956,16 @@
       max-width: none;
       max-height: none;
       display: block;
+      /* The staff is drawn on an opaque "sheet of paper" (the .staff-paper
+         rect added by renderSheetMusic, sized to the viewBox) so the
+         floating background notes can never show through and be
+         mistaken for real notes. Notation is always printed in dark ink
+         on light paper, on every wallpaper — so the text tokens are
+         pinned here (the dark wallpaper's light text would otherwise
+         make the staff lines vanish). */
+      --text: #1a1a1a;
+      --text-dim: #4a4a4a;
+      --text-dim2: #7a7a7a;
     }
 
     /* Stave lines and clefs use the deep text color so they read as
@@ -936,6 +981,12 @@
     }
     .sheet-music-svg .clef {
       fill: var(--text);
+    }
+    .sheet-music-svg .staff-paper {
+      fill: #fffdf8;
+      stroke: rgba(0,0,0,0.06);
+      stroke-width: 1;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.08));
     }
     .sheet-music-svg .notehead {
       stroke-width: 1.2;
@@ -994,7 +1045,8 @@
       justify-content: space-between;
       padding: 8px 20px;
       background: var(--infobar-bg, linear-gradient(to left, #cfe4fb, #b8d8f8));
-      border-bottom: 1.5px solid #000000;
+      border-bottom: 1px solid var(--rule);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
       flex-shrink: 0;
       min-height: 48px;
     }
@@ -1204,6 +1256,12 @@
       gap: 10px;
     }
 
+    .octave-label-text {
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
     .octave-btn {
       width: 32px;
       height: 32px;
@@ -1269,7 +1327,7 @@
     @media (min-width: 431px) {
       body.sheet-music-on .sheet-music-display {
         padding: 0;
-        margin-top: -12px;
+        margin-top: 8px;
       }
       /* Non-portrait: show full label, hide bpm-only span */
       .song-tempo-hint .sth-bpm { display: none; }
@@ -1345,7 +1403,7 @@
     }
     .piano.piano-mode .white-key {
       background: linear-gradient(to bottom, #ffffff, #fafafa);
-      border-color: var(--border);
+      border-color: #e4e4e4;
     }
     .piano.piano-mode .black-key {
       background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
@@ -1389,7 +1447,6 @@
          side. */
       width: clamp(48px, 7vw, 96px);
       min-width: 48px;
-      background: linear-gradient(to bottom, #f8f8f8, #ececec);
       border-radius: 0 0 var(--key-radius) var(--key-radius);
       border: 1px solid var(--border);
       border-top: none;
@@ -1399,15 +1456,17 @@
       align-items: center;
       justify-content: flex-end;
       padding-bottom: 10px;
-      transition: background 0.06s, transform 0.06s, opacity 0.2s;
+      transition: background 0.06s, transform 0.06s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.12), inset 0 -3px 0 rgba(0,0,0,0.05);
-      opacity: 0.85;
+      /* Inactive-octave look (expanded keyboard): a solid soft grey.
+         Solid rather than translucent so nothing behind bleeds through. */
+      background: linear-gradient(to bottom, #dadada, #cdcdcd);
+      border-color: #bdbdbd;
     }
 
     .white-key.active-octave {
       background: linear-gradient(to bottom, #ffffff, #fafafa);
-      border-color: var(--border);
-      opacity: 1;
+      border-color: #e4e4e4;
     }
 
     .white-key.pressed {
@@ -1425,7 +1484,9 @@
          white keys. JS sets explicit pixel width/height on every black key. */
       width: 0;
       height: 0;
-      background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
+      /* Inactive-octave look: a solid charcoal, lighter than the active
+         octave's near-black so the playable octave still stands out. */
+      background: linear-gradient(to bottom, #555555, #3a3a3a);
       border-radius: 0 0 8px 8px;
       border: 1px solid #1a1a1a;
       top: 0;
@@ -1435,15 +1496,13 @@
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 6px;
-      transition: background 0.06s, transform 0.06s, opacity 0.2s;
+      transition: background 0.06s, transform 0.06s;
       box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
-      opacity: 0.85;
       overflow: hidden;
     }
 
     .black-key.active-octave {
       background: linear-gradient(to bottom, #3a3a3a, #1a1a1a);
-      opacity: 1;
     }
 
     .black-key.pressed {
@@ -1457,12 +1516,15 @@
       font-family: 'Inter', sans-serif;
       font-size: 11px;
       font-weight: 700;
-      color: var(--text-dim);
+      /* Fixed ink, not var(--text): the keys stay white on every
+         wallpaper, so the label must not follow the dark theme's light
+         text colour (it would vanish on the white key). */
+      color: #6a6a6a;
       margin-bottom: 1px;
       pointer-events: none;
     }
 
-    .white-key.active-octave .key-note { color: var(--text); }
+    .white-key.active-octave .key-note { color: #1a1a1a; }
     .white-key.pressed .key-note { color: #ffffff; }
 
     /* ── INVERTED KEYS MODE ──
@@ -1796,8 +1858,6 @@
       }
       .logo { font-size: 14px; gap: 7px; }
       .logo-icon { width: 22px; height: 16px; }
-      .mode-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
-      .settings-btn { padding: 7px 12px; font-size: 12px; font-weight: 700; }
 
       /* Slim info bar — always space-between so icons stay left, octave right */
       .info-bar { padding: 5px 12px; justify-content: space-between; gap: 0; min-height: 44px; }
@@ -2254,11 +2314,6 @@
         height: 300px;
       }
 
-      /* The keyboard shortcut hint (Shift=sharp, Tab=Oct- etc.) at the
-         bottom of the QWERTY pad is cut off on short landscape screens.
-         Touch users don't need it — hide it entirely. */
-      body.mode-touch .qwerty-area > div:last-child { display: none; }
-
       /* Viz bar: thinner */
       .viz-bar { height: 2px; }
 
@@ -2436,8 +2491,8 @@
       color: #ffffff;
       text-shadow: 0 1px 2px rgba(0,0,0,0.4);
     }
-    /* Yellow needs dark text */
-    .hk.hk-note[style*="ffeb3b"] { color: #2a1a00; text-shadow: none; }
+    /* Light note colours (yellow, amber…) get dark ink instead of white */
+    .hk.hk-note.hk-dark-ink { color: #2a1a00; text-shadow: none; }
 
     /* ── SPLASH SCREEN ── */
     #splash {
@@ -2667,21 +2722,6 @@
     #splash .splash-tap-keys .splash-key:nth-child(10)::before { background: #e63946; }
     #splash .splash-tap-keys .splash-key:nth-child(11)::before { background: #ff9800; }
 
-
-    /* ── MOBILE PORTRAIT: hide logo icon + "Piano" text in header ── */
-    @media (max-width: 500px) and (orientation: portrait) {
-      .logo-piano-block { display: none; }
-      .settings-btn span { display: none; }
-      #btnPiano {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 2px;
-        padding: 6px 12px;
-        line-height: 1;
-      }
-      #btnPiano .btn-label { font-size: 10px; font-weight: 700; letter-spacing: 0.03em; }
-    }
 
     /* ── COLOR SETTINGS ── */
     .color-grid {
@@ -3038,7 +3078,7 @@
     }
 
     .song-select {
-      background: #ffffff;
+      background-color: var(--surface);
       border: 1px solid var(--border);
       color: var(--text);
       padding: 7px 16px 7px 12px;
@@ -3218,14 +3258,8 @@
     body.lyrics-crayon .tempo-range-btn .tr-name {
       font-family: 'Short Stack', cursive !important;
     }
-      filter: none !important;
-      font-family: 'Short Stack', cursive;
-    }
     body.lyrics-crayon .logo-icon {
       filter: none !important;
-    }
-      transform: rotate(-1deg);
-      letter-spacing: 0.04em;
     }
 
     /* Song title in song book */
@@ -3348,6 +3382,9 @@
     }
 
     .song-complete {
+      width: 100%;
+      border: none;
+      cursor: pointer;
       text-align: center;
       font-family: 'Inter', sans-serif;
       font-size: 16px;
@@ -3883,6 +3920,32 @@
     }
 
     /* ── SUSTAIN INDICATOR ── */
+
+    /* ── DARK WALLPAPER (Midnight) ──
+       The pastel chips and tints that look friendly on the light
+       wallpapers glare on the dark one. These overrides keep each
+       element's colour identity (border / ink) but swap pastel fills
+       for low-alpha washes. */
+    body.wallpaper-dark .setting-label-icon,
+    body.wallpaper-dark .summary-icon { background: rgba(255,255,255,0.07); }
+    body.wallpaper-dark #songBookInfoBtn,
+    body.wallpaper-dark #sheetMusicInfoBtn { background: rgba(255,255,255,0.07); }
+    body.wallpaper-dark #songBookInfoBtn.active  { background: rgba(67,160,71,0.38); }
+    body.wallpaper-dark #sheetMusicInfoBtn.active { background: rgba(30,136,229,0.38); }
+    body.wallpaper-dark .viz-bar {
+      background: linear-gradient(to left, rgba(230,57,70,0.22), rgba(255,152,0,0.22), rgba(255,235,59,0.18), rgba(76,175,80,0.22), rgba(33,150,243,0.22), rgba(156,39,176,0.22));
+    }
+    body.wallpaper-dark .song-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M1 5l4-4 4 4' stroke='%23d8d2c2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M1 9l4 4 4-4' stroke='%23d8d2c2' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    }
+    @supports (background: color-mix(in srgb, red, blue)) {
+      body.wallpaper-dark .tempo-range-btn {
+        background: color-mix(in srgb, var(--tr-color) 16%, var(--surface));
+        border-color: color-mix(in srgb, var(--tr-color) 45%, var(--surface));
+      }
+      body.wallpaper-dark .tempo-range-btn.active { background: var(--tr-color); border-color: var(--tr-color); }
+    }
+    body.wallpaper-dark .tempo-range-btn[data-range] .tr-name { filter: brightness(1.25); }
   </style>
 </head>
 <body class="mode-keyboard lyrics-crayon lyrics-colored keys-logo">
@@ -4030,13 +4093,13 @@
   <!-- Slot for songBook/sheetMusic buttons + octave when touch + both open + not fullscreen -->
   <div class="header-compact-slot" id="headerCompactSlot"></div>
   <div class="controls">
-    <div class="mode-toggle">
-      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')"><span class="btn-label">Piano</span> <svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:20px;height:15px;vertical-align:middle;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2))"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></svg></button>
-      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')">💻 Keyboard</button>
-      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')">⌨️ Touch</button>
+    <div class="mode-toggle" role="group" aria-label="Play mode">
+      <button class="mode-btn" id="btnPiano" onclick="setMode('piano')" aria-pressed="false"><span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 32 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="1" y="1" width="30" height="22" rx="3" fill="#4a3a3a"/><rect x="2.5" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="6.4" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="10.3" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="14.2" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="18.1" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="22.0" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="25.9" y="9" width="3.7" height="13" rx="0.7" fill="#ffffff"/><rect x="2.5" y="9" width="3.7" height="3" fill="#e63946"/><rect x="6.4" y="9" width="3.7" height="3" fill="#ff9800"/><rect x="10.3" y="9" width="3.7" height="3" fill="#ffeb3b"/><rect x="14.2" y="9" width="3.7" height="3" fill="#4caf50"/><rect x="18.1" y="9" width="3.7" height="3" fill="#2196f3"/><rect x="22.0" y="9" width="3.7" height="3" fill="#9c27b0"/><rect x="25.9" y="9" width="3.7" height="3" fill="#f06292"/><rect x="5.2" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="9.1" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="16.9" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="20.8" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="24.7" y="9" width="2.2" height="7" rx="0.4" fill="#2a1a1a"/><rect x="1" y="1" width="30" height="2.5" rx="1" fill="#e63946"/></svg></span><span class="btn-label">Piano</span></button>
+      <button class="mode-btn active" id="btnKeyboard" onclick="setMode('keyboard')" aria-pressed="true"><span class="mode-icon" aria-hidden="true">💻</span><span class="btn-label">Keyboard</span></button>
+      <button class="mode-btn" id="btnTouch" onclick="setMode('touch')" aria-pressed="false"><span class="mode-icon" aria-hidden="true">⌨️</span><span class="btn-label">Touch</span></button>
     </div>
-    <button class="settings-btn settings-btn-settings" onclick="openSettings()">⚙️ <span>Settings</span></button>
-    <button class="settings-btn settings-btn-help" onclick="openHelp()">? <span>Help</span></button>
+    <button class="settings-btn settings-btn-settings" onclick="openSettings()" aria-label="Settings"><span class="btn-icon" aria-hidden="true">⚙️</span><span class="btn-text">Settings</span></button>
+    <button class="settings-btn settings-btn-help" onclick="openHelp()" aria-label="Help"><span class="btn-icon" aria-hidden="true">?</span><span class="btn-text">Help</span></button>
     <button class="install-btn" id="installBtn" title="Install app — opens without browser bar">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -4045,7 +4108,7 @@
       </svg>
       <span>Install App</span>
     </button>
-    <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen (F)">
+    <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Toggle fullscreen (\ key)">
       <svg id="fsIconEnter" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#6a1b9a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
         <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
@@ -4084,7 +4147,7 @@
   <div class="infobar-right" id="infobarRight" style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-shrink:0;">
     <div class="octave-display">
       <button class="octave-btn octave-btn-minus" onclick="changeOctave(-1)">−</button>
-      <span class="octave-label-group"><span style="color:#1a1a1a;font-weight:700;letter-spacing:0.05em">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
+      <span class="octave-label-group"><span class="octave-label-text">OCT</span><span id="octaveNum" style="font-weight:700">4</span></span>
       <button class="octave-btn octave-btn-plus" onclick="changeOctave(1)">+</button>
     </div>
   </div>
@@ -4146,7 +4209,7 @@
   </div>
   <div class="tempo-bar"></div>
   <div class="song-progress"><div class="song-progress-fill" id="songProgressFill"></div></div>
-  <div class="song-complete" id="songComplete">🎉 Well done! Play again?</div>
+  <button type="button" class="song-complete" id="songComplete" onclick="playAgain()">🎉 Well done! Play again?</button>
   <div class="practice-result" id="practiceResult" style="display:none"></div>
 </div>
 
@@ -4518,15 +4581,9 @@
     <div class="help-section">
       <div class="help-section-title" style="color:#ff9800">⌨️ Keyboard Mode</div>
       <p>The keys <strong>A B C D E F G</strong> play the notes of the same name in the current octave.</p>
-      <div class="help-table">
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#9c27b0">A</span><span style="color:#9c27b0;font-weight:700">→ A</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#f06292">B</span><span style="color:#f06292;font-weight:700">→ B</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#e63946">C</span><span style="color:#e63946;font-weight:700">→ C</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#ff9800">D</span><span style="color:#ff9800;font-weight:700">→ D</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#ffeb3b">E</span><span style="color:#c8a800;font-weight:700">→ E</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#4caf50">F</span><span style="color:#4caf50;font-weight:700">→ F</span></div>
-        <div class="help-table-row"><span class="hk hk-note" style="--hk-color:#00897b">G</span><span style="color:#00897b;font-weight:700">→ G</span></div>
-      </div>
+      <!-- Built from the live note colours by buildHelpNoteTable(), so it
+           always matches the keys (including any custom colours). -->
+      <div class="help-table" id="helpNoteTable"></div>
       <div class="help-row" style="margin-top:10px">
         <div class="help-chip">Shift + key</div>
         <span>Play the sharp (♯) of that note — e.g. Shift+C = C♯</span>
@@ -4534,6 +4591,10 @@
       <div class="help-row">
         <div class="help-chip">Alt + key</div>
         <span>Play the flat (♭) of that note — e.g. Alt+D = D♭</span>
+      </div>
+      <div class="help-row">
+        <div class="help-chip">\ key</div>
+        <span>Toggle fullscreen (on computers)</span>
       </div>
       <p style="margin-top:8px; font-size:11px; color:var(--text-dim)">Hold Shift for sharp (♯), Alt for flat (♭).</p>
     </div>
@@ -4558,9 +4619,9 @@
     </div>
 
     <div class="help-section">
-      <div class="help-section-title" style="color:#2196f3">📋 Song Book</div>
-      <p>Enable Song Book in Settings to see a scrolling strip of notes to play along with. The highlighted note is the one to play next. Tap any note in the strip to jump to it.</p>
-      <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. Each song remembers its last tempo for next time. 23 songs included — from Twinkle Twinkle to Chopsticks.</p>
+      <div class="help-section-title" style="color:#2196f3">📖 Song Book</div>
+      <p>Tap the 📖 button at the left of the blue bar (or turn on Song Book in Settings) to see a scrolling strip of notes to play along with. The highlighted note is the one to play next. Tap any note in the strip to jump to it.</p>
+      <p style="margin-top:6px">Use the tempo controls to speed up or slow down the guide. Each song remembers its last tempo for next time. <span id="helpSongCount">50+</span> songs included — nursery rhymes, folk, holiday and classical, from Twinkle Twinkle to Chopsticks.</p>
       <p style="margin-top:6px">Some songs have <strong>chords</strong> — two notes played at the same time, shown as <strong>F+G</strong>. Press both together to advance.</p>
     </div>
 
@@ -4692,6 +4753,16 @@ function readableColor(hex) {
   const dg = Math.round(g * 0.55);
   const db = Math.round(b * 0.55);
   return '#' + [dr,dg,db].map(v => v.toString(16).padStart(2,'0')).join('');
+}
+
+// Ink colour for text drawn ON a note-coloured fill: dark ink on light
+// fills (yellow, amber, pale custom colours), white on everything else.
+function inkOnColor(hex) {
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return lum > 0.62 ? '#2a1a00' : '#ffffff';
 }
 
 function loadColors() {
@@ -6005,10 +6076,26 @@ function renderSheetMusic() {
   // currentSong was loaded earlier and the sheet is hidden.
   if (currentSong && songSheetVisible) {
     renderSheetMusicSong(svg);
-    return;
+  } else {
+    renderSheetMusicLive(svg);
   }
+  addStaffPaper(svg);
+}
 
-  renderSheetMusicLive(svg);
+// Lay an opaque paper rect under the notation, exactly covering the
+// viewBox the render path settled on (the viewBox varies by mode and
+// screen). Inserted as the first child so everything draws on top.
+function addStaffPaper(svg) {
+  const vb = svg.viewBox && svg.viewBox.baseVal;
+  if (!vb || !vb.width) return;
+  const inset = 1;
+  const paper = svgEl('rect', {
+    class: 'staff-paper',
+    x: vb.x + inset, y: vb.y + inset,
+    width: vb.width - inset * 2, height: vb.height - inset * 2,
+    rx: 10, ry: 10,
+  });
+  svg.insertBefore(paper, svg.firstChild);
 }
 
 // LIVE mode: show whichever notes are currently being held / pressed.
@@ -6712,7 +6799,8 @@ function practiceShowResult() {
   const completeEl = document.getElementById('songComplete');
   completeEl.textContent = pct + '% — Well done! Play again?';
   completeEl.style.display = 'block';
-  setTimeout(() => {
+  clearTimeout(songCompleteTimer);
+  songCompleteTimer = setTimeout(() => {
     completeEl.style.display = 'none';
     completeEl.textContent = '🎉 Well done! Play again?';
     practiceResetCounters();
@@ -6849,6 +6937,34 @@ function loadKeyColorMode() {
 //
 // Called on resize/orientationchange (existing handler) and on song
 // sheet toggle. Idempotent.
+// The floating background notes live only in the open area below the
+// header, info bar and (when open) song sheet. Measure the lowest bottom
+// edge of those bars and hand it to CSS as --deco-top. Called from
+// syncLandscapeTopBar (which runs on every layout-changing event) and
+// from a ResizeObserver on the bars themselves.
+function syncDecorationsTop() {
+  const deco = document.querySelector('.bg-decorations');
+  if (!deco) return;
+  let bottom = 0;
+  ['header', '.info-bar', '#songSheet'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (!el || el.offsetParent === null) return;
+    const r = el.getBoundingClientRect();
+    if (r.height > 0) bottom = Math.max(bottom, r.bottom);
+  });
+  // Under the fullscreen CSS zoom, rects are in zoomed px; the custom
+  // property is applied in layout px.
+  const zoom = parseFloat(document.documentElement.style.zoom) || 1;
+  deco.style.setProperty('--deco-top', Math.round(bottom / zoom) + 'px');
+}
+if (typeof ResizeObserver !== 'undefined') {
+  const decoRO = new ResizeObserver(() => syncDecorationsTop());
+  ['header', '.info-bar', '#songSheet'].forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) decoRO.observe(el);
+  });
+}
+
 function syncLandscapeTopBar() {
   const isLandscape = window.matchMedia('(max-width: 926px) and (orientation: landscape)').matches;
   const sheetOpen = document.body.classList.contains('song-sheet-open');
@@ -6868,6 +6984,7 @@ function syncLandscapeTopBar() {
   }
   // Resize the select to fit the current song title in whichever slot is active
   requestAnimationFrame(fitSongSelectToContent);
+  requestAnimationFrame(syncDecorationsTop);
 }
 
 
@@ -6948,10 +7065,34 @@ function closeSettings() {
   updateModHint();
 }
 
+// Help → Keyboard Mode note table, built from the live note colours.
+function buildHelpNoteTable() {
+  const table = document.getElementById('helpNoteTable');
+  if (!table) return;
+  table.innerHTML = '';
+  ['A','B','C','D','E','F','G'].forEach(n => {
+    const c = noteColors[n] || DEFAULT_NOTE_COLORS[n];
+    const row = document.createElement('div');
+    row.className = 'help-table-row';
+    const key = document.createElement('span');
+    key.className = 'hk hk-note' + (inkOnColor(c) !== '#ffffff' ? ' hk-dark-ink' : '');
+    key.style.setProperty('--hk-color', c);
+    key.textContent = n;
+    const lbl = document.createElement('span');
+    lbl.style.cssText = `color:${readableColor(c)};font-weight:700`;
+    lbl.textContent = '→ ' + n;
+    row.append(key, lbl);
+    table.appendChild(row);
+  });
+  const count = document.getElementById('helpSongCount');
+  if (count) count.textContent = SONGS.length;
+}
+
 function openHelp() {
   // Same as settings — pause the song so the player doesn't fall behind
   // while reading help.
   if (tempoPlaying) stopTempo();
+  buildHelpNoteTable();
   document.getElementById('helpPanel').classList.add('open');
 }
 function closeHelp() {
@@ -9297,7 +9438,7 @@ function loadSong(id) {
   if (infobarTitle) infobarTitle.textContent = currentSong.title;
   document.getElementById('songSelect').value = currentSong.id;
   applySongSelectColor(currentSong.id);
-  document.getElementById('songComplete').style.display = 'none';
+  clearSongComplete();
 
   // Compute song-level traits used for adaptive UI.
   // (1) Whether the song uses any sharps/flats — if not, hide the
@@ -9864,13 +10005,15 @@ function finalizeAdvance() {
     }
     // Otherwise this was the last (or only) iteration — celebrate.
     renderNoteStrip();
+    songCompleteFromTempo = false;
     // Practice mode: practiceShowResult handles its own banner with the score
     if (practiceMode) {
       practiceShowResult();
     } else {
       const completeEl = document.getElementById('songComplete');
       completeEl.style.display = 'block';
-      setTimeout(() => {
+      clearTimeout(songCompleteTimer);
+      songCompleteTimer = setTimeout(() => {
         completeEl.style.display = 'none';
         currentNoteIdx = 0;
         currentRepeat = 1;
@@ -10182,7 +10325,30 @@ function stopTempo() {
   updateRepeatBtn();
 }
 
+// ── "Well done! Play again?" banner ──
+// Shown for 3.5s when a song finishes, after which the song resets to the
+// start. Tapping it restarts straight away — and if the song had been
+// running on the tempo guide, starts the guide again.
+let songCompleteTimer = null;
+let songCompleteFromTempo = false;
+const SONG_COMPLETE_TEXT = '🎉 Well done! Play again?';
+
+function clearSongComplete() {
+  clearTimeout(songCompleteTimer);
+  songCompleteTimer = null;
+  const el = document.getElementById('songComplete');
+  if (el) { el.style.display = 'none'; el.textContent = SONG_COMPLETE_TEXT; }
+}
+
+function playAgain() {
+  const resumeTempo = songCompleteFromTempo;
+  restartSong();
+  practiceNotesTotal = practiceCountTotal();
+  if (resumeTempo && !selfTempoMode && songSheetVisible) startTempo();
+}
+
 function restartSong() {
+  clearSongComplete();
   stopTempo();
   currentNoteIdx = 0;
   currentRepeat = 1;
@@ -10195,7 +10361,6 @@ function restartSong() {
   refreshPendingChord();
   updateRepeatBtn();
   renderNoteStrip();
-  document.getElementById('songComplete').style.display = 'none';
 }
 
 function clearTempoTimer() {
@@ -10248,13 +10413,15 @@ function scheduleNextNote(immediate) {
       // Final iteration done — show the celebration and reset.
       stopTempo();
       renderNoteStrip();
+      songCompleteFromTempo = true;
       // Practice mode: practiceShowResult handles its own banner with the score
       if (practiceMode) {
         practiceShowResult();
       } else {
         const completeEl = document.getElementById('songComplete');
         completeEl.style.display = 'block';
-        setTimeout(() => {
+        clearTimeout(songCompleteTimer);
+        songCompleteTimer = setTimeout(() => {
           completeEl.style.display = 'none';
           currentNoteIdx = 0;
           currentRepeat = 1;
@@ -10907,8 +11074,11 @@ function updateFullscreenUI() {
 document.addEventListener('fullscreenchange', updateFullscreenUI);
 document.addEventListener('webkitfullscreenchange', updateFullscreenUI);
 
+// Fullscreen shortcut: the backslash key. It used to be "F", but F is a
+// note key — Shift+F (F sharp) and Caps-Lock+F also toggled fullscreen
+// mid-song. Backslash isn't used for anything else in the app.
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'F' && !e.ctrlKey && !e.metaKey && !e.altKey &&
+  if (e.key === '\\' && !e.ctrlKey && !e.metaKey && !e.altKey &&
       document.activeElement.tagName !== 'INPUT' &&
       document.activeElement.tagName !== 'TEXTAREA') {
     toggleFullscreen();
