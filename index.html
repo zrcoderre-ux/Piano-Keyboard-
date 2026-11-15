@@ -1518,7 +1518,14 @@
       align-items: center;
       justify-content: flex-end;
       padding-bottom: 10px;
-      transition: background 0.06s, transform 0.06s;
+      /* Transform only — never transition `background`. The resting key is
+         a gradient (background-image, with a transparent background-color)
+         and the pressed key is a solid colour. A gradient can't be
+         interpolated, so it vanished on the first frame while the colour
+         faded in from transparent, exposing the dark piano frame behind
+         the key as a brief black flash. */
+      transition: transform 0.06s;
+      -webkit-tap-highlight-color: transparent;
       box-shadow: 0 4px 10px rgba(0,0,0,0.12), inset 0 -3px 0 rgba(0,0,0,0.05);
       /* Inactive-octave look (expanded keyboard): a solid soft grey.
          Solid rather than translucent so nothing behind bleeds through. */
@@ -1558,7 +1565,9 @@
       align-items: flex-end;
       justify-content: center;
       padding-bottom: 6px;
-      transition: background 0.06s, transform 0.06s;
+      /* Transform only — see .white-key for why background isn't animated. */
+      transition: transform 0.06s;
+      -webkit-tap-highlight-color: transparent;
       box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
       overflow: hidden;
     }
@@ -4983,37 +4992,79 @@ function noteToFreq(note, oct) {
   return 440 * Math.pow(2, n / 12);
 }
 
+// All voices feed one master bus: voices → master gain (volume) →
+// compressor → speakers. Without it, each note went straight to the
+// output at up to 0.8 gain, so two or three overlapping notes (a chord,
+// or a new note over the previous one's release tail) summed past full
+// scale and clipped — heard as static/crackle. Per-voice level is kept
+// low enough that a chord stays under full scale, and the compressor
+// catches whatever is left.
+const VOICE_PEAK = 0.35;
+const VOICE_SUSTAIN = 0.14;
+let masterBus = null; // { ctx, gain }
+
+function getMasterBus(ctx) {
+  if (masterBus && masterBus.ctx === ctx) return masterBus.gain;
+  const gain = ctx.createGain();
+  gain.gain.value = masterVolume;
+  let out = ctx.destination;
+  try {
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -12;
+    comp.knee.value = 10;
+    comp.ratio.value = 12;
+    comp.attack.value = 0.003;
+    comp.release.value = 0.25;
+    comp.connect(ctx.destination);
+    out = comp;
+  } catch(e) {}
+  gain.connect(out);
+  masterBus = { ctx, gain };
+  return gain;
+}
+
 function playNote(noteId, freq) {
   if (activeOscillators[noteId]) return;
   const ctx = getAudioCtx();
   if (!ctx) return;
   const osc = ctx.createOscillator();
-  const gainNode = ctx.createGain();
+  // Two gains per voice: `envGain` runs the attack/decay and is never
+  // touched again; `relGain` sits at 1 until release. Keeping them
+  // separate means the release never has to cancel a running ramp and
+  // read back gain.value mid-automation — that read is unreliable on
+  // some browsers and made the level jump, which is an audible click.
+  const envGain = ctx.createGain();
+  const relGain = ctx.createGain();
+  const t = ctx.currentTime;
   osc.type = waveform;
   osc.frequency.value = freq;
-  gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
-  gainNode.gain.linearRampToValueAtTime(masterVolume * 0.8, ctx.currentTime + 0.005);
-  gainNode.gain.exponentialRampToValueAtTime(masterVolume * 0.4, ctx.currentTime + 0.1);
-  gainNode.gain.exponentialRampToValueAtTime(Math.max(masterVolume * 0.25, 0.0001), ctx.currentTime + 0.5);
-  osc.connect(gainNode);
-  gainNode.connect(ctx.destination);
-  osc.start();
-  activeOscillators[noteId] = { osc, gainNode };
+  envGain.gain.setValueAtTime(0, t);
+  envGain.gain.linearRampToValueAtTime(VOICE_PEAK, t + 0.008);
+  envGain.gain.setTargetAtTime(VOICE_SUSTAIN, t + 0.008, 0.15);
+  relGain.gain.setValueAtTime(1, t);
+  osc.connect(envGain);
+  envGain.connect(relGain);
+  relGain.connect(getMasterBus(ctx));
+  osc.onended = () => {
+    try { osc.disconnect(); envGain.disconnect(); relGain.disconnect(); } catch(e) {}
+  };
+  osc.start(t);
+  activeOscillators[noteId] = { osc, relGain };
 }
 
 function stopNote(noteId) {
   const entry = activeOscillators[noteId];
   if (!entry) return;
-  const ctx = getAudioCtx();
-  if (!ctx) { try { entry.osc.stop(); } catch(e) {} delete activeOscillators[noteId]; return; }
-  const { osc, gainNode } = entry;
-  try {
-    gainNode.gain.cancelScheduledValues(ctx.currentTime);
-    gainNode.gain.setValueAtTime(gainNode.gain.value, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
-    osc.stop(ctx.currentTime + 0.41);
-  } catch(e) { try { osc.stop(); } catch(e2) {} }
   delete activeOscillators[noteId];
+  const { osc, relGain } = entry;
+  const ctx = getAudioCtx();
+  if (!ctx) { try { osc.stop(); } catch(e) {} return; }
+  try {
+    const t = ctx.currentTime;
+    relGain.gain.setValueAtTime(1, t);
+    relGain.gain.setTargetAtTime(0, t, 0.06); // smooth fade, ~-70 dB by 0.5s
+    osc.stop(t + 0.5);
+  } catch(e) { try { osc.stop(); } catch(e2) {} }
 }
 
 function stopAllNotes() {
@@ -6899,7 +6950,12 @@ function updateOctaveRange() {
   buildPiano();
 }
 
-function setVolume(v) { masterVolume = v / 100; }
+function setVolume(v) {
+  masterVolume = v / 100;
+  if (masterBus) {
+    try { masterBus.gain.gain.setTargetAtTime(masterVolume, masterBus.ctx.currentTime, 0.02); } catch(e) {}
+  }
+}
 
 let showBassClef = false;
 
