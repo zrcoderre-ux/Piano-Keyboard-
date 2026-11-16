@@ -5069,6 +5069,7 @@ function stopNote(noteId) {
 
 function stopAllNotes() {
   Object.keys(activeOscillators).forEach(stopNote);
+  if (typeof resetKeyLit === 'function') resetKeyLit();
   // Clear any lingering note display state too — otherwise after a mode
   // switch or audio-recovery zombie kill, the staff/big-note would still
   // show the old notes even though no audio is playing.
@@ -5732,6 +5733,63 @@ function updateActiveOctave() {
 
 
 const noteTouchTime = {}; // noteId -> timestamp when note started
+const pendingStops = {};  // noteId -> timer for a deferred (min-duration) stop
+const pianoHolds = {};    // noteId -> number of fingers currently on that key
+
+// ── KEY HIGHLIGHT STATE ──
+// Every on-screen key (piano key or QWERTY pad key) lights through
+// setKeyLit(), which fixes two ways a played key could fail to show its
+// colour during fast playing:
+//   1. Hold count. The same key can be held by more than one source at
+//      once (two fingers, a finger plus the computer keyboard, or two
+//      letters that land on the same note). Lighting used to be a plain
+//      on/off, so the first release switched the colour off while the key
+//      was still held.
+//   2. Minimum lit time. A very quick tap can deliver its press and its
+//      release inside a single screen frame, so the colour was added and
+//      removed before the browser ever painted it.
+const MIN_LIT_MS = 110;
+const keyLit = new Map(); // element -> { count, since, timer }
+
+function setKeyLit(el, on, note) {
+  let st = keyLit.get(el);
+  if (on) {
+    if (!st) { st = { count: 0, since: 0, timer: null }; keyLit.set(el, st); }
+    st.count++;
+    if (st.timer) { clearTimeout(st.timer); st.timer = null; }
+    st.since = performance.now();
+    applyNoteColor(el, note);
+    el.classList.add('pressed');
+    return;
+  }
+  if (!st) { clearNoteColor(el); el.classList.remove('pressed'); return; }
+  if (st.count > 0) st.count--;
+  if (st.count > 0 || st.timer) return;
+  const off = () => {
+    st.timer = null;
+    if (st.count > 0) return;
+    clearNoteColor(el);
+    el.classList.remove('pressed');
+    keyLit.delete(el);
+  };
+  const wait = MIN_LIT_MS - (performance.now() - st.since);
+  if (wait > 0) st.timer = setTimeout(off, wait); else off();
+}
+
+// Switch every key off and forget all holds. Called whenever notes are
+// force-stopped (mode switch, returning from the background) so a missed
+// release can never leave a key stuck lit.
+function resetKeyLit() {
+  keyLit.forEach((st, el) => {
+    if (st.timer) clearTimeout(st.timer);
+    clearNoteColor(el);
+    el.classList.remove('pressed');
+  });
+  keyLit.clear();
+  Object.keys(pianoHolds).forEach(k => delete pianoHolds[k]);
+  Object.keys(pendingStops).forEach(k => { clearTimeout(pendingStops[k]); delete pendingStops[k]; });
+  Object.keys(heldByLetter).forEach(k => delete heldByLetter[k]);
+}
 const MIN_NOTE_MS = 300;  // minimum audible duration for touch taps
 
 // Format a note name for display when tapped directly on a piano key.
@@ -5753,6 +5811,12 @@ function triggerNoteByPianoKey(note, oct) {
   const freq = noteToFreq(note, oct);
   if (!freq) return;
   const id = note + oct + '_piano';
+  // Re-pressing a key whose previous tap is still ringing out its minimum
+  // duration: cancel that pending stop (it would otherwise cut THIS press
+  // short) and end the old voice now so the new press gets its own attack.
+  if (pendingStops[id]) { clearTimeout(pendingStops[id]); delete pendingStops[id]; }
+  stopNote(id);
+  pianoHolds[id] = (pianoHolds[id] || 0) + 1;
   noteTouchTime[id] = performance.now();
   playNote(id, freq);
   highlightPianoKey(note, oct, true);
@@ -5770,6 +5834,10 @@ function triggerNoteByPianoKey(note, oct) {
 function releaseNoteByPianoKey(note, oct) {
   const id = note + oct + '_piano';
   highlightPianoKey(note, oct, false);
+  // Two fingers on the same key: the note keeps sounding (and the key
+  // stays lit) until the last one lifts.
+  if (pianoHolds[id] > 1) { pianoHolds[id]--; return; }
+  delete pianoHolds[id];
   // Self-tempo mode: lifting the finger off a correctly-armed note is
   // the "advance" trigger.
   //
@@ -5783,7 +5851,8 @@ function releaseNoteByPianoKey(note, oct) {
   const elapsed = performance.now() - (noteTouchTime[id] || 0);
   const remaining = MIN_NOTE_MS - elapsed;
   if (remaining > 0) {
-    setTimeout(() => stopNote(id), remaining);
+    if (pendingStops[id]) clearTimeout(pendingStops[id]);
+    pendingStops[id] = setTimeout(() => { delete pendingStops[id]; stopNote(id); }, remaining);
   } else {
     stopNote(id);
   }
@@ -5792,15 +5861,7 @@ function releaseNoteByPianoKey(note, oct) {
 
 function highlightPianoKey(note, oct, on) {
   const keys = document.querySelectorAll(`[data-note="${note}"][data-oct="${oct}"]`);
-  keys.forEach(k => {
-    if (on) {
-      applyNoteColor(k, note);
-      k.classList.add('pressed');
-    } else {
-      clearNoteColor(k);
-      k.classList.remove('pressed');
-    }
-  });
+  keys.forEach(k => setKeyLit(k, on, note));
 }
 
 // ──────────────────────────────────────────
@@ -5957,12 +6018,21 @@ function buildNoteLabel(baseLetter, note, isSharp, isFlat) {
 // ──────────────────────────────────────────
 //  NOTE HANDLING
 // ──────────────────────────────────────────
+// letter -> { note, oct, id, mods } for the press currently held on that
+// letter. The release must undo exactly what the press did. It used to
+// re-derive the note from the modifier keys and octave AT RELEASE TIME, so
+// letting go of Shift/Alt first, or changing octave mid-hold, released a
+// different note and left the real one lit and ringing.
+const heldByLetter = {};
+
 function handleNoteOn(letter, isSharp, isFlat) {
+  if (heldByLetter[letter]) handleNoteOff(letter);
   const note = getNoteForKey(letter, isSharp, isFlat);
   if (!note) return;
   const freq = noteToFreq(note, octave);
   if (!freq) return;
   const id = note + octave + letter;
+  heldByLetter[letter] = { note, oct: octave, id, mods: (isSharp?'#':'') + (isFlat?'b':'') };
   playNote(id, freq);
   highlightPianoKey(note, octave, true);
   highlightQKey(letter, true, note);
@@ -5979,32 +6049,27 @@ function handleNoteOn(letter, isSharp, isFlat) {
 }
 
 function handleNoteOff(letter, isSharp, isFlat) {
-  const note = getNoteForKey(letter, isSharp, isFlat);
-  if (!note) return;
-  const id = note + octave + letter;
+  const held = heldByLetter[letter];
+  if (!held) return;
+  delete heldByLetter[letter];
+  const { note, oct, id } = held;
   stopNote(id);
   clearNoteDisplay(id);
   untrackActiveSheetNote(id);
   clearWrongNote(id);
-  highlightPianoKey(note, octave, false);
+  highlightPianoKey(note, oct, false);
   highlightQKey(letter, false, null);
   // Self-tempo: keyup is the advance trigger.
   advanceSongNoteOnRelease(note);
   // Practice mode: record key release for duration scoring (tempo mode).
   practiceRecordRelease();
-  pressedKeys.delete(letter + (isSharp?'#':'') + (isFlat?'b':''));
+  pressedKeys.delete(letter + held.mods);
 }
 
 function highlightQKey(letter, on, note) {
   const el = document.querySelector(`[data-key="${letter}"], [data-key="${letter.toLowerCase()}"]`);
   if (!el) return;
-  if (on && note) {
-    applyNoteColor(el, note);
-    el.classList.add('pressed');
-  } else {
-    clearNoteColor(el);
-    el.classList.remove('pressed');
-  }
+  setKeyLit(el, !!(on && note), note);
 }
 
 // ──────────────────────────────────────────
